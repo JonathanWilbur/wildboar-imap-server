@@ -1,0 +1,27 @@
+{
+  "name": "imap-server-ts",
+  "version": "0.1.0",
+  "description": "An IMAP version 4-rev1 server in TypeScript",
+  "main": "./dist/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "imap",
+    "email"
+  ],
+  "author": "Jonathan M. Wilbur <jonathan@wilbur.space>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/amqplib": "^0.5.11",
+    "@types/node": "^11.11.3",
+    "emailjs-imap-client": "^3.0.7"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.3",
+    "wildboar-microservices-ts": "^0.1.3"
+  }
+}

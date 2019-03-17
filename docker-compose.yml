@@ -1,0 +1,30 @@
+version: '3.7'
+
+networks:
+  messaging:
+    external: false
+
+services:
+
+  imap:
+    build: .
+    container_name: 'imaphost'
+    depends_on:
+      - messagebroker
+    hostname: 'imaphost'
+    networks:
+      - messaging
+    ports:
+      - '143:143'
+
+  messagebroker:
+    container_name: 'qhost'
+    hostname: 'qhost'
+    image: 'rabbitmq:management-alpine'
+    networks:
+      - messaging
+    ports:
+      - '5672:5672/tcp'
+      - '15672:15672/tcp'
+    volumes:
+      - "${PWD}/configuration/rabbitmq/enabled_plugins.erl:/etc/rabbitmq/enabled_plugins:ro"

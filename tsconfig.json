@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "allowJs": false,
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": true,
+        "alwaysStrict": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "newLine": "LF",
+        "noEmitOnError": true,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "outDir": "./dist",
+        "preserveConstEnums": true,
+        "removeComments": true,
+        "sourceMap": false,
+        "strict": true,
+        "strictFunctionTypes": true,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true,
+        "target": "ESNext"
+    },
+    "include": [
+        "./source/**/*.ts"
+    ]
+}
