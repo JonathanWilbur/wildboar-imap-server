@@ -24,7 +24,7 @@ class Server {
         }).listen(this.configuration.imap_server_tcp_listening_port, this.configuration.imap_server_ip_bind_address, () => { console.log("Listening for connections..."); });
         process.on('SIGINT', () => {
             console.log("Interrupted. Shutting down.");
-            this.messageBroker.close();
+            this.messageBroker.closeConnection();
             process.exit();
         });
     }

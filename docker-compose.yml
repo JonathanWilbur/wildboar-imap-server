@@ -11,6 +11,8 @@ services:
     container_name: 'imaphost'
     depends_on:
       - messagebroker
+    environment:
+      QUEUE_SERVER_HOSTNAME: 'messagebroker'
     hostname: 'imaphost'
     networks:
       - messaging

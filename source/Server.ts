@@ -44,7 +44,7 @@ class Server implements Temporal, UniquelyIdentified {
 
         process.on('SIGINT', () : void => {
             console.log("Interrupted. Shutting down.");
-            this.messageBroker.close();
+            this.messageBroker.closeConnection();
             process.exit();
         });
     }

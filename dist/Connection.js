@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Scanner_1 = require("./Scanner");
+const ConnectionState_1 = require("./ConnectionState");
 const uuidv4 = require("uuid/v4");
 class Connection {
     constructor(server, socket) {
@@ -11,6 +12,8 @@ class Connection {
         this.scanner = new Scanner_1.default();
         this.expectedLexemeType = 0;
         this.currentlySelectedMailbox = "INBOX";
+        this.authenticatedUser = "";
+        this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
         this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
         socket.on("data", (data) => {
             console.log(data);
@@ -60,6 +63,12 @@ class Connection {
             case ("LSUB"):
                 this.executeList(tag, args);
                 break;
+            case ("SELECT"):
+                this.executeSelect(tag, args);
+                break;
+            case ("CREATE"):
+                this.executeCreate(tag, args);
+                break;
             default: {
                 console.log("Unrecognized command. Received this:");
                 console.log(`TAG: ${tag}`);
@@ -82,27 +91,44 @@ class Connection {
     executeLogin(tag, args) {
         this.socket.write(`${tag} OK LOGIN Completed.\r\n`);
     }
+    executeSelect(tag, args) {
+        const mailboxName = args.trim();
+        this.server.messageBroker.select(this.authenticatedUser, mailboxName)
+            .then((response) => {
+            this.socket.write(`* ${response.exists} EXISTS\r\n` +
+                `* ${response.recent} RECENT\r\n` +
+                `* FLAGS (${response.flags.map((flag) => ("\\" + flag)).join(" ")})\r\n` +
+                `${tag} OK [READ-WRITE] SELECT Completed.\r\n`);
+        });
+    }
+    executeCreate(tag, args) {
+        this.socket.write(`${tag} OK CREATE Completed.\r\n`);
+    }
     executeList(tag, args) {
         const listArgs = lexQuoteDelimitedArguments(args);
         if (listArgs.length !== 2)
             throw new Error("Invalid number of arguments given to LIST.");
         const [referenceName, mailboxName] = listArgs;
-        if (referenceName === "") {
-        }
-        if (mailboxName === "") {
-            this.socket.write(`* LIST (\Noselect) NIL ""\r\n`);
-        }
-        else {
-            this.socket.write(`* LIST () NIL "INBOX"\r\n`);
-        }
-        this.socket.write(`${tag} OK LIST Completed.\r\n`);
+        this.server.messageBroker.list(this.authenticatedUser, referenceName, mailboxName)
+            .then((response) => {
+            response.listItems.forEach((listItem) => {
+                this.socket.write(`* LIST (${listItem.nameAttributes.join(" ")}) "${listItem.hierarchyDelimiter}" ${listItem.name}\r\n`);
+            });
+            this.socket.write(`${tag} OK LIST Completed.\r\n`);
+        });
     }
     executeLsub(tag, args) {
         const listArgs = lexQuoteDelimitedArguments(args);
         if (listArgs.length !== 2)
             throw new Error("Invalid number of arguments given to LSUB.");
         const [referenceName, mailboxName] = listArgs;
-        this.socket.write(`${tag} OK LSUB Completed.\r\n`);
+        this.server.messageBroker.lsub(this.authenticatedUser, referenceName, mailboxName)
+            .then((response) => {
+            response.lsubItems.forEach((lsubItem) => {
+                this.socket.write(`* LSUB (${lsubItem.nameAttributes.join(" ")}) "${lsubItem.hierarchyDelimiter}" ${lsubItem.name}\r\n`);
+            });
+            this.socket.write(`${tag} OK LSUB Completed.\r\n`);
+        });
     }
 }
 exports.default = Connection;

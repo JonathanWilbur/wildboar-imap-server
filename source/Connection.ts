@@ -4,6 +4,8 @@ import LexemeType from "./LexemeType";
 import Scanner from "./Scanner";
 import Server from "./Server";
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
+import { ConnectionState } from "./ConnectionState";
+import { ListItem, ListResponse, LsubItem, LsubResponse, SelectResponse } from "./StorageDriverResponses";
 // import SASLAuthenticationMechanism from "./SASLAuthenticationMechanism";
 // import PlainSASLAuthentication from "./SASLAuthenticationMechanisms/Plain";
 const uuidv4 : () => string = require("uuid/v4");
@@ -19,6 +21,8 @@ class Connection implements Temporal, UniquelyIdentified {
     // private saslAuthenticationMechanism : string = "";
     // private saslAuthenticator : SASLAuthenticationMechanism | undefined;
     private currentlySelectedMailbox : string = "INBOX";
+    private authenticatedUser : string = "";
+    private state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
 
     constructor (
         readonly server : Server,
@@ -106,6 +110,8 @@ class Connection implements Temporal, UniquelyIdentified {
             case ("LOGIN"): this.executeLogin(tag, args); break;
             case ("LIST"): this.executeList(tag, args); break;
             case ("LSUB"): this.executeList(tag, args); break;
+            case ("SELECT"): this.executeSelect(tag, args); break;
+            case ("CREATE"): this.executeCreate(tag, args); break;
             default: {
                 console.log("Unrecognized command. Received this:");
                 console.log(`TAG: ${tag}`);
@@ -147,6 +153,19 @@ class Connection implements Temporal, UniquelyIdentified {
 
     // Authenticated state:
     // SELECT
+    public executeSelect (tag : string, args : string) : void {
+        const mailboxName : string = args.trim();
+        this.server.messageBroker.select(this.authenticatedUser, mailboxName)
+        .then((response : SelectResponse) : void => {
+            this.socket.write(
+                `* ${response.exists} EXISTS\r\n` +
+                `* ${response.recent} RECENT\r\n` +
+                `* FLAGS (${response.flags.map((flag : string) => ("\\" + flag)).join(" ")})\r\n` +
+                `${tag} OK [READ-WRITE] SELECT Completed.\r\n`
+            );
+        });
+    }
+
     // EXAMINE
 
     // CREATE
@@ -171,28 +190,22 @@ class Connection implements Temporal, UniquelyIdentified {
         // mailbox name is interpreted.
         const [ referenceName, mailboxName ] = listArgs;
 
-        // From RFC 3501, Section 6.3.8:
-        // An empty ("" string) reference name argument indicates that the
-        // mailbox name is interpreted as by SELECT.
-        //
-        // I don't know what the RFC means by this, but it sounds like it
-        // means "just use the currently selected mailbox."
-        if (referenceName === "") {
+        // // From RFC 3501, Section 6.3.8:
+        // // An empty ("" string) reference name argument indicates that the
+        // // mailbox name is interpreted as by SELECT.
+        // // I don't know what the RFC means by this, but it sounds like it
+        // // means "just use the currently selected mailbox."
+        // // An empty ("" string) mailbox name argument is a special request to
+        // // return the hierarchy delimiter and the root name of the name given
+        // // in the reference.
 
-        }
-
-        // From RFC 3501, Section 6.3.8:
-        // An empty ("" string) mailbox name argument is a special request to
-        // return the hierarchy delimiter and the root name of the name given
-        // in the reference.
-        if (mailboxName === "") {
-            this.socket.write(`* LIST (\Noselect) NIL ""\r\n`);
-        } else {
-            // TODO: Match on wildcards.
-            this.socket.write(`* LIST () NIL "INBOX"\r\n`);
-        }
-
-        this.socket.write(`${tag} OK LIST Completed.\r\n`);
+        this.server.messageBroker.list(this.authenticatedUser, referenceName, mailboxName)
+        .then((response : ListResponse) : void => {
+            response.listItems.forEach((listItem : ListItem) : void => {
+                this.socket.write(`* LIST (${listItem.nameAttributes.join(" ")}) "${listItem.hierarchyDelimiter}" ${listItem.name}\r\n`);
+            });
+            this.socket.write(`${tag} OK LIST Completed.\r\n`);
+        });
     }
 
     // LSUB
@@ -201,15 +214,13 @@ class Connection implements Temporal, UniquelyIdentified {
         if (listArgs.length !== 2)
             throw new Error("Invalid number of arguments given to LSUB.");
         const [ referenceName, mailboxName ] = listArgs;
-
-        // if (mailboxName === "") {
-        //     this.socket.write(`* LIST (\Noselect) NIL ""\r\n`);
-        // } else {
-        //     // TODO: Match on wildcards.
-        //     this.socket.write(`* LIST () NIL "INBOX"\r\n`);
-        // }
-
-        this.socket.write(`${tag} OK LSUB Completed.\r\n`);
+        this.server.messageBroker.lsub(this.authenticatedUser, referenceName, mailboxName)
+        .then((response : LsubResponse) : void => {
+            response.lsubItems.forEach((lsubItem : LsubItem) : void => {
+                this.socket.write(`* LSUB (${lsubItem.nameAttributes.join(" ")}) "${lsubItem.hierarchyDelimiter}" ${lsubItem.name}\r\n`);
+            });
+            this.socket.write(`${tag} OK LSUB Completed.\r\n`);
+        });
     }
 
     // STATUS

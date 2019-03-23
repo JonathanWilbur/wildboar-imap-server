@@ -92,8 +92,8 @@ class EnvironmentVariableConfigurationSource implements ConfigurationSource,Type
     }
 
     get imap_server_ip_bind_address () : string {
-        // const DEFAULT_VALUE : string = "0.0.0.0";
-        const DEFAULT_VALUE : string = "127.0.0.1";
+        const DEFAULT_VALUE : string = "0.0.0.0";
+        // const DEFAULT_VALUE : string = "127.0.0.1";
         const env : string | undefined = this.getString("imap.server.ip.bind_address");
         if (!env) return DEFAULT_VALUE;
         return env;

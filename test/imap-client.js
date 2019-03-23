@@ -14,14 +14,14 @@ client.connect()
     //     console.log(mailboxes);
     // });
 
-    client.createMailbox("bigboi")
-    .then(() => {
-        console.log("Done!");
-    });
-
-    // client.selectMailbox('INBOX').then((mailbox) => {
-    //     console.log(mailbox);
+    // client.createMailbox("bigboi")
+    // .then(() => {
+    //     console.log("Done!");
     // });
+
+    client.selectMailbox('Bigboi').then((mailbox) => {
+        console.log(mailbox);
+    });
 
     // client.listMessages('INBOX', '1:10', ['uid', 'flags', 'body[]']).then((messages) => {
     //     messages.forEach((message) => console.log('Flags for ' + message.uid + ': ' + message.flags.join(', ')));
