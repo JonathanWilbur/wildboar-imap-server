@@ -10,18 +10,18 @@ const client = new ImapClient("localhost", 143, {
 
 client.connect()
 .then(() => {
-    // client.listMailboxes().then((mailboxes) => {
-    //     console.log(mailboxes);
+    client.listMailboxes().then((mailboxes) => {
+        console.log(mailboxes);
+    });
+
+    // client.createMailbox("bigboi")
+    // .then(() => {
+    //     console.log("Done!");
     // });
 
-    client.createMailbox("bigboi")
-    .then(() => {
-        console.log("Done!");
-    });
-
-    client.selectMailbox('Bigboi').then((mailbox) => {
-        console.log(mailbox);
-    });
+    // client.selectMailbox('Bigboi').then((mailbox) => {
+    //     console.log(mailbox);
+    // });
 
     // client.listMessages('INBOX', '1:10', ['uid', 'flags', 'body[]']).then((messages) => {
     //     messages.forEach((message) => console.log('Flags for ' + message.uid + ': ' + message.flags.join(', ')));

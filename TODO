@@ -1,0 +1,6 @@
+- Healthcheck tools
+- Startup validation.
+- Respond to non-existent commands.
+- Check for correct state at the start of commands.
+- Use a `sensitiveCommandRunning` flag to prevent race conditions when a
+  connection attempts two `APPEND`s at once, for instance.

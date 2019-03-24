@@ -2,12 +2,15 @@ import * as net from "net";
 import Lexeme from "./Lexeme";
 import LexemeType from "./LexemeType";
 import Scanner from "./Scanner";
+import { ScanningState } from "./Scanner"; // TODO: Separate this.
 import Server from "./Server";
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
 import { ConnectionState } from "./ConnectionState";
 import { ListItem, ListResponse, LsubItem, LsubResponse, SelectResponse, ExamineResponse, CreateResponse, DeleteResponse, RenameResponse, SubscribeResponse, UnsubscribeResponse } from "./StorageDriverResponses";
 // import SASLAuthenticationMechanism from "./SASLAuthenticationMechanism";
 // import PlainSASLAuthentication from "./SASLAuthenticationMechanisms/Plain";
+import { CommandPlugin } from "./CommandPlugin";
+import { EventEmitter } from "events";
 const uuidv4 : () => string = require("uuid/v4");
 
 export default
@@ -15,89 +18,59 @@ class Connection implements Temporal, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();
-
-    private scanner = new Scanner();
+    public readonly scanner = new Scanner();
     // private expectedLexemeType : LexemeType = LexemeType.COMMAND_LINE;
     // private saslAuthenticationMechanism : string = "";
     // private saslAuthenticator : SASLAuthenticationMechanism | undefined;
-    private currentlySelectedMailbox : string = "INBOX";
-    private authenticatedUser : string = "";
-    private state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
+    public currentlySelectedMailbox : string = "INBOX";
+    public authenticatedUser : string = "";
+    public state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
+    private eventEmitter : EventEmitter = new EventEmitter();
 
     constructor (
         readonly server : Server,
-        readonly socket : net.Socket
+        readonly socket : net.Socket,
+        readonly commandPlugins : CommandPlugin[]
     ) {
-        // this.respond(220, this.server.configuration.smtp_server_greeting);
-        // greeting        = "*" SP (resp-cond-auth / resp-cond-bye) CRLF
-        // resp-cond-auth  = ("OK" / "PREAUTH") SP resp-text ; Authentication condition
-        // resp-cond-bye   = "BYE" SP resp-text
-        // resp-text       = ["[" resp-text-code "]" SP] text
-        // resp-text-code  = "ALERT" /
-        //     "BADCHARSET" [SP "(" astring *(SP astring) ")" ] /
-        //     capability-data / "PARSE" /
-        //     "PERMANENTFLAGS" SP "("
-        //     [flag-perm *(SP flag-perm)] ")" /
-        //     "READ-ONLY" / "READ-WRITE" / "TRYCREATE" /
-        //     "UIDNEXT" SP nz-number / "UIDVALIDITY" SP nz-number /
-        //     "UNSEEN" SP nz-number /
-        //     atom [SP 1*<any TEXT-CHAR except "]">]
-        // text            = 1*TEXT-CHAR
-        // TEXT-CHAR       = <any CHAR except CR and LF>
+        this.commandPlugins.forEach((plugin : CommandPlugin) : void => {
+            this.eventEmitter.on(plugin.commandName, plugin.callback);
+        });
+
         this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
         socket.on("data", (data : Buffer) : void => {
             this.scanner.enqueueData(data);
-            let line : Lexeme[] = this.scanner.scanLine();
-            console.log(line);
-            const tag : string = line[0].token.toString();
-            const command : string = line[1].token.toString();
-            this.dispatchCommand(command, tag, line.slice(2));
-            // let lexeme : Lexeme | null = null;
-            // while (true) {
-            //     switch (this.expectedLexemeType) {
-            //         case (LexemeType.COMMAND_LINE):  lexeme = this.scanner.scanLine(); break;
-            //         case (LexemeType.CONTINUATION_LINE):  lexeme = this.scanner.scanLine(); break;
-            //         // TODO: Default
-            //     }
-            //     if (!lexeme) break;
-            //     if (lexeme.type === LexemeType.COMMAND_LINE) {
-            //         const tag : string = lexeme.getTag();
-            //         const command : string = lexeme.getCommand();
-            //         const args : string = lexeme.getArguments();
-            //         this.dispatchCommand(command, tag, args);
-            //     }
-            // };
+            switch (<number>this.scanner.state) {
+                case (ScanningState.COMMAND_NAME): {
+                    if (this.scanner.lineReady) {
+                        this.scanner.readTag()
+                        .then((tag : string) : void => {
+                            this.scanner.readCommand()
+                            .then((command : string) : void => {
+                                console.log(`${tag} ${command}`);
+                                this.eventEmitter.emit(command.toUpperCase(), this, tag);
+                            })
+                            .catch((rejection : any) : void => {
+                                if (rejection) {
+                                    // Close the connection.
+                                    console.log("Closing connection from command");
+                                }
+                            });
+                        })
+                        .catch((rejection : any) : void => {
+                            if (rejection) {
+                                // Close the connection.
+                                console.log("Closing connection from tag");
+                            }
+                        });
+                    }
+                }
+                default: break;
+            }
         });
 
         socket.on("close", (had_error : boolean) : void => {
             console.log(`Bye!`);
         });
-    }
-
-    // "It is important that you do not use a callback map, because the map
-    // itself will become 'this' in the callbacks." -- Hard experience.
-    private dispatchCommand (command : string, tag : string, args : Lexeme[]) : void {
-        switch (command.toUpperCase()) {
-            case ("CAPABILITY"): this.executeCapability(tag); break;
-            case ("NOOP"): this.executeNoop(tag); break;
-            case ("LOGOUT"): this.executeLogout(tag); break;
-            case ("LOGIN"): this.executeLogin(tag, args); break;
-            // case ("LIST"): this.executeList(tag, args); break;
-            // case ("LSUB"): this.executeList(tag, args); break;
-            case ("SELECT"): this.executeSelect(tag, args); break;
-            case ("EXAMINE"): this.executeExamine(tag, args); break;
-            case ("CREATE"): this.executeCreate(tag, args); break;
-            case ("DELETE"): this.executeDelete(tag, args); break;
-            case ("SUBSCRIBE"): this.executeSubscribe(tag, args); break;
-            case ("UNSUBSCRIBE"): this.executeUnsubscribe(tag, args); break;
-            default: {
-                console.log("Unrecognized command. Received this:");
-                console.log(`TAG: ${tag}`);
-                console.log(`COMMAND: ${command}`);
-                console.log(`ARGUMENTS: ${args}`);
-                // this.respond(504, `Command '${command}' not implemented.`);
-            }
-        }
     }
 
     // Individual command handlers go below here.
@@ -126,13 +99,6 @@ class Connection implements Temporal, UniquelyIdentified {
     // STARTTLS
 
     // AUTHENTICATE
-    // LOGIN
-    public executeLogin (tag : string, args : Lexeme[]) : void {
-        const command : string = "LOGIN";
-        // TODO: Actually implement this.
-        // if (args.length === 2)
-        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
-    }
 
     // Authenticated state:
     // SELECT
@@ -213,6 +179,11 @@ class Connection implements Temporal, UniquelyIdentified {
             else this.socket.write(`${tag} NO ${command} Failed.\r\n`);
         });
     }
+
+    // list            = "LIST" SP mailbox SP list-mailbox
+    // list-mailbox    = 1*list-char / string
+    // list-char       = ATOM-CHAR / list-wildcards / resp-specials
+    // list-wildcards  = "%" / "*"
 
     // LIST
     public executeList (tag : string, args : string) : void {

@@ -42,11 +42,14 @@ class AMQPMessageBroker implements MessageBroker,UniquelyIdentified {
                     const responseQueueName : string = `imap.${command}.responses-${this.id}`;
                     channel.assertQueue(`imap.${command}`, { durable: true });
                     channel.bindQueue(`imap.${command}`, "imap.commands", command);
+                    // TODO: Make the response queue noAck. I think the @types library is missing that property.
                     channel.assertQueue(responseQueueName, { exclusive: true });
                     channel.consume(responseQueueName, (message : ConsumeMessage | null) : void => {
                         if (!message) return; // TODO: Do something more informative here.
                         // console.log(`Should emit ${message.properties.correlationId}`);
                         this.responseEmitter.emit(message.properties.correlationId, message);
+                    }, {
+                        noAck: true
                     });
                 });
 
@@ -84,18 +87,15 @@ class AMQPMessageBroker implements MessageBroker,UniquelyIdentified {
         return new Promise<object>((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response : Message | null) : void => {
                 if (!response) {
-                    reject(`IMAP Command '${command}' timed out!`);
+                    console.log(`IMAP Command '${command}' timed out!`);
+                    reject(new Error(`IMAP Command '${command}' timed out!`));
                     return;
                 }
                 try {
-                    // resolve(JSON.parse(response.toString()));
                     resolve(JSON.parse(response.content.toString()));
                 } catch (error) {
-                    console.log("RESPONSE: " + response.content.toString());
                     reject(error);
                 }
-                // if (response.toString()) resolve(JSON.parse(response.toString()));
-                // else reject(new Error("Could not convert message to string."));
             });
 
             (<any>message)["command"] = command;

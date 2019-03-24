@@ -6,6 +6,7 @@ import MessageBroker from "./MessageBroker";
 import TypedKeyValueStore from "./ConfigurationSource";
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
 const uuidv4 : () => string = require("uuid/v4");
+import { CommandPlugin } from "./CommandPlugin";
 
 export default
 class Server implements Temporal, UniquelyIdentified {
@@ -32,10 +33,14 @@ class Server implements Temporal, UniquelyIdentified {
 
     constructor(
         readonly configuration : TypedKeyValueStore & ConfigurationSource,
+        readonly commandPlugins : CommandPlugin[]
     ) {
         this.messageBroker = new AMQPMessageBroker(configuration);
+        this.commandPlugins.forEach((plugin : CommandPlugin) : void => {
+            console.log(`Loaded plugin for command '${plugin.commandName}'.`);
+        });
         net.createServer((socket : net.Socket) : void => {
-            const connection : Connection = new Connection(this, socket);
+            const connection : Connection = new Connection(this, socket, this.commandPlugins);
         }).listen(
             this.configuration.imap_server_tcp_listening_port,
             this.configuration.imap_server_ip_bind_address,

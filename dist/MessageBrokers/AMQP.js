@@ -34,6 +34,8 @@ class AMQPMessageBroker {
                         if (!message)
                             return;
                         this.responseEmitter.emit(message.properties.correlationId, message);
+                    }, {
+                        noAck: true
                     });
                 });
                 channel.assertExchange("events", "topic", { durable: true });
@@ -60,14 +62,14 @@ class AMQPMessageBroker {
         return new Promise((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response) => {
                 if (!response) {
-                    reject(`IMAP Command '${command}' timed out!`);
+                    console.log(`IMAP Command '${command}' timed out!`);
+                    reject(new Error(`IMAP Command '${command}' timed out!`));
                     return;
                 }
                 try {
                     resolve(JSON.parse(response.content.toString()));
                 }
                 catch (error) {
-                    console.log("RESPONSE: " + response.content.toString());
                     reject(error);
                 }
             });
