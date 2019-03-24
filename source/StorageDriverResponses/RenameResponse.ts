@@ -1,5 +1,6 @@
 export
 interface RenameResponse {
-    existingMailboxName : string;
-    newMailboxName : string;
+    renamed : boolean;
+    existingMailboxName? : string;
+    newMailboxName? : string;
 }

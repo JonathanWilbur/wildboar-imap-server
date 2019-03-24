@@ -44,5 +44,18 @@ amqp.connect("amqp://localhost:5672", (err, connection) => {
                 });
         });
 
+        channel.consume("imap.EXAMINE", (msg) => {
+            channel.sendToQueue(msg.properties.replyTo,
+                Buffer.from(JSON.stringify({
+                    flags: [],
+                    exists: 180,
+                    recent: 3
+                })), {
+                    correlationId: msg.properties.correlationId,
+                    content_type: "application/json",
+                    content_encoding: "8bit"
+                });
+        });
+
     });
 });

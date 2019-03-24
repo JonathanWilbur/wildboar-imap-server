@@ -14,10 +14,10 @@ client.connect()
     //     console.log(mailboxes);
     // });
 
-    // client.createMailbox("bigboi")
-    // .then(() => {
-    //     console.log("Done!");
-    // });
+    client.createMailbox("bigboi")
+    .then(() => {
+        console.log("Done!");
+    });
 
     client.selectMailbox('Bigboi').then((mailbox) => {
         console.log(mailbox);

@@ -10,34 +10,17 @@ class Connection {
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
         this.scanner = new Scanner_1.default();
-        this.expectedLexemeType = 0;
         this.currentlySelectedMailbox = "INBOX";
         this.authenticatedUser = "";
         this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
         this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
         socket.on("data", (data) => {
-            console.log(data);
             this.scanner.enqueueData(data);
-            let lexeme = null;
-            while (true) {
-                switch (this.expectedLexemeType) {
-                    case (0):
-                        lexeme = this.scanner.scanLine();
-                        break;
-                    case (1):
-                        lexeme = this.scanner.scanLine();
-                        break;
-                }
-                if (!lexeme)
-                    break;
-                if (lexeme.type === 0) {
-                    const tag = lexeme.getTag();
-                    const command = lexeme.getCommand();
-                    const args = lexeme.getArguments();
-                    this.dispatchCommand(command, tag, args);
-                }
-            }
-            ;
+            let line = this.scanner.scanLine();
+            console.log(line);
+            const tag = line[0].token.toString();
+            const command = line[1].token.toString();
+            this.dispatchCommand(command, tag, line.slice(2));
         });
         socket.on("close", (had_error) => {
             console.log(`Bye!`);
@@ -57,17 +40,23 @@ class Connection {
             case ("LOGIN"):
                 this.executeLogin(tag, args);
                 break;
-            case ("LIST"):
-                this.executeList(tag, args);
-                break;
-            case ("LSUB"):
-                this.executeList(tag, args);
-                break;
             case ("SELECT"):
                 this.executeSelect(tag, args);
                 break;
+            case ("EXAMINE"):
+                this.executeExamine(tag, args);
+                break;
             case ("CREATE"):
                 this.executeCreate(tag, args);
+                break;
+            case ("DELETE"):
+                this.executeDelete(tag, args);
+                break;
+            case ("SUBSCRIBE"):
+                this.executeSubscribe(tag, args);
+                break;
+            case ("UNSUBSCRIBE"):
+                this.executeUnsubscribe(tag, args);
                 break;
             default: {
                 console.log("Unrecognized command. Received this:");
@@ -78,118 +67,98 @@ class Connection {
         }
     }
     executeCapability(tag) {
-        this.socket.write(`* CAPABILITY ${this.server.capabilities.join(" ")}\r\n`);
-        this.socket.write(`${tag} OK\r\n`);
+        const command = "CAPABILITY";
+        this.socket.write(`* ${command} ${this.server.capabilities.join(" ")}\r\n`);
+        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
     executeNoop(tag) {
-        this.socket.write(`${tag} OK NOOP Completed.\r\n`);
+        const command = "NOOP";
+        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
     executeLogout(tag) {
+        const command = "LOGOUT";
         this.socket.write("* BYE\r\n");
-        this.socket.write(`${tag} OK LOGOUT Completed.\r\n`);
+        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
     executeLogin(tag, args) {
-        this.socket.write(`${tag} OK LOGIN Completed.\r\n`);
+        const command = "LOGIN";
+        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
     executeSelect(tag, args) {
-        const mailboxName = args.trim();
-        this.server.messageBroker.select(this.authenticatedUser, mailboxName)
+        const command = "SELECT";
+        this.server.messageBroker.select(this.authenticatedUser, args[0].toString())
             .then((response) => {
             this.socket.write(`* ${response.exists} EXISTS\r\n` +
                 `* ${response.recent} RECENT\r\n` +
                 `* FLAGS (${response.flags.map((flag) => ("\\" + flag)).join(" ")})\r\n` +
-                `${tag} OK [READ-WRITE] SELECT Completed.\r\n`);
+                `${tag} OK ${response.readOnly ? "[READ-ONLY]" : "[READ-WRITE]"} ${command} Completed.\r\n`);
+        });
+    }
+    executeExamine(tag, args) {
+        const command = "EXAMINE";
+        this.server.messageBroker.select(this.authenticatedUser, args[0].toString())
+            .then((response) => {
+            this.socket.write(`* ${response.exists} EXISTS\r\n` +
+                `* ${response.recent} RECENT\r\n` +
+                `* FLAGS (${response.flags.map((flag) => ("\\" + flag)).join(" ")})\r\n` +
+                `${tag} OK [READ-ONLY] ${command} Completed.\r\n`);
         });
     }
     executeCreate(tag, args) {
-        this.socket.write(`${tag} OK CREATE Completed.\r\n`);
+        const command = "CREATE";
+        this.server.messageBroker.create(this.authenticatedUser, args[0].toString())
+            .then((response) => {
+            if (response.created)
+                this.socket.write(`${tag} OK ${command} Completed.`);
+            else
+                this.socket.write(`${tag} NO ${command} Failed.`);
+        });
+    }
+    executeDelete(tag, args) {
+        const command = "DELETE";
+        this.server.messageBroker.delete(this.authenticatedUser, args[0].toString())
+            .then((response) => {
+            if (response.deleted)
+                this.socket.write(`${tag} OK ${command} Completed.`);
+            else
+                this.socket.write(`${tag} NO ${command} Failed.`);
+        });
+    }
+    executeRename(tag, args) {
+        const command = "RENAME";
+        this.server.messageBroker.rename(this.authenticatedUser, args[0].toString(), args[1].toString())
+            .then((response) => {
+            if (response.renamed)
+                this.socket.write(`${tag} OK ${command} Completed.\r\n`);
+            else
+                this.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        });
+    }
+    executeSubscribe(tag, args) {
+        const command = "SUBSCRIBE";
+        this.server.messageBroker.subscribe(this.authenticatedUser, args[0].toString())
+            .then((response) => {
+            if (response.subscribed)
+                this.socket.write(`${tag} OK ${command} Completed.\r\n`);
+            else
+                this.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        });
+    }
+    executeUnsubscribe(tag, args) {
+        const command = "UNSUBSCRIBE";
+        this.server.messageBroker.unsubscribe(this.authenticatedUser, args[0].toString())
+            .then((response) => {
+            if (response.unsubscribed)
+                this.socket.write(`${tag} OK ${command} Completed.\r\n`);
+            else
+                this.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        });
     }
     executeList(tag, args) {
-        const listArgs = lexQuoteDelimitedArguments(args);
-        if (listArgs.length !== 2)
-            throw new Error("Invalid number of arguments given to LIST.");
-        const [referenceName, mailboxName] = listArgs;
-        this.server.messageBroker.list(this.authenticatedUser, referenceName, mailboxName)
-            .then((response) => {
-            response.listItems.forEach((listItem) => {
-                this.socket.write(`* LIST (${listItem.nameAttributes.join(" ")}) "${listItem.hierarchyDelimiter}" ${listItem.name}\r\n`);
-            });
-            this.socket.write(`${tag} OK LIST Completed.\r\n`);
-        });
     }
     executeLsub(tag, args) {
-        const listArgs = lexQuoteDelimitedArguments(args);
-        if (listArgs.length !== 2)
-            throw new Error("Invalid number of arguments given to LSUB.");
-        const [referenceName, mailboxName] = listArgs;
-        this.server.messageBroker.lsub(this.authenticatedUser, referenceName, mailboxName)
-            .then((response) => {
-            response.lsubItems.forEach((lsubItem) => {
-                this.socket.write(`* LSUB (${lsubItem.nameAttributes.join(" ")}) "${lsubItem.hierarchyDelimiter}" ${lsubItem.name}\r\n`);
-            });
-            this.socket.write(`${tag} OK LSUB Completed.\r\n`);
-        });
+    }
+    executeStatus(tag, args) {
     }
 }
 exports.default = Connection;
-function lexQuoteDelimitedArguments(source) {
-    let ParsingState;
-    (function (ParsingState) {
-        ParsingState[ParsingState["UNKNOWN"] = 0] = "UNKNOWN";
-        ParsingState[ParsingState["WHITESPACE"] = 1] = "WHITESPACE";
-        ParsingState[ParsingState["QUOTED_TEXT"] = 2] = "QUOTED_TEXT";
-        ParsingState[ParsingState["ESCAPED_CHAR"] = 3] = "ESCAPED_CHAR";
-        ParsingState[ParsingState["UNQUOTED_TEXT"] = 4] = "UNQUOTED_TEXT";
-    })(ParsingState || (ParsingState = {}));
-    let state = ParsingState.WHITESPACE;
-    const args = [];
-    let arg = "";
-    let i = 0;
-    while (i < source.length) {
-        switch (state) {
-            case (ParsingState.WHITESPACE): {
-                if (/\s/.test(source.charAt(i)))
-                    break;
-                if (source.charAt(i) === "\"") {
-                    state = ParsingState.QUOTED_TEXT;
-                }
-                else {
-                    state = ParsingState.UNQUOTED_TEXT;
-                }
-                break;
-            }
-            case (ParsingState.QUOTED_TEXT): {
-                if (source.charAt(i) === "\\") {
-                    state = ParsingState.ESCAPED_CHAR;
-                    break;
-                }
-                if (source.charAt(i) === "\"") {
-                    state = ParsingState.WHITESPACE;
-                    args.push(arg);
-                    arg = "";
-                    break;
-                }
-                arg += source.charAt(i);
-                break;
-            }
-            case (ParsingState.ESCAPED_CHAR): {
-                arg += source.charAt(i);
-                state = ParsingState.QUOTED_TEXT;
-                break;
-            }
-            case (ParsingState.UNQUOTED_TEXT): {
-                if (/\s/.test(source.charAt(i))) {
-                    args.push(arg);
-                    arg = "";
-                    state = ParsingState.WHITESPACE;
-                }
-                else {
-                    arg += source.charAt(i);
-                }
-                break;
-            }
-        }
-        i++;
-    }
-    return args;
-}
