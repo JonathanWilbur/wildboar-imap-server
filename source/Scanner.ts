@@ -1,6 +1,3 @@
-// import Lexeme from "./Lexeme";
-// import LexemeType from "./LexemeType";
-
 export
 enum ScanningState {
     TAG,
@@ -211,71 +208,6 @@ class Scanner {
             return this.readLiteralLength();
         return this.readList();
     }
-
-    // private scanAuthenticateArguments (slice : Buffer) : Lexeme[] {
-    //     if (!(slice.every(Scanner.isSASLMechanismNameChar)))
-    //         throw new Error("Invalid character in SASL Authentication Mechanism.");
-    //     return [
-    //         new Lexeme(
-    //             LexemeType.UNQUOTED_STRING,
-    //             slice
-    //         )
-    //     ];
-    // }
-
-    // private scanLoginArguments (slice : Buffer) : Lexeme[] {
-    //     const ret : Lexeme[] = [];
-    //     let i : number = 0;
-    //     while (i < slice.length) {
-    //         const nextLexeme : Lexeme = this.scanAstring(slice.slice(i));
-    //         if (nextLexeme.type === LexemeType.EMPTY) break;
-    //         ret.push(nextLexeme);
-    //         if (nextLexeme.type === LexemeType.ERROR) break;
-    //         i += (nextLexeme.token.length + ' '.length); 
-    //     }
-    //     return ret;
-    // }
-
-    // private scanSelectArguments (slice : Buffer) : Lexeme[] {
-    //     return [ this.scanAstring(slice) ];
-    // }
-
-    // private scanExamineArguments (slice : Buffer) : Lexeme[] {
-    //     return [ this.scanAstring(slice) ];
-    // }
-
-    // private scanCreateArguments (slice : Buffer) : Lexeme[] {
-    //     return [ this.scanAstring(slice) ];
-    // }
-
-    // private scanDeleteArguments (slice : Buffer) : Lexeme[] {
-    //     return [ this.scanAstring(slice) ];
-    // }
-
-    // private scanRenameArguments (slice : Buffer) : Lexeme[] {
-    //     const ret : Lexeme[] = [];
-    //     let i : number = 0;
-    //     while (i < slice.length) {
-    //         const nextLexeme : Lexeme = this.scanAstring(slice.slice(i));
-    //         if (nextLexeme.type === LexemeType.EMPTY) break;
-    //         ret.push(nextLexeme);
-    //         if (nextLexeme.type === LexemeType.ERROR) break;
-    //         i += (nextLexeme.token.length + ' '.length); 
-    //     }
-    //     return ret;
-    // }
-
-    // private scanSubscribeArguments (slice : Buffer) : Lexeme[] {
-    //     return [ this.scanAstring(slice) ];
-    // }
-
-    // private scanUnsubscribeArguments (slice : Buffer) : Lexeme[] {
-    //     return [ this.scanAstring(slice) ];
-    // }
-
-    // private scanStatusArguments (slice : Buffer) : Lexeme[] {
-    //     return [ this.scanAstring(slice) ];
-    // }
 
     public static isChar (char : number) : boolean {
         return (char >= 0x01 && char <= 0x7F);

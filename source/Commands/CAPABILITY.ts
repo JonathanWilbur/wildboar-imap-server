@@ -12,4 +12,4 @@ const CAPABILITY_COMMAND = new CommandPlugin(
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
         connection.scanner.state = ScanningState.COMMAND_NAME;
     }
-)
+);

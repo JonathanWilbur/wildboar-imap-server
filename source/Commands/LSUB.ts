@@ -11,10 +11,8 @@ const LSUB_COMMAND = new CommandPlugin(
         const command : string = "LSUB";
         connection.scanner.readSpace();
         const mailboxName : string = await connection.scanner.readAstring();
-        console.log(mailboxName);
         connection.scanner.readSpace();
         const referenceName : string = await connection.scanner.readMailboxList();
-        console.log(`Reference name: ${referenceName}`);
         connection.scanner.readNewLine();
         connection.server.messageBroker.lsub(connection.authenticatedUser, referenceName, mailboxName)
         .then((response : LsubResponse) : void => {
@@ -25,4 +23,4 @@ const LSUB_COMMAND = new CommandPlugin(
             connection.scanner.state = ScanningState.COMMAND_NAME;
         });
     }
-)
+);

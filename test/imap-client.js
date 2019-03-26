@@ -10,9 +10,9 @@ const client = new ImapClient("localhost", 143, {
 
 client.connect()
 .then(() => {
-    client.listMailboxes().then((mailboxes) => {
-        console.log(mailboxes);
-    });
+    // client.listMailboxes().then((mailboxes) => {
+    //     console.log(mailboxes);
+    // });
 
     // client.createMailbox("bigboi")
     // .then(() => {
@@ -27,6 +27,11 @@ client.connect()
     //     messages.forEach((message) => console.log('Flags for ' + message.uid + ': ' + message.flags.join(', ')));
     // });
 
+    client.search('INBOX', {unseen: true}, {byUid: false}).then((result) => {
+        result.forEach((uid) => console.log('Message ' + uid + ' is unread'));
+    });
+
+    // This is really a test of the UID command.
     // client.search('INBOX', {unseen: true}, {byUid: true}).then((result) => {
     //     result.forEach((uid) => console.log('Message ' + uid + ' is unread'));
     // });
