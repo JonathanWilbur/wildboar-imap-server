@@ -24,7 +24,7 @@ class Server {
             console.log(`Loaded plugin for command '${plugin.commandName}'.`);
         });
         net.createServer((socket) => {
-            const connection = new Connection_1.default(this, socket, this.commandPlugins);
+            const connection = new Connection_1.Connection(this, socket, this.commandPlugins);
         }).listen(this.configuration.imap_server_tcp_listening_port, this.configuration.imap_server_ip_bind_address, () => { console.log("Listening for connections..."); });
         process.on('SIGINT', () => {
             console.log("Interrupted. Shutting down.");
@@ -33,4 +33,4 @@ class Server {
         });
     }
 }
-exports.default = Server;
+exports.Server = Server;

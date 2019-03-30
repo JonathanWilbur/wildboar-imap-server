@@ -1,12 +1,11 @@
 import { CommandPlugin } from "../CommandPlugin";
-import Connection from "../Connection";
+import { Connection } from "../Connection";
 import { ConnectionState } from "../ConnectionState";
 
 export
 const LOGOUT_COMMAND = new CommandPlugin(
     "LOGOUT",
-    async (connection : Connection, tag : string) => {
-        const command : string = "LOGOUT";
+    async (connection : Connection, tag : string, command : string) => {
         connection.scanner.readNewLine();
         // TODO: Add a configuration directive for the BYE message.
         connection.socket.write(`* BYE (Bye message goes here.)\r\n`);

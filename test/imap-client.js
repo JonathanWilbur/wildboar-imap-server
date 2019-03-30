@@ -14,10 +14,10 @@ client.connect()
     //     console.log(mailboxes);
     // });
 
-    // client.createMailbox("bigboi")
-    // .then(() => {
-    //     console.log("Done!");
-    // });
+    client.createMailbox("bigboi")
+    .then(() => {
+        console.log("Done!");
+    });
 
     // client.selectMailbox('Bigboi').then((mailbox) => {
     //     console.log(mailbox);
@@ -27,9 +27,9 @@ client.connect()
     //     messages.forEach((message) => console.log('Flags for ' + message.uid + ': ' + message.flags.join(', ')));
     // });
 
-    client.search('INBOX', {unseen: true}, {byUid: false}).then((result) => {
-        result.forEach((uid) => console.log('Message ' + uid + ' is unread'));
-    });
+    // client.search('INBOX', {unseen: true}, {byUid: false}).then((result) => {
+    //     result.forEach((uid) => console.log('Message ' + uid + ' is unread'));
+    // });
 
     // This is really a test of the UID command.
     // client.search('INBOX', {unseen: true}, {byUid: true}).then((result) => {

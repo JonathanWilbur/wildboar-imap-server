@@ -1,20 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const Lexeme_1 = require("./Lexeme");
 var ScanningState;
 (function (ScanningState) {
-    ScanningState[ScanningState["TAG"] = 0] = "TAG";
-    ScanningState[ScanningState["COMMAND_NAME"] = 1] = "COMMAND_NAME";
-    ScanningState[ScanningState["ARGUMENTS"] = 2] = "ARGUMENTS";
-    ScanningState[ScanningState["CRLF"] = 3] = "CRLF";
+    ScanningState[ScanningState["LINE"] = 0] = "LINE";
+    ScanningState[ScanningState["ARGUMENTS"] = 1] = "ARGUMENTS";
 })(ScanningState = exports.ScanningState || (exports.ScanningState = {}));
 class Scanner {
     constructor() {
         this.receivedData = Buffer.alloc(0);
         this.scanCursor = 0;
-        this.state = ScanningState.COMMAND_NAME;
+        this.state = ScanningState.LINE;
     }
     get lineReady() {
-        return (this.receivedData.indexOf("\r\n") !== -1);
+        return (this.receivedData.indexOf("\r\n", this.scanCursor) !== -1);
     }
     enqueueData(data) {
         if (this.scanCursor === 0)
@@ -23,7 +22,7 @@ class Scanner {
             this.receivedData = Buffer.concat([this.receivedData.slice(this.scanCursor), data]);
         this.scanCursor = 0;
     }
-    readLine() {
+    skipLine() {
         const indexOfCRLF = this.receivedData.indexOf(Scanner.LINE_TERMINATOR, this.scanCursor);
         if (indexOfCRLF === -1)
             false;
@@ -31,11 +30,10 @@ class Scanner {
         return true;
     }
     readTag() {
-        console.log(`Debugging from readTag(): receivedData: ${this.receivedData}`);
         const indexOfFirstSpace = this.receivedData.indexOf(" ".charCodeAt(0), this.scanCursor);
         return new Promise((resolve, reject) => {
             if (indexOfFirstSpace === -1) {
-                reject(null);
+                reject(new Error("No first space."));
                 return;
             }
             const tag = this.receivedData.slice(this.scanCursor, indexOfFirstSpace);
@@ -44,8 +42,7 @@ class Scanner {
                 return;
             }
             this.scanCursor = (indexOfFirstSpace + ' '.length);
-            this.state = ScanningState.COMMAND_NAME;
-            resolve(tag.toString());
+            resolve(new Lexeme_1.Lexeme(4, tag));
         });
     }
     readCommand() {
@@ -58,7 +55,7 @@ class Scanner {
         }
         return new Promise((resolve, reject) => {
             if (indexOfEndOfCommand === -1) {
-                reject(null);
+                reject(new Error("No end of command."));
                 return;
             }
             const commandName = this.receivedData.slice(this.scanCursor, indexOfEndOfCommand);
@@ -67,8 +64,7 @@ class Scanner {
                 return;
             }
             this.scanCursor = indexOfEndOfCommand;
-            this.state = ScanningState.ARGUMENTS;
-            resolve(commandName.toString());
+            resolve(new Lexeme_1.Lexeme(5, commandName));
         });
     }
     readAstring() {
@@ -118,12 +114,7 @@ class Scanner {
                 reject(new Error("A double-quoted string did not have a closing quote."));
                 return;
             }
-            const ret = this.receivedData
-                .slice(this.scanCursor + 1, i)
-                .toString()
-                .replace(/\\"/g, '"')
-                .replace(/\\\\/g, '\\');
-            resolve(ret);
+            resolve(new Lexeme_1.Lexeme(9, this.receivedData.slice(this.scanCursor)));
             this.scanCursor = (i + 1);
         });
     }
@@ -140,13 +131,27 @@ class Scanner {
                 reject(null);
                 return;
             }
-            resolve(this.receivedData.slice(this.scanCursor, indexOfEndOfToken).toString());
+            resolve(new Lexeme_1.Lexeme(8, this.receivedData.slice(this.scanCursor, indexOfEndOfToken)));
             this.scanCursor = indexOfEndOfToken;
         });
     }
     readLiteralLength() {
+        const indexOfEndOfLiteralLength = this.receivedData.indexOf("}\r\n", this.scanCursor);
         return new Promise((resolve, reject) => {
-            resolve("");
+            if (indexOfEndOfLiteralLength === -1) {
+                reject(null);
+                return;
+            }
+            let i = this.scanCursor;
+            while (i < indexOfEndOfLiteralLength) {
+                if (!Scanner.isDigit(this.receivedData[i])) {
+                    reject(new Error("Non-digit detected in literal length."));
+                    return;
+                }
+                i++;
+            }
+            resolve(new Lexeme_1.Lexeme(10, this.receivedData.slice(this.scanCursor, (indexOfEndOfLiteralLength + '}\r\n'.length))));
+            this.scanCursor = (indexOfEndOfLiteralLength + '}\r\n'.length);
         });
     }
     readList() {
@@ -162,7 +167,7 @@ class Scanner {
                 reject(null);
                 return;
             }
-            resolve(this.receivedData.slice(this.scanCursor, indexOfEndOfToken).toString());
+            resolve(new Lexeme_1.Lexeme(8, this.receivedData.slice(this.scanCursor, indexOfEndOfToken)));
             this.scanCursor = indexOfEndOfToken;
         });
     }
@@ -244,4 +249,4 @@ class Scanner {
     }
 }
 Scanner.LINE_TERMINATOR = "\r\n";
-exports.default = Scanner;
+exports.Scanner = Scanner;

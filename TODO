@@ -4,3 +4,39 @@
 - Check for correct state at the start of commands.
 - Use a `sensitiveCommandRunning` flag to prevent race conditions when a
   connection attempts two `APPEND`s at once, for instance.
+- Add `.finally()` to reset to `COMMAND_MODE`
+- AUTHENTICATE (hard)
+- STATUS = "STATUS" SP mailbox SP "(" status-att *(SP status-att) ")"
+  - status-att = "MESSAGES" / "RECENT" / "UIDNEXT" / "UIDVALIDITY" / "UNSEEN"
+- APPEND (hard)
+- SEARCH (very hard)
+- FETCH (hard)
+- STORE (medium)
+- COPY (medium)
+- UID ?
+- Lexeme Types:
+  - WHITESPACE
+  - DATE
+  - TIME
+  - ZONE
+  - QUOTED_STRING
+  - ATOM
+  - STRING_LITERAL
+  - LIST_START
+  - LIST_END
+  - FLAG
+- Add environment variable for signing up an account for the email list
+- Address Potential Concurrency Issues:
+  - Multiple socket writes at the same time.
+- If a literal is encountered:
+  - Make sure it is the last thing in the line. Close the connection if not.
+  - Read the number of bytes. If it is too high, fail the command.
+  - Set the connection state to not process new bytes as commands.
+  - Ensure that `receivedData` is emptied and `scanCursor` is reset to 0.
+  - Set `numberOfLiteralBytesToWaitFor` to, well...
+  - Send the continuation response.
+    - There is no way to do this from the Scanner, because case-by-case logic
+      will have to be applied to determine if continuation is appropriate.
+  - All new data that comes in still gets enqueued, but not run as commands.
+  - With each new enqueued chunk, do nothing until the `numberOfLiteralBytesToWaitFor` is exceeded.
+  - Read that many bytes into a new Lexeme, and adjust the scan cursor as normal.

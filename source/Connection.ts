@@ -1,27 +1,20 @@
 import * as net from "net";
-import Lexeme from "./Lexeme";
-import LexemeType from "./LexemeType";
-import Scanner from "./Scanner";
+import { Lexeme } from "./Lexeme";
+import { Scanner } from "./Scanner";
 import { ScanningState } from "./Scanner"; // TODO: Separate this.
-import Server from "./Server";
+import { Server } from "./Server";
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
 import { ConnectionState } from "./ConnectionState";
-import { ListItem, ListResponse, LsubItem, LsubResponse, SelectResponse, ExamineResponse, CreateResponse, DeleteResponse, RenameResponse, SubscribeResponse, UnsubscribeResponse } from "./StorageDriverResponses";
-// import SASLAuthenticationMechanism from "./SASLAuthenticationMechanism";
-// import PlainSASLAuthentication from "./SASLAuthenticationMechanisms/Plain";
 import { CommandPlugin } from "./CommandPlugin";
 import { EventEmitter } from "events";
 const uuidv4 : () => string = require("uuid/v4");
 
-export default
+export
 class Connection implements Temporal, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();
     public readonly scanner = new Scanner();
-    // private expectedLexemeType : LexemeType = LexemeType.COMMAND_LINE;
-    // private saslAuthenticationMechanism : string = "";
-    // private saslAuthenticator : SASLAuthenticationMechanism | undefined;
     public currentlySelectedMailbox : string = "INBOX";
     public authenticatedUser : string = "";
     public state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
@@ -33,35 +26,33 @@ class Connection implements Temporal, UniquelyIdentified {
         readonly commandPlugins : CommandPlugin[]
     ) {
         this.commandPlugins.forEach((plugin : CommandPlugin) : void => {
-            this.eventEmitter.on(plugin.commandName, plugin.callback);
+            this.eventEmitter.on(plugin.commandName, (connection : Connection, tag : string) : void => {
+                plugin.callback(connection, tag, plugin.commandName);
+            });
         });
 
         this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
-        socket.on("data", (data : Buffer) : void => {
+        socket.on("data", async (data : Buffer) => {
             this.scanner.enqueueData(data);
             switch (<number>this.scanner.state) {
-                case (ScanningState.COMMAND_NAME): {
-                    if (this.scanner.lineReady) {
-                        this.scanner.readTag()
-                        .then((tag : string) : void => {
-                            this.scanner.readCommand()
-                            .then((command : string) : void => {
-                                console.log(`${tag} ${command}`);
-                                this.eventEmitter.emit(command.toUpperCase(), this, tag);
-                            })
-                            .catch((rejection : any) : void => {
-                                if (rejection) {
-                                    // Close the connection.
-                                    console.log("Closing connection from command");
-                                }
-                            });
-                        })
-                        .catch((rejection : any) : void => {
-                            if (rejection) {
-                                // Close the connection.
-                                console.log("Closing connection from tag");
-                            }
-                        });
+                case (ScanningState.LINE): {
+                    while (this.scanner.lineReady) {
+                        // try {
+                            const tag : Lexeme = await this.scanner.readTag();
+                            const command : Lexeme = await this.scanner.readCommand();
+                            console.log(`${tag.toString()} ${command.toString()}`);
+                            // this.scanner.state = ScanningState.ARGUMENTS;
+                            this.eventEmitter.emit(
+                                command.toString().toUpperCase(),
+                                this,
+                                tag.toString()
+                            );
+                        // } catch (e) {
+                        //     console.log(`Error ${e}`);
+                        //     this.socket.write("Bad tag or command. Closing connection.\r\n");
+                        //     this.close();
+                        //     break;
+                        // }
                     }
                 }
                 default: break;

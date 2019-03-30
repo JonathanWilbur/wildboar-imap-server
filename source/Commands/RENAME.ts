@@ -1,23 +1,22 @@
 import { CommandPlugin } from "../CommandPlugin";
-import Connection from "../Connection";
+import { Connection } from "../Connection";
 import { ScanningState } from "../Scanner"; // TODO: Separate this.
 import { RenameResponse } from "../StorageDriverResponses";
+import { Lexeme } from "../Lexeme";
 
 export
 const RENAME_COMMAND = new CommandPlugin(
     "RENAME",
-    async (connection : Connection, tag : string) => {
-        const command : string = "RENAME";
+    async (connection : Connection, tag : string, command : string) => {
         connection.scanner.readSpace();
-        const existingMailboxName : string = await connection.scanner.readAstring();
+        const existingMailboxName : Lexeme = await connection.scanner.readAstring();
         connection.scanner.readSpace();
-        const newMailboxName : string = await connection.scanner.readAstring();
+        const newMailboxName : Lexeme = await connection.scanner.readAstring();
         connection.scanner.readNewLine();
-        connection.server.messageBroker.rename(connection.authenticatedUser, existingMailboxName, newMailboxName)
+        connection.server.messageBroker.rename(connection.authenticatedUser, existingMailboxName.toString(), newMailboxName.toString())
         .then((response : RenameResponse) : void => {
             if (response.renamed) connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
             else connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
-            connection.scanner.state = ScanningState.COMMAND_NAME;
         });
     }
 );

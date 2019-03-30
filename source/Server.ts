@@ -1,14 +1,14 @@
 import * as net from "net";
 import AMQPMessageBroker from "./MessageBrokers/AMQP";
 import ConfigurationSource from "./ConfigurationSource";
-import Connection from "./Connection";
+import { Connection } from "./Connection";
 import MessageBroker from "./MessageBroker";
 import TypedKeyValueStore from "./ConfigurationSource";
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
 const uuidv4 : () => string = require("uuid/v4");
 import { CommandPlugin } from "./CommandPlugin";
 
-export default
+export
 class Server implements Temporal, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;

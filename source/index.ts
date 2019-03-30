@@ -1,5 +1,5 @@
 import EnvironmentVariablesConfigurationSource from "./ConfigurationSources/EnvironmentVariables";
-import Server from "./Server";
+import { Server } from "./Server";
 import {
     CAPABILITY_COMMAND,
     CHECK_COMMAND,

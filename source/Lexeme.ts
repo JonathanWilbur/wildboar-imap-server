@@ -1,6 +1,6 @@
-import LexemeType from "./LexemeType";
+import { LexemeType } from "./LexemeType";
 
-export default
+export
 class Lexeme {
     constructor (
         readonly type : LexemeType,
@@ -9,12 +9,31 @@ class Lexeme {
 
     public toString() : string {
         switch (<number>this.type) {
-            case (LexemeType.COMMAND_NAME): return this.token.toString();
+            case (LexemeType.TAG):
+            case (LexemeType.COMMAND_NAME): 
+                return this.token.toString();
             case (LexemeType.LIST_START): return "(";
             case (LexemeType.LIST_END): return ")";
-            case (LexemeType.UNQUOTED_STRING): return this.token.toString();
             case (LexemeType.QUOTED_STRING): return this.token.toString().replace("\\", "");
+            case (LexemeType.ATOM): {
+                if (this.token.length <= 2) return "";
+                return this.token
+                    .slice(1, (this.token.length - 1))
+                    .toString()
+                    .replace(/\\\\/g, '\\')
+                    .replace(/\\"/g, '"');
+            }
             default: return "";
         }
+    }
+
+    public toLiteralLength() : number {
+        if (this.type !== LexemeType.LITERAL_LENGTH)
+            throw new Error("Invalid Lexeme type: literal length cannot be parsed.");
+        const match : RegExpExecArray | null = /^\{(\d+)\}\r\n$/.exec(this.token.toString());
+        if (!match) 
+            throw new Error("Invalid literal length lexeme. THIS ERROR SHOULD NEVER OCCUR.");
+        // TODO: Catch parseInt errors
+        return parseInt(match[1]);
     }
 }
