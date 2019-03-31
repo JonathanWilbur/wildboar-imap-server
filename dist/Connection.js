@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Lexeme_1 = require("./Lexeme");
 const Scanner_1 = require("./Scanner");
 const ConnectionState_1 = require("./ConnectionState");
-const events_1 = require("events");
 const uuidv4 = require("uuid/v4");
 class Connection {
     constructor(server, socket) {
@@ -11,17 +10,23 @@ class Connection {
         this.socket = socket;
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
-        this.scanner = new Scanner_1.Scanner(this.sendCommandContinuationRequest);
+        this.scanner = new Scanner_1.Scanner();
         this.currentlySelectedMailbox = "INBOX";
         this.authenticatedUser = "";
         this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
-        this.eventEmitter = new events_1.EventEmitter();
         this.currentCommand = [];
         this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
         socket.on("data", (data) => {
             this.scanner.enqueueData(data);
             for (let lexeme of this.lexemeStream()) {
                 this.currentCommand.push(lexeme);
+                if (lexeme.type === 3) {
+                    this.executeCommand();
+                    this.currentCommand = [];
+                }
+                else if (lexeme.type === 0) {
+                    this.currentCommand = [];
+                }
             }
         });
         socket.on("close", (had_error) => {
@@ -29,11 +34,16 @@ class Connection {
         });
     }
     *lexemeStream() {
-        if (this.currentCommand.length === 0 && this.scanner.lineReady())
-            yield this.scanner.readTag();
         while (true) {
+            if (this.currentCommand.length > 20) {
+                this.scanner.skipLine();
+                return;
+            }
+            if (this.currentCommand.length === 0 && this.scanner.lineReady())
+                yield this.scanner.readTag();
             const lastLexeme = this.currentCommand[this.currentCommand.length - 1];
-            console.log(lastLexeme);
+            if (!lastLexeme)
+                return;
             switch (lastLexeme.type) {
                 case (4): {
                     if (this.scanner.lineReady()) {
@@ -43,6 +53,7 @@ class Connection {
                     return;
                 }
                 case (10): {
+                    this.socket.write("+ Ready for literal data.\r\n");
                     const literalLength = lastLexeme.toLiteralLength();
                     const literal = this.scanner.readLiteral(literalLength);
                     if (!literal)
@@ -51,33 +62,26 @@ class Connection {
                     continue;
                 }
                 case (3): {
-                    const commandName = this.currentCommand[1].toString();
-                    if (commandName in this.server.commandPlugins) {
-                        const commandPlugin = this.server.commandPlugins[commandName];
-                        commandPlugin.callback(this, this.currentCommand[0].toString(), this.currentCommand[1].toString(), this.currentCommand.slice(2));
-                    }
-                    else {
-                        console.log(`Command '${commandName}' not understood.`);
-                    }
-                    this.currentCommand = [];
                     if (this.scanner.lineReady()) {
                         yield this.scanner.readTag();
                         continue;
                     }
                     return;
                 }
+                case (0): {
+                    this.scanner.skipLine();
+                    return;
+                }
                 default: {
                     const commandName = this.currentCommand[1].toString();
-                    console.log(commandName);
                     if (commandName in this.server.commandPlugins) {
                         const commandPlugin = this.server.commandPlugins[commandName];
-                        const nextArgument = commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
+                        const nextArgument = commandPlugin.argumentsScanner(this.scanner, this.currentCommand.filter((lexeme) => (lexeme.type !== 10))).next();
                         if (nextArgument.done)
                             return;
                         yield nextArgument.value;
                     }
                     else {
-                        console.log(`Command '${commandName}' not understood ya dingus.`);
                         this.scanner.skipLine();
                         yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
                     }
@@ -86,8 +90,21 @@ class Connection {
             }
         }
     }
-    sendCommandContinuationRequest(message) {
-        this.socket.write(`+ ${message}\r\n`);
+    executeCommand() {
+        const commandName = this.currentCommand[1].toString();
+        if (commandName in this.server.commandPlugins) {
+            const commandPlugin = this.server.commandPlugins[commandName];
+            try {
+                commandPlugin.callback(this, this.currentCommand[0].toString(), this.currentCommand[1].toString(), this.currentCommand.filter((lexeme) => (lexeme.type !== 10)));
+            }
+            catch (e) {
+                console.log(e);
+                this.currentCommand.push(new Lexeme_1.Lexeme(0, Buffer.from(e.message || "")));
+            }
+        }
+        else {
+            console.log(`Command '${commandName}' not understood.`);
+        }
     }
     close() {
         this.socket.end();

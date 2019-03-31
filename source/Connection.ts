@@ -5,7 +5,6 @@ import { Server } from "./Server";
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
 import { ConnectionState } from "./ConnectionState";
 import { CommandPlugin } from "./CommandPlugin";
-import { EventEmitter } from "events";
 import { LexemeType } from "./LexemeType";
 const uuidv4 : () => string = require("uuid/v4");
 
@@ -14,11 +13,10 @@ class Connection implements Temporal, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();
-    public readonly scanner = new Scanner(this.sendCommandContinuationRequest);
+    public readonly scanner = new Scanner();
     public currentlySelectedMailbox : string = "INBOX";
     public authenticatedUser : string = "";
     public state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
-    private eventEmitter : EventEmitter = new EventEmitter();
 
     public currentCommand : Lexeme[] = [];
 
@@ -30,7 +28,14 @@ class Connection implements Temporal, UniquelyIdentified {
         socket.on("data", (data : Buffer) => {
             this.scanner.enqueueData(data);
             for (let lexeme of this.lexemeStream()) {
+                // console.log(lexeme);
                 this.currentCommand.push(lexeme);
+                if (lexeme.type === LexemeType.END_OF_COMMAND) {
+                    this.executeCommand();
+                    this.currentCommand = [];
+                } else if (lexeme.type === LexemeType.ERROR) {
+                    this.currentCommand = [];
+                }
             }
         });
 
@@ -40,11 +45,15 @@ class Connection implements Temporal, UniquelyIdentified {
     }
 
     public *lexemeStream () : IterableIterator<Lexeme> {
-        if (this.currentCommand.length === 0 && this.scanner.lineReady()) 
-            yield this.scanner.readTag();
         while (true) {
+            if (this.currentCommand.length > 20) {
+                this.scanner.skipLine();
+                return;
+            }
+            if (this.currentCommand.length === 0 && this.scanner.lineReady()) 
+                yield this.scanner.readTag();
             const lastLexeme : Lexeme = this.currentCommand[this.currentCommand.length - 1];
-            console.log(lastLexeme);
+            if (!lastLexeme) return;
             switch (<number>lastLexeme.type) {
                 case (LexemeType.TAG): {
                     if (this.scanner.lineReady()) {
@@ -54,6 +63,7 @@ class Connection implements Temporal, UniquelyIdentified {
                     return;
                 }
                 case (LexemeType.LITERAL_LENGTH): {
+                    this.socket.write("+ Ready for literal data.\r\n");
                     const literalLength : number = lastLexeme.toLiteralLength();
                     const literal : Lexeme | null = this.scanner.readLiteral(literalLength);
                     if (!literal) return;
@@ -61,38 +71,37 @@ class Connection implements Temporal, UniquelyIdentified {
                     continue;
                 }
                 case (LexemeType.END_OF_COMMAND): {
-                    const commandName : string = this.currentCommand[1].toString();
-                    if (commandName in this.server.commandPlugins) {
-                        const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
-                        commandPlugin.callback(
-                            this,
-                            this.currentCommand[0].toString(),
-                            this.currentCommand[1].toString(),
-                            this.currentCommand.slice(2)
-                        );
-                    } else {
-                        console.log(`Command '${commandName}' not understood.`);
-                        // TODO: Do something better, such as closing the connection.
-                    }
-                    this.currentCommand = [];
                     if (this.scanner.lineReady()) {
                         yield this.scanner.readTag();
                         continue;
                     }
                     return;
                 }
-                // case (LexemeType.COMMAND_NAME):
+                case (LexemeType.ERROR): {
+                    this.scanner.skipLine();
+                    return;
+                }
                 default: {
                     const commandName : string = this.currentCommand[1].toString();
-                    console.log(commandName);
                     if (commandName in this.server.commandPlugins) {
                         const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
                         const nextArgument : IteratorResult<Lexeme> =
-                            commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
+                            commandPlugin.argumentsScanner(
+                                this.scanner,
+                                /**
+                                 * We omit literal length indicators from the arguments
+                                 * passed into the arguments lexer to simplify lexing.
+                                 * This means that string literals can be treated like
+                                 * other strings.
+                                 */
+                                this.currentCommand.filter((lexeme : Lexeme) : boolean => 
+                                    (lexeme.type !== LexemeType.LITERAL_LENGTH)
+                                )
+                            ).next();
                         if (nextArgument.done) return;
                         yield nextArgument.value;
                     } else {
-                        console.log(`Command '${commandName}' not understood ya dingus.`);
+                        // console.log(`Command '${commandName}' not understood ya dingus.`);
                         this.scanner.skipLine();
                         yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
                         // TODO: Simply read until the next newLine, then report the error.
@@ -105,8 +114,37 @@ class Connection implements Temporal, UniquelyIdentified {
 
     }
 
-    public sendCommandContinuationRequest (message : string) : void {
-        this.socket.write(`+ ${message}\r\n`);
+    public executeCommand () : void {
+        const commandName : string = this.currentCommand[1].toString(); // #UTF_SAFE
+        if (commandName in this.server.commandPlugins) {
+            const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
+            try {
+                commandPlugin.callback(
+                    this,
+                    this.currentCommand[0].toString(), // #UTF_SAFE
+                    this.currentCommand[1].toString(), // #UTF_SAFE
+                    /**
+                     * We omit literal length indicators from the arguments
+                     * passed into the command callback to simplify lexing for
+                     * the per-command arguments lexer. Literal length
+                     * indicators are only of interest in scanning, not in
+                     * command execution.
+                     */
+                    this.currentCommand.filter((lexeme : Lexeme) : boolean => 
+                        (lexeme.type !== LexemeType.LITERAL_LENGTH)
+                    )
+                );
+            } catch (e) {
+                console.log(e); // TODO: Do some better logging than this.
+                this.currentCommand.push(new Lexeme(
+                    LexemeType.ERROR,
+                    Buffer.from(e.message || "")
+                ));
+            }
+        } else {
+            console.log(`Command '${commandName}' not understood.`);
+            // TODO: Do something better, such as closing the connection.
+        }
     }
 
     public close () : void {

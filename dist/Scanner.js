@@ -1,22 +1,27 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Lexeme_1 = require("./Lexeme");
-var ScanningState;
-(function (ScanningState) {
-    ScanningState[ScanningState["LINE"] = 0] = "LINE";
-    ScanningState[ScanningState["ARGUMENTS"] = 1] = "ARGUMENTS";
-})(ScanningState = exports.ScanningState || (exports.ScanningState = {}));
 class Scanner {
-    constructor(continuer) {
-        this.continuer = continuer;
+    constructor() {
         this.receivedData = Buffer.alloc(0);
         this.scanCursor = 0;
-        this.state = ScanningState.LINE;
+        this.ignoreEverythingUntilNewline = false;
     }
     lineReady() {
-        return (this.receivedData.indexOf("\r\n", this.scanCursor) !== -1);
+        return (this.receivedData.indexOf(Scanner.LINE_TERMINATOR, this.scanCursor) !== -1);
     }
     enqueueData(data) {
+        if (data.length === 0)
+            return;
+        if (this.ignoreEverythingUntilNewline) {
+            const indexOfCRLF = data.indexOf(Scanner.LINE_TERMINATOR);
+            if (indexOfCRLF === -1)
+                return;
+            this.receivedData = data.slice(indexOfCRLF + Scanner.LINE_TERMINATOR.length);
+            this.scanCursor = 0;
+            this.ignoreEverythingUntilNewline = false;
+            return;
+        }
         if (this.scanCursor === 0)
             this.receivedData = Buffer.concat([this.receivedData, data]);
         else
@@ -25,10 +30,14 @@ class Scanner {
     }
     skipLine() {
         const indexOfCRLF = this.receivedData.indexOf(Scanner.LINE_TERMINATOR, this.scanCursor);
-        if (indexOfCRLF === -1)
-            false;
-        this.scanCursor = (indexOfCRLF + "\r\n".length);
-        return true;
+        if (indexOfCRLF === -1) {
+            this.ignoreEverythingUntilNewline = true;
+            return false;
+        }
+        else {
+            this.scanCursor = (indexOfCRLF + Scanner.LINE_TERMINATOR.length);
+            return true;
+        }
     }
     readTag() {
         const indexOfFirstSpace = this.receivedData.indexOf(" ".charCodeAt(0), this.scanCursor);

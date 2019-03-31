@@ -8,12 +8,8 @@ import { LexemeType } from "../LexemeType";
 export
 const LOGIN_COMMAND = new CommandPlugin(
     function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
-        // We skip literals for counting the number of arguments, because they are added
-        // after the literal length indicators.
-        const nonLiterals : Lexeme[] = currentCommand.filter((lexeme : Lexeme) : boolean => 
-            { return (lexeme.type !== LexemeType.STRING_LITERAL); }
-        );
-        switch (nonLiterals.length) {
+        console.log(currentCommand);
+        switch (currentCommand.length) {
             case (2): {
                 if (scanner.readSpace())
                     yield new Lexeme(LexemeType.WHITESPACE, Buffer.from(" "));
@@ -38,7 +34,7 @@ const LOGIN_COMMAND = new CommandPlugin(
                 break;
             }
             default: {
-                scanner.skipLine();
+                yield new Lexeme(LexemeType.ERROR, Buffer.from("Too many arguments."));
                 // TODO: Report an error.
             }
         }

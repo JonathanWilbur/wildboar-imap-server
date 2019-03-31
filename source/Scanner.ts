@@ -1,28 +1,41 @@
 import { Lexeme } from "./Lexeme";
 import { LexemeType } from "./LexemeType";
 
-export
-enum ScanningState {
-    LINE,
-    ARGUMENTS
-}
-
+/**
+ * A separate class for lexing the raw bytes received from the connection.
+ * 
+ * All methods that start with 'read' MUST return a `null` if the next
+ * lexeme could not be read solely because of non-completion. Returning `null`
+ * means "I have not received the rest of this token over the connection yet."
+ * 
+ * On the other hand, if there is an error, such as a token containing invalid
+ * characters, being too long, or terminating prematurely, an error MUST be
+ * thrown.
+ */
 export
 class Scanner {
 
-    constructor (
-        readonly continuer : (message : string) => void
-    ) {}
+    constructor () {}
 
     private static readonly LINE_TERMINATOR : string = "\r\n";
     private receivedData : Buffer = Buffer.alloc(0);
     private scanCursor : number = 0;
-    public state : ScanningState = ScanningState.LINE;
+    private ignoreEverythingUntilNewline : boolean = false;
     public lineReady () : boolean {
-        return (this.receivedData.indexOf("\r\n", this.scanCursor) !== -1);
+        return (this.receivedData.indexOf(Scanner.LINE_TERMINATOR, this.scanCursor) !== -1);
     }
 
     public enqueueData (data : Buffer) : void {
+        if (data.length === 0) return;
+        if (this.ignoreEverythingUntilNewline) {
+            const indexOfCRLF : number = data.indexOf(Scanner.LINE_TERMINATOR);
+            // If the line has not ended yet, just drop the data.
+            if (indexOfCRLF === -1) return;
+            this.receivedData = data.slice(indexOfCRLF + Scanner.LINE_TERMINATOR.length);
+            this.scanCursor = 0;
+            this.ignoreEverythingUntilNewline = false;
+            return;
+        }
         if (this.scanCursor === 0)
             // This is done for performance reasons.
             this.receivedData = Buffer.concat([ this.receivedData, data ]);
@@ -38,9 +51,13 @@ class Scanner {
     public skipLine () : boolean {
         const indexOfCRLF : number =
             this.receivedData.indexOf(Scanner.LINE_TERMINATOR, this.scanCursor);
-        if (indexOfCRLF === -1) false;
-        this.scanCursor = (indexOfCRLF + "\r\n".length);
-        return true;
+        if (indexOfCRLF === -1) {
+            this.ignoreEverythingUntilNewline = true;
+            return false;
+        } else {
+            this.scanCursor = (indexOfCRLF + Scanner.LINE_TERMINATOR.length);
+            return true;
+        }
     }
 
     public readTag () : Lexeme {

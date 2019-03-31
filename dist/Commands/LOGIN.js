@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../CommandPlugin");
 const Lexeme_1 = require("../Lexeme");
 exports.LOGIN_COMMAND = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
-    const nonLiterals = currentCommand.filter((lexeme) => { return (lexeme.type !== 11); });
-    switch (nonLiterals.length) {
+    console.log(currentCommand);
+    switch (currentCommand.length) {
         case (2): {
             if (scanner.readSpace())
                 yield new Lexeme_1.Lexeme(2, Buffer.from(" "));
@@ -31,7 +31,7 @@ exports.LOGIN_COMMAND = new CommandPlugin_1.CommandPlugin(function* (scanner, cu
             break;
         }
         default: {
-            scanner.skipLine();
+            yield new Lexeme_1.Lexeme(0, Buffer.from("Too many arguments."));
         }
     }
 }, (connection, tag, command, args) => {
