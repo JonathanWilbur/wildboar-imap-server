@@ -10,11 +10,15 @@ enum ScanningState {
 export
 class Scanner {
 
+    constructor (
+        readonly continuer : (message : string) => void
+    ) {}
+
     private static readonly LINE_TERMINATOR : string = "\r\n";
     private receivedData : Buffer = Buffer.alloc(0);
     private scanCursor : number = 0;
     public state : ScanningState = ScanningState.LINE;
-    get lineReady () : boolean {
+    public lineReady () : boolean {
         return (this.receivedData.indexOf("\r\n", this.scanCursor) !== -1);
     }
 
@@ -39,29 +43,22 @@ class Scanner {
         return true;
     }
 
-    public readTag () : Promise<Lexeme> {
+    public readTag () : Lexeme {
         const indexOfFirstSpace : number =
             this.receivedData.indexOf(" ".charCodeAt(0), this.scanCursor);
-        return new Promise<Lexeme>((resolve, reject) : void => {
-            if (indexOfFirstSpace === -1) {
-                reject(new Error("No first space."));
-                return;
-            }
-            // TODO: Check it is not zero-length.
-            const tag : Buffer =
-                this.receivedData.slice(this.scanCursor, indexOfFirstSpace);
-            if (!(tag.every(Scanner.isTagChar))) {
-                reject(new Error("Invalid characters in tag."));
-                return;
-            }
-            this.scanCursor = (indexOfFirstSpace + ' '.length);
-            // this.state = ScanningState.LINE;
-             // No chance of UTF8 Errors here, because everything is US-ASCII.
-            resolve(new Lexeme(LexemeType.TAG, tag));
-        });
+        if (indexOfFirstSpace === -1)
+            throw new Error("No first space.");
+        // TODO: Check it is not zero-length.
+        const tag : Buffer =
+            this.receivedData.slice(this.scanCursor, indexOfFirstSpace);
+        if (!(tag.every(Scanner.isTagChar)))
+            throw new Error("Invalid characters in tag.");
+        this.scanCursor = (indexOfFirstSpace + ' '.length);
+        // No chance of UTF8 Errors here, because everything is US-ASCII.
+        return new Lexeme(LexemeType.TAG, tag);
     }
 
-    public readCommand () : Promise<Lexeme> {
+    public readCommand () : Lexeme {
         let indexOfEndOfCommand = -1;
         for (let i : number = this.scanCursor; i < this.receivedData.length; i++) {
             if (!(Scanner.isAtomChar(this.receivedData[i]))) {
@@ -69,27 +66,20 @@ class Scanner {
                 break;
             }
         }
-        
-        return new Promise<Lexeme>((resolve, reject) : void => {
-            if (indexOfEndOfCommand === -1)  {
-                reject(new Error("No end of command."));
-                return;
-            }
-            const commandName : Buffer =
-                this.receivedData.slice(this.scanCursor, indexOfEndOfCommand);
-            if (!(commandName.every(Scanner.isAtomChar))) {
-                reject(new Error("Invalid characters in command name."));
-                return;
-            }
-            this.scanCursor = indexOfEndOfCommand;
-            // this.state = ScanningState.ARGUMENTS;
-            // No chance of UTF8 Errors here, because everything is US-ASCII.
-            resolve(new Lexeme(LexemeType.COMMAND_NAME, commandName));
-        });
+        if (indexOfEndOfCommand === -1)
+            throw new Error("No end of command.");
+        const commandName : Buffer =
+            this.receivedData.slice(this.scanCursor, indexOfEndOfCommand);
+        if (!(commandName.every(Scanner.isAtomChar)))
+            throw new Error("Invalid characters in command name.");
+        this.scanCursor = indexOfEndOfCommand;
+        // No chance of UTF8 Errors here, because everything is US-ASCII.
+        return new Lexeme(LexemeType.COMMAND_NAME, commandName);
     }
 
-    public readAstring () : Promise<Lexeme> {
-        if (this.receivedData.length === 0) return Promise.reject(null);
+    public readAstring () : Lexeme | null {
+        // if (this.receivedData.length === 0)
+        //     return new Lexeme(LexemeType.EMPTY, Buffer.alloc(0));
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
             return this.readDoubleQuotedString();
         if (this.receivedData[this.scanCursor] === '{'.charCodeAt(0))
@@ -115,87 +105,69 @@ class Scanner {
         } else return false;
     }
 
-    public readDoubleQuotedString () : Promise<Lexeme> {
+    public readDoubleQuotedString () : Lexeme | null {
         let i : number = (this.scanCursor + 1);
         let closingQuoteEncountered : boolean = false;
-        return new Promise<Lexeme>((resolve, reject) : void => {
-            while (i < this.receivedData.length) {
-                if (
-                    (this.receivedData[i] === '\r'.charCodeAt(0)) ||
-                    (this.receivedData[i] === '\n'.charCodeAt(0))
-                ) reject(new Error("CR or LF not permitted in a double-quoted string."));
-                if (
-                    (this.receivedData[i] === '"'.charCodeAt(0)) &&
-                    (this.receivedData[(i - 1)] !== '\\'.charCodeAt(0))
-                ) {
-                    closingQuoteEncountered = true;
-                    break;
-                }
-                i++;
+        while (i < this.receivedData.length) {
+            if (
+                (this.receivedData[i] === '\r'.charCodeAt(0)) ||
+                (this.receivedData[i] === '\n'.charCodeAt(0))
+            ) throw new Error("CR or LF not permitted in a double-quoted string.");
+            if (
+                (this.receivedData[i] === '"'.charCodeAt(0)) &&
+                (this.receivedData[(i - 1)] !== '\\'.charCodeAt(0))
+            ) {
+                closingQuoteEncountered = true;
+                break;
             }
-            if (!closingQuoteEncountered) {
-                reject(new Error("A double-quoted string did not have a closing quote."));
-                return;
-            }
-            resolve(new Lexeme(LexemeType.QUOTED_STRING, this.receivedData.slice(this.scanCursor)));
-            this.scanCursor = (i + 1);
-        });
+            i++;
+        }
+        if (!closingQuoteEncountered) return null;
+            // throw new Error("A double-quoted string did not have a closing quote.");
+        const oldScanCursor = this.scanCursor;
+        this.scanCursor = (i + 1);
+        return new Lexeme(LexemeType.QUOTED_STRING, this.receivedData.slice(oldScanCursor, this.scanCursor));
     }
 
-    public readAtom () : Promise<Lexeme> {
-        let indexOfEndOfToken = -1;
+    public readAtom () : Lexeme | null {
+        let indexOfEndOfToken : number = -1;
         for (let i : number = this.scanCursor; i < this.receivedData.length; i++) {
             if (!(Scanner.isAtomChar(this.receivedData[i]))) {
                 indexOfEndOfToken = i;
                 break;
             }
         }
-        return new Promise<Lexeme>((resolve, reject) : void => {
-            if (indexOfEndOfToken === -1) {
-                reject(null);
-                return;
-            }
-            resolve(new Lexeme(
-                LexemeType.ATOM,
-                this.receivedData.slice(this.scanCursor, indexOfEndOfToken)
-            ));
-            this.scanCursor = indexOfEndOfToken;
-        });
+        if (indexOfEndOfToken === -1) return null;
+        const oldScanCursor : number = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return new Lexeme(
+            LexemeType.ATOM,
+            this.receivedData.slice(oldScanCursor, indexOfEndOfToken)
+        );
     }
 
-    public readLiteralLength () : Promise<Lexeme> {
+    public readLiteralLength () : Lexeme | null {
+        if (this.receivedData[this.scanCursor] !== '{'.charCodeAt(0))
+            return null;
         const indexOfEndOfLiteralLength : number =
             this.receivedData.indexOf("}\r\n", this.scanCursor);
-        return new Promise<Lexeme>((resolve, reject) : void => {
-            if (indexOfEndOfLiteralLength === -1) {
-                reject(null);
-                return;
-            }
-            let i : number = this.scanCursor;
-            while (i < indexOfEndOfLiteralLength) {
-                if (!Scanner.isDigit(this.receivedData[i])) {
-                    reject(new Error("Non-digit detected in literal length."));
-                    return;
-                }
-                i++;
-            }
-            // const literalLength : number =
-            //     parseInt(
-            //         this.receivedData.slice(
-            //             (this.scanCursor + 1),
-            //             indexOfEndOfLiteralLength
-            //         ).toString()
-            //     );
-            resolve(new Lexeme(
-                LexemeType.LITERAL_LENGTH,
-                this.receivedData.slice(this.scanCursor, (indexOfEndOfLiteralLength + '}\r\n'.length))
-            ));
-            this.scanCursor = (indexOfEndOfLiteralLength + '}\r\n'.length);
-        });
+        if (indexOfEndOfLiteralLength === -1) return null;
+        let i : number = (this.scanCursor + 1);
+        while (i < indexOfEndOfLiteralLength) {
+            if (!Scanner.isDigit(this.receivedData[i]))
+                throw new Error("Non-digit detected in literal length.");
+            i++;
+        }
+        const oldScanCursor = this.scanCursor;
+        this.scanCursor = (indexOfEndOfLiteralLength + '}\r\n'.length);
+        return new Lexeme(
+            LexemeType.LITERAL_LENGTH,
+            this.receivedData.slice(oldScanCursor, (indexOfEndOfLiteralLength + '}\r\n'.length))
+        );
     }
 
     // NOTE: This code can possibly be deduped, because it came from readAtom().
-    public readList () : Promise<Lexeme> {
+    public readList () : Lexeme {
         let indexOfEndOfToken = -1;
         for (let i : number = this.scanCursor; i < this.receivedData.length; i++) {
             if (!(Scanner.isListChar(this.receivedData[i]))) {
@@ -203,36 +175,41 @@ class Scanner {
                 break;
             }
         }
-
-        return new Promise<Lexeme>((resolve, reject) : void => {
-            if (indexOfEndOfToken === -1)  {
-                reject(null);
-                return;
-            }
-            resolve(new Lexeme(
-                LexemeType.ATOM,
-                this.receivedData.slice(this.scanCursor, indexOfEndOfToken)
-            ));
-            this.scanCursor = indexOfEndOfToken;
-        });
+        if (indexOfEndOfToken === -1)
+            throw new Error("No end of list encountered.");
+        const oldScanCursor = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return new Lexeme(
+            LexemeType.ATOM,
+            this.receivedData.slice(oldScanCursor, indexOfEndOfToken)
+        );
     }
 
-    public readString () : Promise<Lexeme> {
-        if (this.receivedData.length === 0) return Promise.reject(null);
+    public readString () : Lexeme | null {
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
             return this.readDoubleQuotedString();
         if (this.receivedData[this.scanCursor] === '{'.charCodeAt(0))
             return this.readLiteralLength();
-        return Promise.reject(new Error("The string you attempted to read was neither quoted string, nor a literal."));
+        throw new Error("The string you attempted to read was neither quoted string, nor a literal.");
     }
 
-    public readMailboxList () : Promise<Lexeme> {
-        if (this.receivedData.length === 0) return Promise.reject(null);
+    public readMailboxList () : Lexeme | null {
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
             return this.readDoubleQuotedString();
         if (this.receivedData[this.scanCursor] === '{'.charCodeAt(0))
             return this.readLiteralLength();
         return this.readList();
+    }
+
+    public readLiteral (length : number) : Lexeme | null {
+        if (this.scanCursor + length > this.receivedData.length)
+            return null;
+        const oldScanCursor = this.scanCursor;
+        this.scanCursor = (this.scanCursor + length);
+        return new Lexeme(
+            LexemeType.STRING_LITERAL,
+            this.receivedData.slice(oldScanCursor, this.scanCursor)
+        );
     }
 
     public static isChar (char : number) : boolean {

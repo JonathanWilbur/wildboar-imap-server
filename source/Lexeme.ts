@@ -10,12 +10,13 @@ class Lexeme {
     public toString() : string {
         switch (<number>this.type) {
             case (LexemeType.TAG):
-            case (LexemeType.COMMAND_NAME): 
+            case (LexemeType.ATOM):
+            case (LexemeType.STRING_LITERAL):
                 return this.token.toString();
+            case (LexemeType.COMMAND_NAME): return this.token.toString().toUpperCase();
             case (LexemeType.LIST_START): return "(";
             case (LexemeType.LIST_END): return ")";
-            case (LexemeType.QUOTED_STRING): return this.token.toString().replace("\\", "");
-            case (LexemeType.ATOM): {
+            case (LexemeType.QUOTED_STRING): {
                 if (this.token.length <= 2) return "";
                 return this.token
                     .slice(1, (this.token.length - 1))

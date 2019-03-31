@@ -8,12 +8,13 @@ class Lexeme {
     toString() {
         switch (this.type) {
             case (4):
-            case (5):
+            case (8):
+            case (11):
                 return this.token.toString();
+            case (5): return this.token.toString().toUpperCase();
             case (6): return "(";
             case (7): return ")";
-            case (9): return this.token.toString().replace("\\", "");
-            case (8): {
+            case (9): {
                 if (this.token.length <= 2)
                     return "";
                 return this.token

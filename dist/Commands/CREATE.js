@@ -1,18 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../CommandPlugin");
-exports.CREATE_COMMAND = new CommandPlugin_1.CommandPlugin("CREATE", async (connection, tag, command) => {
-    connection.scanner.readSpace();
-    const mailboxName = await connection.scanner.readAstring();
-    if (mailboxName.type === 10) {
-        const literalLength = mailboxName.toLiteralLength();
-        if (literalLength > 10) {
-            connection.socket.write(`${tag} BAD ${command} Failed. Your mailbox name is too long.\r\n`);
-            return;
-        }
+const Lexeme_1 = require("../Lexeme");
+exports.CREATE_COMMAND = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
+    if (currentCommand.length <= 2) {
+        if (scanner.readSpace())
+            yield new Lexeme_1.Lexeme(2, Buffer.from(" "));
     }
-    connection.scanner.readNewLine();
-    const response = await connection.server.messageBroker.create(connection.authenticatedUser, mailboxName.toString());
+    if (currentCommand.length <= 3) {
+        const mailboxName = scanner.readAstring();
+        if (!mailboxName)
+            return;
+        yield mailboxName;
+    }
+    if (scanner.readNewLine())
+        yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
+    return;
+}, async (connection, tag, command, args) => {
+    const response = await connection.server.messageBroker.create(connection.authenticatedUser, args[0].toString());
     if (response.created)
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
     else

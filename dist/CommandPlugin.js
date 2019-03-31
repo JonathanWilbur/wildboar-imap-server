@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class CommandPlugin {
-    constructor(commandName, callback) {
-        this.commandName = commandName;
+    constructor(argumentsScanner, callback) {
+        this.argumentsScanner = argumentsScanner;
         this.callback = callback;
     }
 }

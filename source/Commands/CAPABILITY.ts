@@ -1,12 +1,17 @@
 import { CommandPlugin } from "../CommandPlugin";
 import { Connection } from "../Connection";
-import { ScanningState } from "../Scanner"; // TODO: Separate this.
+import { Scanner } from "../Scanner";
+import { Lexeme } from "../Lexeme";
+import { LexemeType } from "../LexemeType";
 
 export
 const CAPABILITY_COMMAND = new CommandPlugin(
-    "CAPABILITY",
-    (connection : Connection, tag : string, command : string) : void => {
-        connection.scanner.readNewLine();
+    function* (scanner : Scanner, currentcommand : Lexeme[]) : IterableIterator<Lexeme> {
+        if (scanner.readNewLine())
+            yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
+        return;
+    },
+    (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {
         connection.socket.write(`* ${command} ${connection.server.capabilities.join(" ")}\r\n`);
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }

@@ -33,14 +33,14 @@ class Server implements Temporal, UniquelyIdentified {
 
     constructor(
         readonly configuration : TypedKeyValueStore & ConfigurationSource,
-        readonly commandPlugins : CommandPlugin[]
+        readonly commandPlugins : { [ commandName : string ] : CommandPlugin }
     ) {
         this.messageBroker = new AMQPMessageBroker(configuration);
-        this.commandPlugins.forEach((plugin : CommandPlugin) : void => {
-            console.log(`Loaded plugin for command '${plugin.commandName}'.`);
+        Object.keys(this.commandPlugins).forEach((plugin : string) : void => {
+            console.log(`Loaded plugin for command '${plugin}'.`);
         });
         net.createServer((socket : net.Socket) : void => {
-            const connection : Connection = new Connection(this, socket, this.commandPlugins);
+            const connection : Connection = new Connection(this, socket);
         }).listen(
             this.configuration.imap_server_tcp_listening_port,
             this.configuration.imap_server_ip_bind_address,

@@ -1,44 +1,26 @@
 import EnvironmentVariablesConfigurationSource from "./ConfigurationSources/EnvironmentVariables";
 import { Server } from "./Server";
-import {
-    CAPABILITY_COMMAND,
-    CHECK_COMMAND,
-    CLOSE_COMMAND,
-    CREATE_COMMAND,
-    DELETE_COMMAND,
-    EXAMINE_COMMAND,
-    EXPUNGE_COMMAND,
-    LOGIN_COMMAND,
-    LOGOUT_COMMAND,
-    LIST_COMMAND,
-    LSUB_COMMAND,
-    NOOP_COMMAND,
-    RENAME_COMMAND,
-    SELECT_COMMAND,
-    STARTTLS_COMMAND,
-    SUBSCRIBE_COMMAND,
-    UNSUBSCRIBE_COMMAND
-} from "./Commands/index";
+import * as commands from "./Commands/index";
 
 const server : Server = new Server(
     new EnvironmentVariablesConfigurationSource(),
-    [
-        CAPABILITY_COMMAND,
-        CHECK_COMMAND,
-        CLOSE_COMMAND,
-        CREATE_COMMAND,
-        DELETE_COMMAND,
-        EXAMINE_COMMAND,
-        EXPUNGE_COMMAND,
-        LOGIN_COMMAND,
-        LOGOUT_COMMAND,
-        LIST_COMMAND,
-        LSUB_COMMAND,
-        NOOP_COMMAND,
-        RENAME_COMMAND,
-        SELECT_COMMAND,
-        STARTTLS_COMMAND,
-        SUBSCRIBE_COMMAND,
-        UNSUBSCRIBE_COMMAND
-    ]
+    {
+        "CAPABILITY": commands.CAPABILITY_COMMAND,
+        // "": commands.CHECK_COMMAND,
+        // "": commands.CLOSE_COMMAND,
+        "CREATE": commands.CREATE_COMMAND,
+        // "": commands.DELETE_COMMAND,
+        // "": commands.EXAMINE_COMMAND,
+        // "": commands.EXPUNGE_COMMAND,
+        "LOGIN": commands.LOGIN_COMMAND,
+        // "": commands.LOGOUT_COMMAND,
+        // "": commands.LIST_COMMAND,
+        // "": commands.LSUB_COMMAND,
+        // "": commands.NOOP_COMMAND,
+        // "": commands.RENAME_COMMAND,
+        // "": commands.SELECT_COMMAND,
+        // "": commands.STARTTLS_COMMAND,
+        // "": commands.SUBSCRIBE_COMMAND,
+        // "": commands.UNSUBSCRIBE_COMMAND
+    }
 );

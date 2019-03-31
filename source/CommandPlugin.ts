@@ -5,8 +5,7 @@ import { Scanner } from "./Scanner";
 export
 class CommandPlugin {
     constructor (
-        readonly commandName : string,
-        // readonly argumentsScanner : (scanner : Scanner) => Lexeme[],
-        readonly callback : (connection : Connection, tag : string, command : string) => void
+        readonly argumentsScanner : (scanner : Scanner, currentCommand : Lexeme[]) => IterableIterator<Lexeme>,
+        readonly callback : (connection : Connection, tag : string, command : string, args : Lexeme[]) => void
     ) {}
 }

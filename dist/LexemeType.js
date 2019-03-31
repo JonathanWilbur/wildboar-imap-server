@@ -5,7 +5,7 @@ var LexemeType;
     LexemeType[LexemeType["ERROR"] = 0] = "ERROR";
     LexemeType[LexemeType["EMPTY"] = 1] = "EMPTY";
     LexemeType[LexemeType["WHITESPACE"] = 2] = "WHITESPACE";
-    LexemeType[LexemeType["NEWLINE"] = 3] = "NEWLINE";
+    LexemeType[LexemeType["END_OF_COMMAND"] = 3] = "END_OF_COMMAND";
     LexemeType[LexemeType["TAG"] = 4] = "TAG";
     LexemeType[LexemeType["COMMAND_NAME"] = 5] = "COMMAND_NAME";
     LexemeType[LexemeType["LIST_START"] = 6] = "LIST_START";

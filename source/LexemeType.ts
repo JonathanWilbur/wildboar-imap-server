@@ -8,7 +8,7 @@ const enum LexemeType {
     ERROR,
     EMPTY,
     WHITESPACE,
-    NEWLINE, // CRLF
+    END_OF_COMMAND, // CRLF
     TAG,
     COMMAND_NAME,
     LIST_START, // (
