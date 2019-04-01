@@ -19,13 +19,24 @@ class Connection {
         socket.on("data", (data) => {
             this.scanner.enqueueData(data);
             for (let lexeme of this.lexemeStream()) {
-                this.currentCommand.push(lexeme);
-                if (lexeme.type === 3) {
-                    this.executeCommand();
-                    this.currentCommand = [];
-                }
-                else if (lexeme.type === 0) {
-                    this.currentCommand = [];
+                switch (lexeme.type) {
+                    case (0): {
+                        this.currentCommand = [];
+                        break;
+                    }
+                    case (11): {
+                        this.currentCommand.pop();
+                        this.currentCommand.push(lexeme);
+                        break;
+                    }
+                    case (3): {
+                        this.executeCommand();
+                        this.currentCommand = [];
+                        break;
+                    }
+                    default: {
+                        this.currentCommand.push(lexeme);
+                    }
                 }
             }
         });
@@ -76,7 +87,7 @@ class Connection {
                     const commandName = this.currentCommand[1].toString();
                     if (commandName in this.server.commandPlugins) {
                         const commandPlugin = this.server.commandPlugins[commandName];
-                        const nextArgument = commandPlugin.argumentsScanner(this.scanner, this.currentCommand.filter((lexeme) => (lexeme.type !== 10))).next();
+                        const nextArgument = commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
                         if (nextArgument.done)
                             return;
                         yield nextArgument.value;
@@ -95,7 +106,7 @@ class Connection {
         if (commandName in this.server.commandPlugins) {
             const commandPlugin = this.server.commandPlugins[commandName];
             try {
-                commandPlugin.callback(this, this.currentCommand[0].toString(), this.currentCommand[1].toString(), this.currentCommand.filter((lexeme) => (lexeme.type !== 10)));
+                commandPlugin.callback(this, this.currentCommand[0].toString(), this.currentCommand[1].toString(), this.currentCommand);
             }
             catch (e) {
                 console.log(e);

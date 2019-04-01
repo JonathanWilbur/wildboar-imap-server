@@ -1,4 +1,8 @@
 - [ ] Healthcheck tools
+  - [ ] Add a "HEALTHCHECK" command, which returns information for the container's healthcheck.
+    - [ ] Queue can be reached.
+    - [ ] Configuration source can be reached.
+    - [ ] Listening on socket.
 - [ ] Startup validation.
 - [ ] Check for correct state at the start of commands.
 - [ ] Use a `sensitiveCommandRunning` flag to prevent race conditions when a

@@ -28,13 +28,42 @@ class Connection implements Temporal, UniquelyIdentified {
         socket.on("data", (data : Buffer) => {
             this.scanner.enqueueData(data);
             for (let lexeme of this.lexemeStream()) {
-                // console.log(lexeme);
-                this.currentCommand.push(lexeme);
-                if (lexeme.type === LexemeType.END_OF_COMMAND) {
-                    this.executeCommand();
-                    this.currentCommand = [];
-                } else if (lexeme.type === LexemeType.ERROR) {
-                    this.currentCommand = [];
+                switch (<number>lexeme.type) {
+                    case (LexemeType.ERROR): {
+                        this.currentCommand = [];
+                        break;
+                    }
+                    case (LexemeType.STRING_LITERAL): {
+                        /**
+                         * We remove the literal length indicator entirely.
+                         * Since it ALWAYS comes before the literal and serves
+                         * no other purpose than indicating the length of the
+                         * literal, which can be obtained from the literal
+                         * lexeme itself, it is useless at this point.
+                         * 
+                         * The advantage of doing this is simplicity: if there
+                         * are a fixed number of arguments expected in a
+                         * command that accepts literals, the number of lexemes
+                         * passed to the command plugin's callback can be used
+                         * directly, rather than a complicated scheme to
+                         * determine how many arguments have been received.
+                         * Every lexeme after [0] and [1] are arguments, and
+                         * each argument is represented on only a single
+                         * lexeme. This greatly simplifies the per-command
+                         * argument lexing.
+                         */
+                        this.currentCommand.pop();
+                        this.currentCommand.push(lexeme);
+                        break;
+                    }
+                    case (LexemeType.END_OF_COMMAND): {
+                        this.executeCommand();
+                        this.currentCommand = [];
+                        break;
+                    }
+                    default: {
+                        this.currentCommand.push(lexeme);
+                    }
                 }
             }
         });
@@ -86,18 +115,7 @@ class Connection implements Temporal, UniquelyIdentified {
                     if (commandName in this.server.commandPlugins) {
                         const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
                         const nextArgument : IteratorResult<Lexeme> =
-                            commandPlugin.argumentsScanner(
-                                this.scanner,
-                                /**
-                                 * We omit literal length indicators from the arguments
-                                 * passed into the arguments lexer to simplify lexing.
-                                 * This means that string literals can be treated like
-                                 * other strings.
-                                 */
-                                this.currentCommand.filter((lexeme : Lexeme) : boolean => 
-                                    (lexeme.type !== LexemeType.LITERAL_LENGTH)
-                                )
-                            ).next();
+                            commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
                         if (nextArgument.done) return;
                         yield nextArgument.value;
                     } else {
@@ -123,16 +141,7 @@ class Connection implements Temporal, UniquelyIdentified {
                     this,
                     this.currentCommand[0].toString(), // #UTF_SAFE
                     this.currentCommand[1].toString(), // #UTF_SAFE
-                    /**
-                     * We omit literal length indicators from the arguments
-                     * passed into the command callback to simplify lexing for
-                     * the per-command arguments lexer. Literal length
-                     * indicators are only of interest in scanning, not in
-                     * command execution.
-                     */
-                    this.currentCommand.filter((lexeme : Lexeme) : boolean => 
-                        (lexeme.type !== LexemeType.LITERAL_LENGTH)
-                    )
+                    this.currentCommand
                 );
             } catch (e) {
                 console.log(e); // TODO: Do some better logging than this.
