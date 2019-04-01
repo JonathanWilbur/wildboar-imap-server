@@ -17,12 +17,15 @@
   - [ ] STORE (medium)
   - [ ] COPY (medium)
   - [ ] UID ?
+  - [ ] Custom commands:
+    - [ ] INFO / STATISTICS
 - [ ] Add environment variable for signing up an account for the email list
 - [ ] Address Potential Concurrency Issues:
   - [ ] Multiple socket writes at the same time.
 - [ ] Start-up checks:
   - [ ] Confirm that all integers are safe.
   - [ ] Confirm that all command names are atoms.
+  - [ ] Confirm that there are no duplicate plugins.
 - [ ] Check `toString()` occurrences for UTF decoding safety.
   - [ ] Flag safe ones with #UTF_SAFE comments.
 - [x] Make sure that `Scanner.skipLine()` waits until a new line comes in to skip ahead.

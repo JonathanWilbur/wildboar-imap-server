@@ -17,20 +17,23 @@ class Connection implements Temporal, UniquelyIdentified {
     public currentlySelectedMailbox : string = "INBOX";
     public authenticatedUser : string = "";
     public state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
-
     public currentCommand : Lexeme[] = [];
 
     constructor (
         readonly server : Server,
         readonly socket : net.Socket
     ) {
-        this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
         socket.on("data", (data : Buffer) => {
             this.scanner.enqueueData(data);
             for (let lexeme of this.lexemeStream()) {
                 switch (<number>lexeme.type) {
                     case (LexemeType.ERROR): {
                         this.currentCommand = [];
+                        break;
+                    }
+                    case (LexemeType.LITERAL_LENGTH): {
+                        this.socket.write("+ Ready for literal data.\r\n");
+                        this.currentCommand.push(lexeme);
                         break;
                     }
                     case (LexemeType.STRING_LITERAL): {
@@ -71,9 +74,19 @@ class Connection implements Temporal, UniquelyIdentified {
         socket.on("close", (had_error : boolean) : void => {
             console.log(`Bye!`);
         });
+
+        this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
     }
 
-    public *lexemeStream () : IterableIterator<Lexeme> {
+    /**
+     * Returns lexemes from the client. This does nothing more than breaking
+     * the stream of raw bytes into lexemes.
+     * 
+     * @summary Yields lexemes from the network stream.
+     * @yields {Lexeme}
+     * @private
+     */
+    private *lexemeStream () : IterableIterator<Lexeme> {
         while (true) {
             if (this.currentCommand.length > 20) {
                 this.scanner.skipLine();
@@ -92,7 +105,6 @@ class Connection implements Temporal, UniquelyIdentified {
                     return;
                 }
                 case (LexemeType.LITERAL_LENGTH): {
-                    this.socket.write("+ Ready for literal data.\r\n");
                     const literalLength : number = lastLexeme.toLiteralLength();
                     const literal : Lexeme | null = this.scanner.readLiteral(literalLength);
                     if (!literal) return;
@@ -103,8 +115,7 @@ class Connection implements Temporal, UniquelyIdentified {
                     if (this.scanner.lineReady()) {
                         yield this.scanner.readTag();
                         continue;
-                    }
-                    return;
+                    } else return;
                 }
                 case (LexemeType.ERROR): {
                     this.scanner.skipLine();
@@ -129,10 +140,18 @@ class Connection implements Temporal, UniquelyIdentified {
                 }
             }
         }
-
     }
 
-    public executeCommand () : void {
+    /**
+     * Executes the current command. It does by looking up the command plugin
+     * by name, then executing the callback associated with that plugin, if
+     * the plugin can be found.
+     * 
+     * @summary Executes the current command plugin's callback.
+     * @private
+     */
+    private executeCommand () : void {
+        if (this.currentCommand.length < 2) return;
         const commandName : string = this.currentCommand[1].toString(); // #UTF_SAFE
         if (commandName in this.server.commandPlugins) {
             const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
