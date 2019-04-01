@@ -5,3 +5,9 @@
 * License: [MIT License](https://mit-license.org/)
 
 Build by running `tsc` in the root directory.
+
+## Development
+
+### Testing
+
+Run `npm run-script test`.
