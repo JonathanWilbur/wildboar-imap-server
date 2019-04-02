@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const uuidv4 = require("uuid/v4");
-class EnvironmentVariableConfigurationSource {
+class EnvironmentVariablesConfigurationSource {
     constructor() {
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
@@ -143,5 +143,5 @@ class EnvironmentVariableConfigurationSource {
         return env;
     }
 }
-exports.default = EnvironmentVariableConfigurationSource;
+exports.EnvironmentVariablesConfigurationSource = EnvironmentVariablesConfigurationSource;
 //# sourceMappingURL=EnvironmentVariables.js.map

@@ -51,3 +51,10 @@
     - closeConnection
 - [ ] Remove default exports
 - [ ] Response messages should all contain `ok`
+- [ ] Visual Studio Solution
+- [ ] Bazel build Configuration
+- [ ] Sentry Configuration
+- [ ] NPM Tasks
+- [ ] Make plugins follow serverless handler signatures.
+- [ ] Create a plugins system for authentication methods
+- [ ] Get Ctrl-C working

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
-const Commands_1 = require("../Commands");
+const url_1 = require("url");
 const amqp = require("amqplib/callback_api");
 const uuidv4 = require("uuid/v4");
 class AMQPMessageBroker {
@@ -9,10 +9,9 @@ class AMQPMessageBroker {
         this.configuration = configuration;
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
+        this.protocol = "amqp";
         this.responseEmitter = new events_1.EventEmitter();
-        this.server_host = configuration.queue_server_hostname;
-        this.server_port = configuration.queue_server_tcp_listening_port;
-        amqp.connect(`amqp://${this.server_host}:${this.server_port}`, (err, connection) => {
+        amqp.connect(this.queueURI.toString(), (err, connection) => {
             if (err) {
                 console.log(err);
                 return;
@@ -25,19 +24,6 @@ class AMQPMessageBroker {
                 }
                 this.channel = channel;
                 channel.assertExchange("imap.commands", "direct", { durable: true });
-                Commands_1.IMAP_STORAGE_COMMANDS.forEach((command) => {
-                    const responseQueueName = `imap.${command}.responses-${this.id}`;
-                    channel.assertQueue(`imap.${command}`, { durable: true });
-                    channel.bindQueue(`imap.${command}`, "imap.commands", command);
-                    channel.assertQueue(responseQueueName, { exclusive: true });
-                    channel.consume(responseQueueName, (message) => {
-                        if (!message)
-                            return;
-                        this.responseEmitter.emit(message.properties.correlationId, message);
-                    }, {
-                        noAck: true
-                    });
-                });
                 channel.assertExchange("events", "topic", { durable: true });
                 channel.assertQueue("events.imap", { durable: false });
                 channel.bindQueue("events.imap", "events", "imap");
@@ -52,6 +38,24 @@ class AMQPMessageBroker {
                 channel.bindQueue("ANONYMOUS", "authentication", "authentication.ANONYMOUS");
                 channel.assertQueue("authorization", { durable: false });
             });
+        });
+    }
+    get queueURI() {
+        return new url_1.URL(this.protocol + "://" +
+            this.configuration.queue_server_hostname + ":" +
+            this.configuration.queue_server_tcp_listening_port.toString());
+    }
+    initializeCommandRPCQueue(commandName) {
+        const responseQueueName = `imap.${commandName}.responses-${this.id}`;
+        this.channel.assertQueue(`imap.${commandName}`, { durable: true });
+        this.channel.bindQueue(`imap.${commandName}`, "imap.commands", commandName);
+        this.channel.assertQueue(responseQueueName, { exclusive: true });
+        this.channel.consume(responseQueueName, (message) => {
+            if (!message)
+                return;
+            this.responseEmitter.emit(message.properties.correlationId, message);
+        }, {
+            noAck: true
         });
     }
     publishCommand(authenticatedUser, command, message) {

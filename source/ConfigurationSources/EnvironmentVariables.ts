@@ -1,9 +1,9 @@
-import ConfigurationSource from "../ConfigurationSource";
-import TypedKeyValueStore from "../TypedKeyValueStore";
+import { ConfigurationSource } from "../ConfigurationSource";
+import { TypedKeyValueStore } from "../TypedKeyValueStore";
 const uuidv4 : () => string = require("uuid/v4");
 
-export default
-class EnvironmentVariableConfigurationSource implements ConfigurationSource,TypedKeyValueStore {
+export
+class EnvironmentVariablesConfigurationSource implements ConfigurationSource,TypedKeyValueStore {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();

@@ -1,11 +1,9 @@
-import ConfigurationSource from "../ConfigurationSource";
-import MessageBroker from "../MessageBroker";
-import { UniquelyIdentified } from "wildboar-microservices-ts";
 import { Channel, ConsumeMessage, Message } from 'amqplib';
-import { ExamineResponse, SelectResponse, CreateResponse, DeleteResponse, RenameResponse, SubscribeResponse, UnsubscribeResponse, AppendResponse, CheckResponse, CloseResponse, ExpungeResponse, ListResponse, LsubResponse, StatusResponse, SearchResponse, StoreResponse, CopyResponse, FetchResponse } from "../StorageDriverResponses/index";
 import { EventEmitter } from "events";
-import { IMAP_STORAGE_COMMANDS } from "../Commands";
-import { SequenceSet } from "../SequenceSet";
+import { URL } from "url";
+import { UniquelyIdentified } from "wildboar-microservices-ts";
+import { ConfigurationSource } from "../ConfigurationSource";
+import { MessageBroker } from "../MessageBroker";
 const amqp = require("amqplib/callback_api");
 const uuidv4 : () => string = require("uuid/v4");
 
@@ -17,19 +15,20 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();
-    
-    private readonly server_host! : string;
-    private readonly server_port! : number;
+    public readonly protocol : string = "amqp";
     private connection! : any;
     private channel! : any;
     private responseEmitter : EventEmitter = new EventEmitter();
+    public get queueURI () : URL {
+        return new URL(
+            this.protocol + "://" +
+            this.configuration.queue_server_hostname + ":" +
+            this.configuration.queue_server_tcp_listening_port.toString()
+        );
+    }
 
-    constructor (
-        readonly configuration : ConfigurationSource
-    ) {
-        this.server_host = configuration.queue_server_hostname;
-        this.server_port = configuration.queue_server_tcp_listening_port;
-        amqp.connect(`amqp://${this.server_host}:${this.server_port}`, (err : Error, connection : any) => {
+    constructor (readonly configuration : ConfigurationSource) {
+        amqp.connect(this.queueURI.toString(), (err : Error, connection : any) => {
             if (err) { console.log(err); return; }
             this.connection = connection;
 
@@ -38,20 +37,6 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
                 this.channel = channel;
 
                 channel.assertExchange("imap.commands", "direct", { durable: true });
-                IMAP_STORAGE_COMMANDS.forEach((command : string) : void => {
-                    const responseQueueName : string = `imap.${command}.responses-${this.id}`;
-                    channel.assertQueue(`imap.${command}`, { durable: true });
-                    channel.bindQueue(`imap.${command}`, "imap.commands", command);
-                    // TODO: Make the response queue noAck. I think the @types library is missing that property.
-                    channel.assertQueue(responseQueueName, { exclusive: true });
-                    channel.consume(responseQueueName, (message : ConsumeMessage | null) : void => {
-                        if (!message) return; // TODO: Do something more informative here.
-                        // console.log(`Should emit ${message.properties.correlationId}`);
-                        this.responseEmitter.emit(message.properties.correlationId, message);
-                    }, {
-                        noAck: true
-                    });
-                });
 
                 channel.assertExchange("events", "topic", { durable: true });
                 channel.assertQueue("events.imap", { durable: false });
@@ -72,6 +57,20 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
                 channel.assertQueue("authorization", { durable: false });
                 // TODO:
             });
+        });
+    }
+
+    public initializeCommandRPCQueue (commandName : string) : void {
+        const responseQueueName : string = `imap.${commandName}.responses-${this.id}`;
+        this.channel.assertQueue(`imap.${commandName}`, { durable: true });
+        this.channel.bindQueue(`imap.${commandName}`, "imap.commands", commandName);
+        // TODO: Make the response queue noAck. I think the @types library is missing that property.
+        this.channel.assertQueue(responseQueueName, { exclusive: true });
+        this.channel.consume(responseQueueName, (message : ConsumeMessage | null) : void => {
+            if (!message) return; // TODO: Do something more informative here.
+            this.responseEmitter.emit(message.properties.correlationId, message);
+        }, {
+            noAck: true
         });
     }
 

@@ -7,9 +7,8 @@ class DummyMessageBroker {
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
     }
-    publishCommand() {
-        return Promise.resolve({});
-    }
+    initializeCommandRPCQueue(commandName) { }
+    publishCommand() { return Promise.resolve({}); }
     publishEvent(topic, message) { }
     closeConnection() { }
 }

@@ -1,7 +1,8 @@
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
+import { TypedKeyValueStore } from "./TypedKeyValueStore";
 
-export default
-interface ConfigurationSource extends Temporal, UniquelyIdentified {
+export
+interface ConfigurationSource extends Temporal, TypedKeyValueStore, UniquelyIdentified {
     imap_server_ip_bind_address : string;
     imap_server_tcp_listening_port : number;
     imap_server_domain : string;

@@ -1,11 +1,11 @@
 import * as net from "net";
-import ConfigurationSource from "./ConfigurationSource";
-import { Connection } from "./Connection";
-import MessageBroker from "./MessageBroker";
-import TypedKeyValueStore from "./ConfigurationSource";
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
-const uuidv4 : () => string = require("uuid/v4");
 import { CommandPlugin } from "./CommandPlugin";
+import { ConfigurationSource } from "./ConfigurationSource";
+import { Connection } from "./Connection";
+import { MessageBroker } from "./MessageBroker";
+import { TypedKeyValueStore } from "./TypedKeyValueStore";
+const uuidv4 : () => string = require("uuid/v4");
 
 export
 class Server implements Temporal, UniquelyIdentified {
@@ -34,9 +34,6 @@ class Server implements Temporal, UniquelyIdentified {
         readonly messageBroker : MessageBroker,
         readonly commandPlugins : { [ commandName : string ] : CommandPlugin }
     ) {
-        Object.keys(this.commandPlugins).forEach((plugin : string) : void => {
-            console.log(`Loaded plugin for command '${plugin}'.`);
-        });
         net.createServer((socket : net.Socket) : void => {
             const connection : Connection = new Connection(this, socket);
         }).listen(

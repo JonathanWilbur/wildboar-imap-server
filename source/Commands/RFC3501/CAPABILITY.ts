@@ -1,8 +1,8 @@
 import { CommandPlugin } from "../../CommandPlugin";
 import { Connection } from "../../Connection";
-import { Scanner } from "../../Scanner";
 import { Lexeme } from "../../Lexeme";
 import { LexemeType } from "../../LexemeType";
+import { Scanner } from "../../Scanner";
 
 export default new CommandPlugin(
     function* (scanner : Scanner, currentcommand : Lexeme[]) : IterableIterator<Lexeme> {

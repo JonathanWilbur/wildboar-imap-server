@@ -1,12 +1,10 @@
-import ConfigurationSource from "./ConfigurationSource";
-import EnvironmentVariablesConfigurationSource from "./ConfigurationSources/EnvironmentVariables";
-import { Server } from "./Server";
-import MessageBroker from "./MessageBroker";
-// import { DummyMessageBroker } from "./MessageBrokers/DUMMY";
-// import { AMQPMessageBroker } from "./MessageBrokers/AMQP";
-import { CommandPlugin } from "./CommandPlugin";
 import * as fs from "fs";
 import * as path from "path";
+import { CommandPlugin } from "./CommandPlugin";
+import { ConfigurationSource } from "./ConfigurationSource";
+import { EnvironmentVariablesConfigurationSource } from "./ConfigurationSources/EnvironmentVariables";
+import { MessageBroker } from "./MessageBroker";
+import { Server } from "./Server";
 
 const configuration : ConfigurationSource =
     new EnvironmentVariablesConfigurationSource();
@@ -28,16 +26,6 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
     }
 }
 
-const commandsDirectory : string = path.join(__dirname, "Commands");
-const plugins : { [ commandName : string ] : CommandPlugin } = {};
-const commandPluginsIterator = pluginIterator(commandsDirectory);
-for (let plugin of commandPluginsIterator) {
-    const commandName : string = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
-    // TODO: Check that every character is valid for a command.
-    plugins[commandName] = require(plugin).default;
-    console.log(`Loaded command plugin for command '${commandName}'.`);
-}
-
 const messageBrokersDirectory : string = path.join(__dirname, "MessageBrokers");
 const messageBrokerProtocols : { [ protocolName : string ] : string } = {};
 const messageBrokerPluginsIterator = pluginIterator(messageBrokersDirectory);
@@ -57,5 +45,16 @@ if (!(queueProtocol in messageBrokerProtocols)) {
 const messageBroker : MessageBroker = 
     new (require(messageBrokerProtocols[queueProtocol]).default)(configuration);
 console.log(`Loaded message broker plugin for protocol '${queueProtocol}'.`);
+
+const commandsDirectory : string = path.join(__dirname, "Commands");
+const plugins : { [ commandName : string ] : CommandPlugin } = {};
+const commandPluginsIterator = pluginIterator(commandsDirectory);
+for (let plugin of commandPluginsIterator) {
+    const commandName : string = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
+    // TODO: Check that every character is valid for a command.
+    plugins[commandName] = require(plugin).default;
+    messageBroker.initializeCommandRPCQueue(commandName);
+    console.log(`Loaded command plugin for command '${commandName}'.`);
+}
 
 const server : Server = new Server(configuration, messageBroker, plugins);

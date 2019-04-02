@@ -1,11 +1,11 @@
 import * as net from "net";
+import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
+import { CommandPlugin } from "./CommandPlugin";
+import { ConnectionState } from "./ConnectionState";
 import { Lexeme } from "./Lexeme";
+import { LexemeType } from "./LexemeType";
 import { Scanner } from "./Scanner";
 import { Server } from "./Server";
-import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
-import { ConnectionState } from "./ConnectionState";
-import { CommandPlugin } from "./CommandPlugin";
-import { LexemeType } from "./LexemeType";
 const uuidv4 : () => string = require("uuid/v4");
 
 export

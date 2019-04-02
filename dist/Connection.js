@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const ConnectionState_1 = require("./ConnectionState");
 const Lexeme_1 = require("./Lexeme");
 const Scanner_1 = require("./Scanner");
-const ConnectionState_1 = require("./ConnectionState");
 const uuidv4 = require("uuid/v4");
 class Connection {
     constructor(server, socket) {

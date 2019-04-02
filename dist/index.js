@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const EnvironmentVariables_1 = require("./ConfigurationSources/EnvironmentVariables");
-const Server_1 = require("./Server");
 const fs = require("fs");
 const path = require("path");
-const configuration = new EnvironmentVariables_1.default();
+const EnvironmentVariables_1 = require("./ConfigurationSources/EnvironmentVariables");
+const Server_1 = require("./Server");
+const configuration = new EnvironmentVariables_1.EnvironmentVariablesConfigurationSource();
 function* pluginIterator(directoryName) {
     const entries = fs.readdirSync(directoryName, { encoding: "utf8" });
     for (let i = 0; i < entries.length; i++) {
@@ -22,14 +22,6 @@ function* pluginIterator(directoryName) {
         }
     }
 }
-const commandsDirectory = path.join(__dirname, "Commands");
-const plugins = {};
-const commandPluginsIterator = pluginIterator(commandsDirectory);
-for (let plugin of commandPluginsIterator) {
-    const commandName = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
-    plugins[commandName] = require(plugin).default;
-    console.log(`Loaded command plugin for command '${commandName}'.`);
-}
 const messageBrokersDirectory = path.join(__dirname, "MessageBrokers");
 const messageBrokerProtocols = {};
 const messageBrokerPluginsIterator = pluginIterator(messageBrokersDirectory);
@@ -46,5 +38,14 @@ if (!(queueProtocol in messageBrokerProtocols)) {
 }
 const messageBroker = new (require(messageBrokerProtocols[queueProtocol]).default)(configuration);
 console.log(`Loaded message broker plugin for protocol '${queueProtocol}'.`);
+const commandsDirectory = path.join(__dirname, "Commands");
+const plugins = {};
+const commandPluginsIterator = pluginIterator(commandsDirectory);
+for (let plugin of commandPluginsIterator) {
+    const commandName = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
+    plugins[commandName] = require(plugin).default;
+    messageBroker.initializeCommandRPCQueue(commandName);
+    console.log(`Loaded command plugin for command '${commandName}'.`);
+}
 const server = new Server_1.Server(configuration, messageBroker, plugins);
 //# sourceMappingURL=index.js.map
