@@ -65,6 +65,13 @@ class EnvironmentVariableConfigurationSource {
         return (environmentVariableName in process.env ?
             process.env[environmentVariableName] : undefined);
     }
+    get queue_protocol() {
+        const DEFAULT_VALUE = "AMQP";
+        const env = this.getString("queue.protocol");
+        if (!env)
+            return DEFAULT_VALUE;
+        return env;
+    }
     get queue_server_hostname() {
         const DEFAULT_VALUE = "localhost";
         const env = this.getString("queue.server.hostname");

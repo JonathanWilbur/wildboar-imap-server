@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const net = require("net");
-const AMQP_1 = require("./MessageBrokers/AMQP");
 const Connection_1 = require("./Connection");
 const uuidv4 = require("uuid/v4");
 class Server {
-    constructor(configuration, commandPlugins) {
+    constructor(configuration, messageBroker, commandPlugins) {
         this.configuration = configuration;
+        this.messageBroker = messageBroker;
         this.commandPlugins = commandPlugins;
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
@@ -19,7 +19,6 @@ class Server {
             "LOGINDISABLED",
             "AUTH=PLAIN"
         ];
-        this.messageBroker = new AMQP_1.default(configuration);
         Object.keys(this.commandPlugins).forEach((plugin) => {
             console.log(`Loaded plugin for command '${plugin}'.`);
         });

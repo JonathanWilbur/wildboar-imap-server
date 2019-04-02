@@ -1,6 +1,5 @@
 import { CommandPlugin } from "../CommandPlugin";
 import { Connection } from "../Connection";
-import { CreateResponse } from "../StorageDriverResponses/CreateResponse";
 import { Scanner } from "../Scanner";
 import { Lexeme } from "../Lexeme";
 import { LexemeType } from "../LexemeType";
@@ -22,9 +21,10 @@ const CREATE_COMMAND = new CommandPlugin(
         return;
     },
     async (connection : Connection, tag : string, command : string, args : Lexeme[]) => {
-        const response : CreateResponse =
-            await connection.server.messageBroker.create(connection.authenticatedUser, args[0].toString());
-        if (response.created) connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+        const response : object =
+            await connection.server.messageBroker.publishCommand("", command, {});
+        if ("created" in response && (<any>response)["created"])
+            connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
         else connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
     }
 );

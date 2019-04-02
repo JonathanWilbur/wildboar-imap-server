@@ -1,5 +1,4 @@
 import * as net from "net";
-import AMQPMessageBroker from "./MessageBrokers/AMQP";
 import ConfigurationSource from "./ConfigurationSource";
 import { Connection } from "./Connection";
 import MessageBroker from "./MessageBroker";
@@ -13,7 +12,6 @@ class Server implements Temporal, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();
-    public messageBroker! : MessageBroker;
 
     public readonly supportedSASLAuthenticationMechanisms : string[] = [
         "PLAIN"
@@ -33,9 +31,9 @@ class Server implements Temporal, UniquelyIdentified {
 
     constructor(
         readonly configuration : TypedKeyValueStore & ConfigurationSource,
+        readonly messageBroker : MessageBroker,
         readonly commandPlugins : { [ commandName : string ] : CommandPlugin }
     ) {
-        this.messageBroker = new AMQPMessageBroker(configuration);
         Object.keys(this.commandPlugins).forEach((plugin : string) : void => {
             console.log(`Loaded plugin for command '${plugin}'.`);
         });

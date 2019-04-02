@@ -15,13 +15,17 @@ class Connection {
         this.authenticatedUser = "";
         this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
         this.currentCommand = [];
-        this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
         socket.on("data", (data) => {
             this.scanner.enqueueData(data);
             for (let lexeme of this.lexemeStream()) {
                 switch (lexeme.type) {
                     case (0): {
                         this.currentCommand = [];
+                        break;
+                    }
+                    case (10): {
+                        this.socket.write("+ Ready for literal data.\r\n");
+                        this.currentCommand.push(lexeme);
                         break;
                     }
                     case (11): {
@@ -43,6 +47,7 @@ class Connection {
         socket.on("close", (had_error) => {
             console.log(`Bye!`);
         });
+        this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
     }
     *lexemeStream() {
         while (true) {
@@ -64,7 +69,6 @@ class Connection {
                     return;
                 }
                 case (10): {
-                    this.socket.write("+ Ready for literal data.\r\n");
                     const literalLength = lastLexeme.toLiteralLength();
                     const literal = this.scanner.readLiteral(literalLength);
                     if (!literal)
@@ -77,7 +81,8 @@ class Connection {
                         yield this.scanner.readTag();
                         continue;
                     }
-                    return;
+                    else
+                        return;
                 }
                 case (0): {
                     this.scanner.skipLine();
@@ -102,6 +107,8 @@ class Connection {
         }
     }
     executeCommand() {
+        if (this.currentCommand.length < 2)
+            return;
         const commandName = this.currentCommand[1].toString();
         if (commandName in this.server.commandPlugins) {
             const commandPlugin = this.server.commandPlugins[commandName];

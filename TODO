@@ -42,3 +42,12 @@
   - [ ] Events queue verbosity
   - [ ] Single account
   - [ ] Simple Authorization
+- [ ] Remove specific commands from `MessageBroker`
+  - The interface should be:
+    - publishEvent
+    - publishCommand
+    - publishAuthentication
+    - publishAuthorization
+    - closeConnection
+- [ ] Remove default exports
+- [ ] Response messages should all contain `ok`

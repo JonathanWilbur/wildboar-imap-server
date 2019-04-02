@@ -63,6 +63,13 @@ class EnvironmentVariableConfigurationSource implements ConfigurationSource,Type
      * The specific directive accessors go below here.
      */
 
+    get queue_protocol () : string {
+        const DEFAULT_VALUE : string = "AMQP";
+        const env : string | undefined = this.getString("queue.protocol");
+        if (!env) return DEFAULT_VALUE;
+        return env;
+    }
+
     get queue_server_hostname () : string {
         const DEFAULT_VALUE : string = "localhost";
         const env : string | undefined = this.getString("queue.server.hostname");
