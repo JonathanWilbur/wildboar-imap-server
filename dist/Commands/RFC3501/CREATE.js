@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const CommandPlugin_1 = require("../CommandPlugin");
-const Lexeme_1 = require("../Lexeme");
-exports.CREATE_COMMAND = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
+const CommandPlugin_1 = require("../../CommandPlugin");
+const Lexeme_1 = require("../../Lexeme");
+exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
     if (currentCommand.length <= 2) {
         if (scanner.readSpace())
             yield new Lexeme_1.Lexeme(2, Buffer.from(" "));

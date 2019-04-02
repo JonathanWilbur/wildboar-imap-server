@@ -12,7 +12,7 @@ const uuidv4 : () => string = require("uuid/v4");
 // TODO: Add content_type
 // TODO: Add expiration, plus setTimeout to fire the events to remove the event handlers.
 
-export
+export default
 class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;

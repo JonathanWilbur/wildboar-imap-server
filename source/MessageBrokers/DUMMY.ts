@@ -3,7 +3,7 @@ import MessageBroker from "../MessageBroker";
 import { UniquelyIdentified } from "wildboar-microservices-ts";
 const uuidv4 : () => string = require("uuid/v4");
 
-export
+export default
 class DummyMessageBroker implements MessageBroker, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;

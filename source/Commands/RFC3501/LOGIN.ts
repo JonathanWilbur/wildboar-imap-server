@@ -1,12 +1,11 @@
-import { CommandPlugin } from "../CommandPlugin";
-import { Connection } from "../Connection";
-import { Scanner } from "../Scanner";
-import { Lexeme } from "../Lexeme";
-import { LexemeType } from "../LexemeType";
+import { CommandPlugin } from "../../CommandPlugin";
+import { Connection } from "../../Connection";
+import { Scanner } from "../../Scanner";
+import { Lexeme } from "../../Lexeme";
+import { LexemeType } from "../../LexemeType";
 
 // TODO: Actually implement this.
-export
-const LOGIN_COMMAND = new CommandPlugin(
+export default new CommandPlugin(
     function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
         console.log(currentCommand);
         switch (currentCommand.length) {

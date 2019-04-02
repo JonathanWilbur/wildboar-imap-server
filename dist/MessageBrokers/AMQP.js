@@ -90,5 +90,5 @@ class AMQPMessageBroker {
         this.connection.close();
     }
 }
-exports.AMQPMessageBroker = AMQPMessageBroker;
+exports.default = AMQPMessageBroker;
 //# sourceMappingURL=AMQP.js.map

@@ -13,5 +13,5 @@ class DummyMessageBroker {
     publishEvent(topic, message) { }
     closeConnection() { }
 }
-exports.DummyMessageBroker = DummyMessageBroker;
+exports.default = DummyMessageBroker;
 //# sourceMappingURL=DUMMY.js.map

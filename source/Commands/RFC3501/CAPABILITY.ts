@@ -1,11 +1,10 @@
-import { CommandPlugin } from "../CommandPlugin";
-import { Connection } from "../Connection";
-import { Scanner } from "../Scanner";
-import { Lexeme } from "../Lexeme";
-import { LexemeType } from "../LexemeType";
+import { CommandPlugin } from "../../CommandPlugin";
+import { Connection } from "../../Connection";
+import { Scanner } from "../../Scanner";
+import { Lexeme } from "../../Lexeme";
+import { LexemeType } from "../../LexemeType";
 
-export
-const CAPABILITY_COMMAND = new CommandPlugin(
+export default new CommandPlugin(
     function* (scanner : Scanner, currentcommand : Lexeme[]) : IterableIterator<Lexeme> {
         if (scanner.readNewLine())
             yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
