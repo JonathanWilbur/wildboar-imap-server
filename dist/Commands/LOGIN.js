@@ -43,3 +43,4 @@ exports.LOGIN_COMMAND = new CommandPlugin_1.CommandPlugin(function* (scanner, cu
     console.log(`Authenticating with username '${credentials[0].toString()}' and password '${credentials[1].toString()}'.`);
     connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
 });
+//# sourceMappingURL=LOGIN.js.map

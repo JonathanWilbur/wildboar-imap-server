@@ -23,3 +23,4 @@ exports.CREATE_COMMAND = new CommandPlugin_1.CommandPlugin(function* (scanner, c
     else
         connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
 });
+//# sourceMappingURL=CREATE.js.map

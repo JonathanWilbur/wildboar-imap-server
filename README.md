@@ -11,3 +11,8 @@ Build by running `tsc` in the root directory.
 ### Testing
 
 Run `npm run-script test`.
+
+### Debugging
+
+You can debug easily in VS Code. For some reason, breakpoints do not appear to
+work in `index.ts`. 

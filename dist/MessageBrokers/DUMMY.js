@@ -14,3 +14,4 @@ class DummyMessageBroker {
     closeConnection() { }
 }
 exports.DummyMessageBroker = DummyMessageBroker;
+//# sourceMappingURL=DUMMY.js.map

@@ -237,3 +237,4 @@ class Scanner {
 }
 Scanner.LINE_TERMINATOR = "\r\n";
 exports.Scanner = Scanner;
+//# sourceMappingURL=Scanner.js.map

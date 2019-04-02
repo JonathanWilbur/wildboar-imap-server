@@ -7,3 +7,4 @@ var ConnectionState;
     ConnectionState[ConnectionState["SELECTED"] = 3] = "SELECTED";
     ConnectionState[ConnectionState["LOGOUT"] = 4] = "LOGOUT";
 })(ConnectionState = exports.ConnectionState || (exports.ConnectionState = {}));
+//# sourceMappingURL=ConnectionState.js.map

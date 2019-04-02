@@ -7,3 +7,4 @@ class CommandPlugin {
     }
 }
 exports.CommandPlugin = CommandPlugin;
+//# sourceMappingURL=CommandPlugin.js.map

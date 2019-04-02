@@ -19,6 +19,19 @@ services:
     ports:
       - '143:143'
 
+  imap-debug:
+    command: '/usr/local/bin/node --inspect=0.0.0.0:5858 /srv/dist/index.js'
+    container_name: 'imapdebug'
+    environment:
+      QUEUE_PROTOCOL: 'DUMMY'
+    hostname: 'imapdebug'
+    image: 'node:11.12.0-alpine'
+    ports:
+      - '143:143'
+      - '5858:5858' # For debugging. Comment out when done.
+    volumes:
+      - '.:/srv:ro'
+
   messagebroker:
     container_name: 'qhost'
     hostname: 'qhost'

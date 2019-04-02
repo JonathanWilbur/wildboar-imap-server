@@ -15,3 +15,10 @@ socket.on("data", (data) => {
     }
     console.log(data.toString());
 });
+
+// This is to make sure this process does not accidentally become orphaned.
+// This has happened before on my Windows workstation, and I could not find
+// the process to kill it.
+setTimeout(() => {
+    process.exit(0);
+}, 30000);

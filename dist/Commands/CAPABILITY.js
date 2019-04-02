@@ -10,3 +10,4 @@ exports.CAPABILITY_COMMAND = new CommandPlugin_1.CommandPlugin(function* (scanne
     connection.socket.write(`* ${command} ${connection.server.capabilities.join(" ")}\r\n`);
     connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
 });
+//# sourceMappingURL=CAPABILITY.js.map

@@ -91,3 +91,4 @@ class AMQPMessageBroker {
     }
 }
 exports.AMQPMessageBroker = AMQPMessageBroker;
+//# sourceMappingURL=AMQP.js.map

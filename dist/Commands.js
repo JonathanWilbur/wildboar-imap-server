@@ -53,3 +53,4 @@ exports.IMAP_STORAGE_COMMANDS = [
     "COPY",
     "UID"
 ];
+//# sourceMappingURL=Commands.js.map

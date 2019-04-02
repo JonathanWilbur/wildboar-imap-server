@@ -23,3 +23,4 @@ var LexemeType;
     LexemeType[LexemeType["SEQUENCE_SET"] = 18] = "SEQUENCE_SET";
 })(LexemeType = exports.LexemeType || (exports.LexemeType = {}));
 ;
+//# sourceMappingURL=LexemeType.js.map

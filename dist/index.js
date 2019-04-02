@@ -5,6 +5,7 @@ const Server_1 = require("./Server");
 const commands = require("./Commands/index");
 const DUMMY_1 = require("./MessageBrokers/DUMMY");
 const AMQP_1 = require("./MessageBrokers/AMQP");
+console.log(`Starting up in ${__dirname}`);
 const configuration = new EnvironmentVariables_1.default();
 const plugins = {
     "CAPABILITY": commands.CAPABILITY_COMMAND,
@@ -22,3 +23,4 @@ const messageBroker = (() => {
     }
 })();
 const server = new Server_1.Server(configuration, messageBroker, plugins);
+//# sourceMappingURL=index.js.map

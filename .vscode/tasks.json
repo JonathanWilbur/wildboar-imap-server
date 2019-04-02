@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile",
+            "type": "shell",
+            "command": "tsc",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "Build Container",
+            "type": "shell",
+            "command": "docker-compose build imap",
+            "group": "build"
+        },
+        {
+            "label": "Run Container",
+            "type": "shell",
+            "command": "docker-compose up --detach imap"
+        },
+        {
+            "label": "Compile, Build, and Run Container",
+            "type": "shell",
+            "command": "tsc; docker-compose up --detach --build imap"
+        },
+        {
+            "label": "Compile and Run Debugging Container",
+            "type": "shell",
+            "command": "tsc; docker-compose up --detach imap-debug"
+        },
+        {
+            "label": "Stop Container",
+            "type": "shell",
+            "command": "docker-compose stop imap"
+        }
+    ]
+}
