@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const crypto = require("crypto");
 const net = require("net");
 const Connection_1 = require("./Connection");
 const uuidv4 = require("uuid/v4");
@@ -10,6 +11,7 @@ class Server {
         this.commandPlugins = commandPlugins;
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
+        this.driverlessAuthenticationDatabase = this.configuration.driverless_authentication_credentials;
         this.supportedSASLAuthenticationMechanisms = [
             "PLAIN"
         ];
@@ -28,6 +30,20 @@ class Server {
             process.exit();
         });
     }
+    static passwordHash(password) {
+        return new Promise((resolve, reject) => {
+            crypto.pbkdf2(password, Server.driverlessAuthenticationPasswordSalt, Server.driverlessAuthenticationHashRounds, Server.driverlessAuthenticationDesiredHashLengthInBytes, Server.driverlessAuthenticationKeyedHMACAlgorithm, (err, derivedKey) => {
+                if (err)
+                    reject(err);
+                else
+                    resolve(derivedKey.toString("hex"));
+            });
+        });
+    }
 }
+Server.driverlessAuthenticationPasswordSalt = "PRESS_F_TO_PAY_RESPECCS";
+Server.driverlessAuthenticationHashRounds = 100000;
+Server.driverlessAuthenticationDesiredHashLengthInBytes = 64;
+Server.driverlessAuthenticationKeyedHMACAlgorithm = "sha512";
 exports.Server = Server;
 //# sourceMappingURL=Server.js.map

@@ -141,4 +141,19 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
         return env;
     }
 
+    get driverless_authentication_credentials () : { [ username : string ] : string } {
+        const DEFAULT_VALUE : { [ username : string ] : string } = {};
+        const env : string | undefined = this.getString("driverless.authentication.credentials");
+        if (!env) return DEFAULT_VALUE;
+        const ret : { [ username : string ] : string } = {};
+        env.split(" ").forEach((pair : string) : void => {
+            const indexOfColon : number = pair.indexOf(":");
+            if (indexOfColon === -1) return;
+            const username : string = pair.slice(0, indexOfColon);
+            const passhash : string = pair.slice(indexOfColon + 1);
+            ret[username] = passhash;
+        });
+        return ret;
+    }
+
 }

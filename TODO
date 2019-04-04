@@ -42,14 +42,7 @@
   - [ ] Events queue verbosity
   - [ ] Single account
   - [ ] Simple Authorization
-- [ ] Remove specific commands from `MessageBroker`
-  - The interface should be:
-    - publishEvent
-    - publishCommand
-    - publishAuthentication
-    - publishAuthorization
-    - closeConnection
-- [ ] Remove default exports
+- [x] Remove default exports
 - [ ] Response messages should all contain `ok`
 - [ ] Visual Studio Solution
 - [ ] Bazel build Configuration
@@ -57,4 +50,8 @@
 - [ ] NPM Tasks
 - [ ] Make plugins follow serverless handler signatures.
 - [ ] Create a plugins system for authentication methods
+- [ ] Create a plugins system for search tricks
 - [ ] Get Ctrl-C working
+- [ ] Add `capability` field to plugins.
+- [ ] Consider using nameless queues to make the queue list more readable.
+- [ ] Drop capabilities

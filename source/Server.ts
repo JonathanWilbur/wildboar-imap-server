@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as net from "net";
 import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
 import { CommandPlugin } from "./CommandPlugin";
@@ -12,6 +13,25 @@ class Server implements Temporal, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();
+
+    /**
+     * This is deliberately cached, rather than accessed on the fly, because:
+     * 1. It is computationally expensive enough to generate this database that
+     *    it could be an inroad to a denial-of-service attack if an attacker
+     *    performs a brute-force attack.
+     * 2. Accessing it on the fly means that, if an attacker can gain control
+     *    of environment variables, he can create accounts surreptitiously.
+     *    While this is still true, it is much harder to exploit when this
+     *    environment variable is only read before the server even starts
+     *    listening.
+     */
+    public readonly driverlessAuthenticationDatabase : { [ username : string ] : string }
+        = this.configuration.driverless_authentication_credentials;
+
+    public static driverlessAuthenticationPasswordSalt : string = "PRESS_F_TO_PAY_RESPECCS";
+    public static driverlessAuthenticationHashRounds : number = 100000;
+    public static driverlessAuthenticationDesiredHashLengthInBytes = 64;
+    public static driverlessAuthenticationKeyedHMACAlgorithm : string = "sha512";
 
     public readonly supportedSASLAuthenticationMechanisms : string[] = [
         "PLAIN"
@@ -46,6 +66,21 @@ class Server implements Temporal, UniquelyIdentified {
             console.log("Interrupted. Shutting down.");
             this.messageBroker.closeConnection();
             process.exit();
+        });
+    }
+
+    public static passwordHash (password : string) : Promise<string> {
+        return new Promise<string>((resolve, reject) : void => {
+            crypto.pbkdf2(password,
+                Server.driverlessAuthenticationPasswordSalt,
+                Server.driverlessAuthenticationHashRounds,
+                Server.driverlessAuthenticationDesiredHashLengthInBytes,
+                Server.driverlessAuthenticationKeyedHMACAlgorithm,
+                (err, derivedKey) => {
+                    if (err) reject(err);
+                    else resolve(derivedKey.toString("hex"));
+                }
+            );
         });
     }
 

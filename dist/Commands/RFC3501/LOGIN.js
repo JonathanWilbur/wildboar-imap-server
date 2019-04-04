@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
 const Lexeme_1 = require("../../Lexeme");
+const Server_1 = require("../../Server");
 exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
     console.log(currentCommand);
     switch (currentCommand.length) {
@@ -40,7 +41,20 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
             lexeme.type === 9 ||
             lexeme.type === 11);
     });
+    const username = credentials[0].toString().toLowerCase();
+    const password = credentials[1].toString();
     console.log(`Authenticating with username '${credentials[0].toString()}' and password '${credentials[1].toString()}'.`);
-    connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+    if (username in connection.server.driverlessAuthenticationDatabase) {
+        Server_1.Server.passwordHash(password).then((passhash) => {
+            if (connection.server.driverlessAuthenticationDatabase[username] === passhash) {
+                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+                connection.authenticatedUser = username;
+            }
+            else
+                connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+        });
+    }
+    else
+        connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
 });
 //# sourceMappingURL=LOGIN.js.map

@@ -21,7 +21,7 @@ export default new CommandPlugin(
     },
     async (connection : Connection, tag : string, command : string, args : Lexeme[]) => {
         const response : object =
-            await connection.server.messageBroker.publishCommand("", command, {});
+            await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {});
         if ("created" in response && (<any>response)["created"])
             connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
         else connection.socket.write(`${tag} NO ${command} Failed.\r\n`);

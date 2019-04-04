@@ -34,6 +34,11 @@
             "label": "Stop Container",
             "type": "shell",
             "command": "docker-compose stop imap"
+        },
+        {
+            "label": "Stop Debugging Container",
+            "type": "shell",
+            "command": "docker-compose stop imap-debug"
         }
     ]
 }

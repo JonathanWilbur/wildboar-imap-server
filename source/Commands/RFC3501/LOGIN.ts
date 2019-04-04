@@ -3,6 +3,7 @@ import { Connection } from "../../Connection";
 import { Lexeme } from "../../Lexeme";
 import { LexemeType } from "../../LexemeType";
 import { Scanner } from "../../Scanner";
+import { Server } from "../../Server";
 
 // TODO: Actually implement this.
 export default new CommandPlugin(
@@ -46,7 +47,17 @@ export default new CommandPlugin(
                 lexeme.type === LexemeType.STRING_LITERAL
             );
         });
+        const username : string = credentials[0].toString().toLowerCase();
+        const password : string = credentials[1].toString();
         console.log(`Authenticating with username '${credentials[0].toString()}' and password '${credentials[1].toString()}'.`);
-        connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+        if (username in connection.server.driverlessAuthenticationDatabase) {
+            Server.passwordHash(password).then((passhash : string) : void => {
+                if (connection.server.driverlessAuthenticationDatabase[username] === passhash) {
+                    connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+                    connection.authenticatedUser = username;
+                } else
+                connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+            });
+        } else connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
     }
 );

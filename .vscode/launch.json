@@ -11,7 +11,7 @@
             "address": "localhost",
             "port": 5858,
             "preLaunchTask": "Compile and Run Debugging Container",
-            "postDebugTask": "Stop Container",
+            "postDebugTask": "Stop Debugging Container",
             "sourceMaps": true,
             "outFiles": [
                 "./dist/**/*.js"

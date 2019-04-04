@@ -47,5 +47,8 @@ for (let plugin of commandPluginsIterator) {
     messageBroker.initializeCommandRPCQueue(commandName);
     console.log(`Loaded command plugin for command '${commandName}'.`);
 }
+Object.keys(configuration.driverless_authentication_credentials).forEach((username) => {
+    console.log(`Found credentials for user '${username}' in the driverless authentication database.`);
+});
 const server = new Server_1.Server(configuration, messageBroker, plugins);
 //# sourceMappingURL=index.js.map

@@ -142,6 +142,22 @@ class EnvironmentVariablesConfigurationSource {
             return DEFAULT_VALUE;
         return env;
     }
+    get driverless_authentication_credentials() {
+        const DEFAULT_VALUE = {};
+        const env = this.getString("driverless.authentication.credentials");
+        if (!env)
+            return DEFAULT_VALUE;
+        const ret = {};
+        env.split(" ").forEach((pair) => {
+            const indexOfColon = pair.indexOf(":");
+            if (indexOfColon === -1)
+                return;
+            const username = pair.slice(0, indexOfColon);
+            const passhash = pair.slice(indexOfColon + 1);
+            ret[username] = passhash;
+        });
+        return ret;
+    }
 }
 exports.EnvironmentVariablesConfigurationSource = EnvironmentVariablesConfigurationSource;
 //# sourceMappingURL=EnvironmentVariables.js.map
