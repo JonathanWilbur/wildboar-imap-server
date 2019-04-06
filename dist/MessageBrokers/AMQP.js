@@ -74,7 +74,7 @@ class AMQPMessageBroker {
                 correlationId: correlationId,
                 contentType: "application/json",
                 contentEncoding: "8bit",
-                replyTo: `imap.${saslMechanism}.responses-${this.id}`
+                replyTo: `authentication.responses-${this.id}`
             });
         });
     }

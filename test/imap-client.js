@@ -3,8 +3,8 @@ const client = new ImapClient("localhost", 143, {
     logLevel: "info",
     ignoreTLS: true,
     auth: {
-        user: "jwilbur",
-        pass: "oops"
+        user: "jonathan",
+        pass: "bigboi"
     }
 });
 

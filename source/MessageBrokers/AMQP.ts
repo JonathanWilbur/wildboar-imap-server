@@ -1,4 +1,5 @@
-import { connect, Channel, Connection, ConsumeMessage, Message, Replies } from 'amqplib';
+import { AuthenticationRequest } from "../AuthenticationRequest";
+import { connect, Channel, Connection, ConsumeMessage, Message } from "amqplib";
 import { EventEmitter } from "events";
 import { URL } from "url";
 import { UniquelyIdentified } from "wildboar-microservices-ts";
@@ -68,7 +69,7 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
     }
     
     // TODO: This code is very similar to publishCommand. Attempt to deduplicate.
-    public publishAuthentication (saslMechanism : string, message : object) : Promise<object> {
+    public publishAuthentication (saslMechanism : string, message : AuthenticationRequest) : Promise<object> {
         const correlationId : string = `urn:uuid:${uuidv4()}`;
 
         // This induces a timeout, so that we do not accumulate event listeners
@@ -101,7 +102,7 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
                 contentType: "application/json",
                 contentEncoding: "8bit",
                 // expiration: 10000, // TODO: Make this a configurable expiration.
-                replyTo: `imap.${saslMechanism}.responses-${this.id}`
+                replyTo: `authentication.responses-${this.id}`
             });
         });
     }

@@ -1,4 +1,5 @@
 import { UniquelyIdentified } from "wildboar-microservices-ts";
+import { AuthenticationRequest } from "../AuthenticationRequest";
 import { ConfigurationSource } from "../ConfigurationSource";
 import { MessageBroker } from "../MessageBroker";
 import { v4 as uuidv4 } from "uuid";
@@ -17,7 +18,7 @@ class DummyMessageBroker implements MessageBroker, UniquelyIdentified {
     public publishCommand () : Promise<object> {
         return Promise.resolve({});
     }
-    public publishAuthentication (saslMechanism : string, message : object) : Promise<object> {
+    public publishAuthentication (saslMechanism : string, message : AuthenticationRequest) : Promise<object> {
         return Promise.resolve({});
     }
     public publishEvent (topic : string, message : object) : void {}

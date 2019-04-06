@@ -78,3 +78,52 @@ arguments:
 - A Digest of SHA-512
 - A key length of 64 bytes
 - Iterations shall be 100000.
+
+## Request and Response
+
+The existence of an authenticatedUser field means that the authentication was
+successful. This field MUST only be read when done is true.
+
+Responses to completed authentication MAY include the request messages.
+
+Request:
+
+```
+{
+  messages: [
+    "ASweBLJ+ORTqwretJHGOQ/=="
+  ]
+}
+```
+
+Success response:
+
+```
+{
+  done: true,
+  authenticatedUser: "jonathan"
+  messages: [
+    "ASweBLJ+ORTqwretJHGOQ/=="
+  ]
+}
+```
+
+Failure response:
+
+```
+{
+  done: true
+}
+```
+
+Continuation response:
+
+```
+{
+  done: false,
+  responseMessage: "ASweBLJ+ORTqwretJHGOQ/=="
+  messages: [
+    "ASweBLJ+ORTqwretJHGOQ/=="
+  ]
+}
+```

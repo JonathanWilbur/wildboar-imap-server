@@ -55,7 +55,28 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
                 connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
         });
     }
-    else
-        connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+    else {
+        connection.server.messageBroker.publishAuthentication("PLAIN", {
+            messages: [
+                (Buffer.from(`${username}\x00${username}\x00${password}`)).toString("base64")
+            ]
+        })
+            .then((response) => {
+            if (!("done" in response))
+                throw Error(`Authentication driver response using mechanism 'PLAIN' did not include a "done" field.`);
+            if (response["done"]) {
+                if ("authenticatedUser" in response && typeof response["authenticatedUser"] === "string") {
+                    connection.authenticatedUser = response["authenticatedUser"];
+                    connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+                }
+                else {
+                    connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+                }
+            }
+            else {
+                connection.socket.write(`${tag} NO ${command} Unexpected error.\r\n`);
+            }
+        });
+    }
 });
 //# sourceMappingURL=LOGIN.js.map
