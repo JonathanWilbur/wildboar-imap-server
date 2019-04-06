@@ -1,6 +1,6 @@
 import { ConfigurationSource } from "../ConfigurationSource";
 import { TypedKeyValueStore } from "../TypedKeyValueStore";
-const uuidv4 : () => string = require("uuid/v4");
+import { v4 as uuidv4 } from "uuid";
 
 export
 class EnvironmentVariablesConfigurationSource implements ConfigurationSource,TypedKeyValueStore {

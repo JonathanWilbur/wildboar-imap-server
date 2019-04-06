@@ -3,12 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ConnectionState_1 = require("./ConnectionState");
 const Lexeme_1 = require("./Lexeme");
 const Scanner_1 = require("./Scanner");
-const uuidv4 = require("uuid/v4");
+const uuid_1 = require("uuid");
 class Connection {
     constructor(server, socket) {
         this.server = server;
         this.socket = socket;
-        this.id = `urn:uuid:${uuidv4()}`;
+        this.id = `urn:uuid:${uuid_1.v4()}`;
         this.creationTime = new Date();
         this.scanner = new Scanner_1.Scanner();
         this.currentlySelectedMailbox = "INBOX";

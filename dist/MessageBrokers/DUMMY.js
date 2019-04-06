@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const uuidv4 = require("uuid/v4");
+const uuid_1 = require("uuid");
 class DummyMessageBroker {
     constructor(configuration) {
         this.configuration = configuration;
-        this.id = `urn:uuid:${uuidv4()}`;
+        this.id = `urn:uuid:${uuid_1.v4()}`;
         this.creationTime = new Date();
     }
     async initialize() {

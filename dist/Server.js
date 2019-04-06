@@ -3,13 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const crypto = require("crypto");
 const net = require("net");
 const Connection_1 = require("./Connection");
-const uuidv4 = require("uuid/v4");
+const uuid_1 = require("uuid");
 class Server {
     constructor(configuration, messageBroker, commandPlugins) {
         this.configuration = configuration;
         this.messageBroker = messageBroker;
         this.commandPlugins = commandPlugins;
-        this.id = `urn:uuid:${uuidv4()}`;
+        this.id = `urn:uuid:${uuid_1.v4()}`;
         this.creationTime = new Date();
         this.driverlessAuthenticationDatabase = this.configuration.driverless_authentication_credentials;
         this.supportedSASLAuthenticationMechanisms = [

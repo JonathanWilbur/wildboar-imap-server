@@ -3,11 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const amqplib_1 = require("amqplib");
 const events_1 = require("events");
 const url_1 = require("url");
-const uuidv4 = require("uuid/v4");
+const uuid_1 = require("uuid");
 class AMQPMessageBroker {
     constructor(configuration) {
         this.configuration = configuration;
-        this.id = `urn:uuid:${uuidv4()}`;
+        this.id = `urn:uuid:${uuid_1.v4()}`;
         this.creationTime = new Date();
         this.protocol = "amqp";
         this.responseEmitter = new events_1.EventEmitter();
@@ -52,7 +52,7 @@ class AMQPMessageBroker {
         return Promise.resolve(true);
     }
     publishAuthentication(saslMechanism, message) {
-        const correlationId = `urn:uuid:${uuidv4()}`;
+        const correlationId = `urn:uuid:${uuid_1.v4()}`;
         setTimeout(() => {
             this.responseEmitter.emit(correlationId, null);
         }, 10000);
@@ -80,7 +80,7 @@ class AMQPMessageBroker {
         });
     }
     publishCommand(authenticatedUser, command, message) {
-        const correlationId = `urn:uuid:${uuidv4()}`;
+        const correlationId = `urn:uuid:${uuid_1.v4()}`;
         setTimeout(() => {
             this.responseEmitter.emit(correlationId, null);
         }, 10000);

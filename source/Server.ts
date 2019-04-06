@@ -6,7 +6,7 @@ import { ConfigurationSource } from "./ConfigurationSource";
 import { Connection } from "./Connection";
 import { MessageBroker } from "./MessageBroker";
 import { TypedKeyValueStore } from "./TypedKeyValueStore";
-const uuidv4 : () => string = require("uuid/v4");
+import { v4 as uuidv4 } from "uuid";
 
 export
 class Server implements Temporal, UniquelyIdentified {

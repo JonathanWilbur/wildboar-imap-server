@@ -6,7 +6,7 @@ import { Lexeme } from "./Lexeme";
 import { LexemeType } from "./LexemeType";
 import { Scanner } from "./Scanner";
 import { Server } from "./Server";
-const uuidv4 : () => string = require("uuid/v4");
+import { v4 as uuidv4 } from "uuid";
 
 export
 class Connection implements Temporal, UniquelyIdentified {
