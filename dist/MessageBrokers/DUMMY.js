@@ -7,8 +7,18 @@ class DummyMessageBroker {
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
     }
-    initializeCommandRPCQueue(commandName) { }
-    publishCommand() { return Promise.resolve({}); }
+    async initialize() {
+        return Promise.resolve(true);
+    }
+    initializeCommandRPCQueue(commandName) {
+        return Promise.resolve(true);
+    }
+    publishCommand() {
+        return Promise.resolve({});
+    }
+    publishAuthentication(saslMechanism, message) {
+        return Promise.resolve({});
+    }
     publishEvent(topic, message) { }
     closeConnection() { }
 }

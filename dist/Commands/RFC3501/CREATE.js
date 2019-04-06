@@ -17,7 +17,7 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
         yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
     return;
 }, async (connection, tag, command, args) => {
-    const response = await connection.server.messageBroker.publishCommand("", command, {});
+    const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {});
     if ("created" in response && response["created"])
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
     else

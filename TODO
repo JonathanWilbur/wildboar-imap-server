@@ -55,3 +55,5 @@
 - [ ] Add `capability` field to plugins.
 - [ ] Consider using nameless queues to make the queue list more readable.
 - [ ] Drop capabilities
+- [x] There is a race condition where the constructor of `AMQPMessageBroker` does not finish before `index.ts` uses the message broker.
+- [ ] Convert to using strong types for UUID

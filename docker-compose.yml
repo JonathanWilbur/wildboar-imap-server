@@ -9,8 +9,8 @@ services:
   imap:
     build: .
     container_name: 'imaphost'
-    depends_on:
-      - messagebroker
+    # depends_on:
+    #   - messagebroker
     environment:
       QUEUE_SERVER_HOSTNAME: 'messagebroker'
     hostname: 'imaphost'
@@ -26,6 +26,7 @@ services:
       QUEUE_PROTOCOL: 'DUMMY'
       # The password below is 'oops'.
       DRIVERLESS_AUTHENTICATION_CREDENTIALS: 'jwilbur:3e51e41a6620077a3693048796face0838c5837be2c4f20c78518c38b62f41c31d7845a5bd4b86513b933f7633f2aad7e91409d64b94cfa9fd2464f5c8758f37'
+      IMAP_SERVER_PERMITTED_SASL_MECHANISMS: 'PLAIN DIGEST CRAM-MD5'
     hostname: 'imapdebug'
     image: 'node:11.12.0-alpine'
     ports:

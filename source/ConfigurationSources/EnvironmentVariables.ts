@@ -8,6 +8,10 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();
 
+    public initialize () : Promise<boolean> {
+        return Promise.resolve(true);
+    }
+
     private transformKeyNameToEnvironmentVariableName (key : string) : string {
         return key.toUpperCase().replace(/\./g, "_");
     }
@@ -139,6 +143,14 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
         const env : string | undefined = this.getString("imap.server.greeting");
         if (!env) return DEFAULT_VALUE;
         return env;
+    }
+
+    get imap_server_permitted_sasl_mechanisms () : string[] {
+        const DEFAULT_VALUE : string[] = [ "PLAIN" ];
+        const env : string | undefined = this.getString("imap.server.permitted_sasl_mechanisms");
+        if (!env) return DEFAULT_VALUE;
+        // TODO: Validate SASL Mechanism names.
+        return env.split(" ");
     }
 
     get driverless_authentication_credentials () : { [ username : string ] : string } {

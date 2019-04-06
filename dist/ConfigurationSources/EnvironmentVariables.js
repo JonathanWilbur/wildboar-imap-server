@@ -6,6 +6,9 @@ class EnvironmentVariablesConfigurationSource {
         this.id = `urn:uuid:${uuidv4()}`;
         this.creationTime = new Date();
     }
+    initialize() {
+        return Promise.resolve(true);
+    }
     transformKeyNameToEnvironmentVariableName(key) {
         return key.toUpperCase().replace(/\./g, "_");
     }
@@ -141,6 +144,13 @@ class EnvironmentVariablesConfigurationSource {
         if (!env)
             return DEFAULT_VALUE;
         return env;
+    }
+    get imap_server_permitted_sasl_mechanisms() {
+        const DEFAULT_VALUE = ["PLAIN"];
+        const env = this.getString("imap.server.permitted_sasl_mechanisms");
+        if (!env)
+            return DEFAULT_VALUE;
+        return env.split(" ");
     }
     get driverless_authentication_credentials() {
         const DEFAULT_VALUE = {};
