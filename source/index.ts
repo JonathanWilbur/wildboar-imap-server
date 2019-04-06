@@ -2,7 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 import { CommandPlugin } from "./CommandPlugin";
 import { ConfigurationSource } from "./ConfigurationSource";
+import { ConsoleAndQueueLogger } from "./Loggers/ConsoleAndQueueLogger";
 import { EnvironmentVariablesConfigurationSource } from "./ConfigurationSources/EnvironmentVariables";
+import { Logger } from "./Logger";
 import { MessageBroker } from "./MessageBroker";
 import { Server } from "./Server";
 
@@ -35,20 +37,21 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
     for (let plugin of messageBrokerPluginsIterator) {
         const protocolName : string = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
         messageBrokerProtocols[protocolName] = plugin;
-        console.log(`Found (but not yet loaded) message broker plugin for protocol '${protocolName}'.`);
+        if (console)
+            console.log(`Found (but not yet loaded) message broker plugin for protocol '${protocolName}'.`);
     }
 
     // Initializing the chosen message broker plugin
     const queueProtocol : string = configuration.queue_protocol.toUpperCase();
     if (!(queueProtocol in messageBrokerProtocols)) {
-        console.error(`No message broker plugin is available for the protocol '${queueProtocol}'.`);
-        console.error(`Your choices are: ${Object.keys(messageBrokerProtocols).join(", ")}.`);
+        if (console) console.error(`No message broker plugin is available for the protocol '${queueProtocol}'.`);
+        if (console) console.error(`Your choices are: ${Object.keys(messageBrokerProtocols).join(", ")}.`);
         process.exit(1);
     }
     const messageBroker : MessageBroker = 
         new (require(messageBrokerProtocols[queueProtocol]).default)(configuration);
     await messageBroker.initialize();
-    console.log(`Loaded message broker plugin for protocol '${queueProtocol}'.`);
+    if (console) console.log(`Loaded message broker plugin for protocol '${queueProtocol}'.`);
 
     // Loading the command plugins
     const commandsDirectory : string = path.join(__dirname, "Commands");
@@ -58,7 +61,7 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
         const commandName : string = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
         // TODO: Check that every character is valid for a command.
         plugins[commandName] = require(plugin).default;
-        console.log(`Loaded command plugin for command '${commandName}'.`);
+        if (console) console.log(`Loaded command plugin for command '${commandName}'.`);
     }
 
     /**
@@ -72,11 +75,14 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
     await Promise.all(Object.keys(plugins).map((commandName : string) => {
         return messageBroker.initializeCommandRPCQueue(commandName);
     }));
-    console.log("Initialized all command RPC queues.");
+    if (console) console.log("Initialized all command RPC queues.");
 
     Object.keys(configuration.driverless_authentication_credentials).forEach((username : string) : void => {
-        console.log(`Found credentials for user '${username}' in the driverless authentication database.`);
+        if (console) console.log(`Found credentials for user '${username}' in the driverless authentication database.`);
     });
 
-    const server : Server = new Server(configuration, messageBroker, plugins);
+    const logger : Logger = new ConsoleAndQueueLogger(messageBroker);
+    await logger.initialize();
+
+    const server : Server = new Server(configuration, messageBroker, logger, plugins);
 })();

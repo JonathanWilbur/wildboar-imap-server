@@ -5,9 +5,10 @@ const net = require("net");
 const Connection_1 = require("./Connection");
 const uuid_1 = require("uuid");
 class Server {
-    constructor(configuration, messageBroker, commandPlugins) {
+    constructor(configuration, messageBroker, logger, commandPlugins) {
         this.configuration = configuration;
         this.messageBroker = messageBroker;
+        this.logger = logger;
         this.commandPlugins = commandPlugins;
         this.id = `urn:uuid:${uuid_1.v4()}`;
         this.creationTime = new Date();
@@ -23,11 +24,13 @@ class Server {
         ];
         net.createServer((socket) => {
             const connection = new Connection_1.Connection(this, socket);
-        }).listen(this.configuration.imap_server_tcp_listening_port, this.configuration.imap_server_ip_bind_address, () => { console.log("Listening for connections..."); });
-        process.on('SIGINT', () => {
-            console.log("Interrupted. Shutting down.");
-            this.messageBroker.closeConnection();
-            process.exit();
+        }).listen(this.configuration.imap_server_tcp_listening_port, this.configuration.imap_server_ip_bind_address, () => {
+            this.logger.info({
+                message: "Wildboar IMAP server started listening.",
+                address: this.configuration.imap_server_ip_bind_address,
+                port: this.configuration.imap_server_tcp_listening_port,
+                serverID: this.id
+            });
         });
     }
     static passwordHash(password) {

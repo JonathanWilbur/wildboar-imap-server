@@ -4,7 +4,6 @@ const CommandPlugin_1 = require("../../CommandPlugin");
 const Lexeme_1 = require("../../Lexeme");
 const Server_1 = require("../../Server");
 exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
-    console.log(currentCommand);
     switch (currentCommand.length) {
         case (2): {
             if (scanner.readSpace())
@@ -43,7 +42,9 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
     });
     const username = credentials[0].toString().toLowerCase();
     const password = credentials[1].toString();
-    console.log(`Authenticating with username '${credentials[0].toString()}' and password '${credentials[1].toString()}'.`);
+    connection.server.logger.info({
+        message: `Authenticating with username '${credentials[0].toString()}' and password '${credentials[1].toString()}'.`
+    });
     if (username in connection.server.driverlessAuthenticationDatabase) {
         Server_1.Server.passwordHash(password).then((passhash) => {
             if (connection.server.driverlessAuthenticationDatabase[username] === passhash) {

@@ -53,7 +53,6 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
     }
 
     public async initializeCommandRPCQueue (commandName : string) : Promise<boolean> {
-        // console.log(`initialized for ${this.id}`);
         const responseQueueName : string = `imap.${commandName}.responses-${this.id}`;
         await this.channel.assertQueue(`imap.${commandName}`, { durable: true });
         await this.channel.bindQueue(`imap.${commandName}`, "imap.commands", commandName);
@@ -81,7 +80,6 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
         return new Promise<object>((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response : Message | null) : void => {
                 if (!response) {
-                    console.log(`SASL authentication using mechanism '${saslMechanism}' timed out!`);
                     reject(new Error(`SASL authentication using mechanism '${saslMechanism}' timed out!`));
                     return;
                 }
@@ -120,7 +118,6 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
         return new Promise<object>((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response : Message | null) : void => {
                 if (!response) {
-                    console.log(`IMAP Command '${command}' timed out!`);
                     reject(new Error(`IMAP Command '${command}' timed out!`));
                     return;
                 }

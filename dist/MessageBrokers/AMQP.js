@@ -59,7 +59,6 @@ class AMQPMessageBroker {
         return new Promise((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response) => {
                 if (!response) {
-                    console.log(`SASL authentication using mechanism '${saslMechanism}' timed out!`);
                     reject(new Error(`SASL authentication using mechanism '${saslMechanism}' timed out!`));
                     return;
                 }
@@ -87,7 +86,6 @@ class AMQPMessageBroker {
         return new Promise((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response) => {
                 if (!response) {
-                    console.log(`IMAP Command '${command}' timed out!`);
                     reject(new Error(`IMAP Command '${command}' timed out!`));
                     return;
                 }

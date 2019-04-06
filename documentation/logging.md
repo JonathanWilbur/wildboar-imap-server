@@ -14,3 +14,17 @@
     this string, and only this string, shall comprise the entirety of the text
     that appears on the console for the given event, save for timestamps and
     other metadata.
+
+```
+{
+    topic: "",
+    message: "",
+    severity: "",
+    command: "",
+    subcommand: "",
+    arguments: [],
+    server: "",
+    connection: "",
+    messageQueue: ""
+}
+```

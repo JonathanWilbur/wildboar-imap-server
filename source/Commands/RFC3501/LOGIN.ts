@@ -8,7 +8,6 @@ import { Server } from "../../Server";
 // TODO: Actually implement this.
 export default new CommandPlugin(
     function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
-        console.log(currentCommand);
         switch (currentCommand.length) {
             case (2): {
                 if (scanner.readSpace())
@@ -49,7 +48,9 @@ export default new CommandPlugin(
         });
         const username : string = credentials[0].toString().toLowerCase();
         const password : string = credentials[1].toString();
-        console.log(`Authenticating with username '${credentials[0].toString()}' and password '${credentials[1].toString()}'.`);
+        connection.server.logger.info({
+            message: `Authenticating with username '${credentials[0].toString()}' and password '${credentials[1].toString()}'.`
+        });
         if (username in connection.server.driverlessAuthenticationDatabase) {
             Server.passwordHash(password).then((passhash : string) : void => {
                 if (connection.server.driverlessAuthenticationDatabase[username] === passhash) {

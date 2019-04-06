@@ -57,3 +57,9 @@
 - [ ] Drop capabilities
 - [x] There is a race condition where the constructor of `AMQPMessageBroker` does not finish before `index.ts` uses the message broker.
 - [x] Convert to using strong types for UUID
+- [ ] Cryptographically signed messages?
+- [ ] Graceful Shutdown
+  - [ ] ConfigurationSource
+  - [ ] Logger
+- [ ] Better constructors
+- [ ] Signal handling

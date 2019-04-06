@@ -4,6 +4,7 @@ import { Temporal, UniquelyIdentified } from "wildboar-microservices-ts";
 import { CommandPlugin } from "./CommandPlugin";
 import { ConfigurationSource } from "./ConfigurationSource";
 import { Connection } from "./Connection";
+import { Logger } from "./Logger";
 import { MessageBroker } from "./MessageBroker";
 import { TypedKeyValueStore } from "./TypedKeyValueStore";
 import { v4 as uuidv4 } from "uuid";
@@ -52,6 +53,7 @@ class Server implements Temporal, UniquelyIdentified {
     constructor(
         readonly configuration : TypedKeyValueStore & ConfigurationSource,
         readonly messageBroker : MessageBroker,
+        readonly logger : Logger,
         readonly commandPlugins : { [ commandName : string ] : CommandPlugin }
     ) {
         net.createServer((socket : net.Socket) : void => {
@@ -59,14 +61,15 @@ class Server implements Temporal, UniquelyIdentified {
         }).listen(
             this.configuration.imap_server_tcp_listening_port,
             this.configuration.imap_server_ip_bind_address,
-            () : void => { console.log("Listening for connections..."); }
+            () : void => {
+                this.logger.info({
+                    message: "Wildboar IMAP server started listening.",
+                    address: this.configuration.imap_server_ip_bind_address,
+                    port: this.configuration.imap_server_tcp_listening_port,
+                    serverID: this.id
+                });
+            }
         );
-
-        process.on('SIGINT', () : void => {
-            console.log("Interrupted. Shutting down.");
-            this.messageBroker.closeConnection();
-            process.exit();
-        });
     }
 
     public static passwordHash (password : string) : Promise<string> {

@@ -19,6 +19,10 @@ class Connection implements Temporal, UniquelyIdentified {
     public state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
     public currentCommand : Lexeme[] = [];
 
+    public get socketString () : string {
+        return `${this.socket.remoteFamily}:${this.socket.remoteAddress}:${this.socket.remotePort}`;
+    }
+
     constructor (
         readonly server : Server,
         readonly socket : net.Socket
@@ -72,7 +76,13 @@ class Connection implements Temporal, UniquelyIdentified {
         });
 
         socket.on("close", (had_error : boolean) : void => {
-            console.log(`Bye!`);
+            server.logger.info({
+                topic: "imap.socket.close",
+                message: `Socket for connection ${this.id} closed.`,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser
+            });
         });
 
         this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
@@ -130,7 +140,14 @@ class Connection implements Temporal, UniquelyIdentified {
                         if (nextArgument.done) return;
                         yield nextArgument.value;
                     } else {
-                        // console.log(`Command '${commandName}' not understood ya dingus.`);
+                        this.server.logger.warn({
+                            message: `Command '${commandName}' not understood by this server.`,
+                            topic: "imap.command._unknown",
+                            command: commandName,
+                            socket: this.socket,
+                            connectionID: this.id,
+                            authenticatedUser: this.authenticatedUser
+                        });
                         this.scanner.skipLine();
                         yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
                         // TODO: Simply read until the next newLine, then report the error.
@@ -163,15 +180,25 @@ class Connection implements Temporal, UniquelyIdentified {
                     this.currentCommand
                 );
             } catch (e) {
-                console.log(e); // TODO: Do some better logging than this.
+                this.server.logger.error({
+                    topic: `imap.commands.${commandName}`,
+                    message: e.message,
+                    error: e
+                });
                 this.currentCommand.push(new Lexeme(
                     LexemeType.ERROR,
                     Buffer.from(e.message || "")
                 ));
             }
         } else {
-            console.log(`Command '${commandName}' not understood.`);
-            // TODO: Do something better, such as closing the connection.
+            this.server.logger.warn({
+                message: `Command '${commandName}' not understood by this server.`,
+                topic: "imap.command._unknown",
+                command: commandName,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser
+            });
         }
     }
 

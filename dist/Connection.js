@@ -45,9 +45,18 @@ class Connection {
             }
         });
         socket.on("close", (had_error) => {
-            console.log(`Bye!`);
+            server.logger.info({
+                topic: "imap.socket.close",
+                message: `Socket for connection ${this.id} closed.`,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser
+            });
         });
         this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
+    }
+    get socketString() {
+        return `${this.socket.remoteFamily}:${this.socket.remoteAddress}:${this.socket.remotePort}`;
     }
     *lexemeStream() {
         while (true) {
@@ -98,6 +107,14 @@ class Connection {
                         yield nextArgument.value;
                     }
                     else {
+                        this.server.logger.warn({
+                            message: `Command '${commandName}' not understood by this server.`,
+                            topic: "imap.command._unknown",
+                            command: commandName,
+                            socket: this.socket,
+                            connectionID: this.id,
+                            authenticatedUser: this.authenticatedUser
+                        });
                         this.scanner.skipLine();
                         yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
                     }
@@ -116,12 +133,23 @@ class Connection {
                 commandPlugin.callback(this, this.currentCommand[0].toString(), this.currentCommand[1].toString(), this.currentCommand);
             }
             catch (e) {
-                console.log(e);
+                this.server.logger.error({
+                    topic: `imap.commands.${commandName}`,
+                    message: e.message,
+                    error: e
+                });
                 this.currentCommand.push(new Lexeme_1.Lexeme(0, Buffer.from(e.message || "")));
             }
         }
         else {
-            console.log(`Command '${commandName}' not understood.`);
+            this.server.logger.warn({
+                message: `Command '${commandName}' not understood by this server.`,
+                topic: "imap.command._unknown",
+                command: commandName,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser
+            });
         }
     }
     close() {
