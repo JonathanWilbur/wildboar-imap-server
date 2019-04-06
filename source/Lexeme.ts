@@ -24,7 +24,7 @@ class Lexeme {
                     .replace(/\\\\/g, '\\')
                     .replace(/\\"/g, '"');
             }
-            default: return "";
+            default: return this.token.toString();
         }
     }
 

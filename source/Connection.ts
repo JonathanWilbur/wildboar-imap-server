@@ -68,6 +68,11 @@ class Connection implements Temporal, UniquelyIdentified {
                         this.currentCommand = [];
                         break;
                     }
+                    case (LexemeType.NEWLINE): {
+                        this.currentCommand.push(lexeme);
+                        this.executeCommand();
+                        break;
+                    }
                     default: {
                         this.currentCommand.push(lexeme);
                     }

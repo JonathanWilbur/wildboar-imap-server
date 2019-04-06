@@ -36,9 +36,9 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
     }
 }, (connection, tag, command, args) => {
     const credentials = args.filter((lexeme) => {
-        return (lexeme.type === 8 ||
-            lexeme.type === 9 ||
-            lexeme.type === 11);
+        return (lexeme.type === 9 ||
+            lexeme.type === 10 ||
+            lexeme.type === 12);
     });
     const username = credentials[0].toString().toLowerCase();
     const password = credentials[1].toString();

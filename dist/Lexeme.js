@@ -7,14 +7,14 @@ class Lexeme {
     }
     toString() {
         switch (this.type) {
-            case (4):
-            case (8):
-            case (11):
+            case (5):
+            case (9):
+            case (12):
                 return this.token.toString();
-            case (5): return this.token.toString().toUpperCase();
-            case (6): return "(";
-            case (7): return ")";
-            case (9): {
+            case (6): return this.token.toString().toUpperCase();
+            case (7): return "(";
+            case (8): return ")";
+            case (10): {
                 if (this.token.length <= 2)
                     return "";
                 return this.token
@@ -23,11 +23,11 @@ class Lexeme {
                     .replace(/\\\\/g, '\\')
                     .replace(/\\"/g, '"');
             }
-            default: return "";
+            default: return this.token.toString();
         }
     }
     toLiteralLength() {
-        if (this.type !== 10)
+        if (this.type !== 11)
             throw new Error("Invalid Lexeme type: literal length cannot be parsed.");
         const match = /^\{(\d+)\}\r\n$/.exec(this.token.toString());
         if (!match)

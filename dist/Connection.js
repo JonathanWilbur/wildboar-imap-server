@@ -23,12 +23,12 @@ class Connection {
                         this.currentCommand = [];
                         break;
                     }
-                    case (10): {
+                    case (11): {
                         this.socket.write("+ Ready for literal data.\r\n");
                         this.currentCommand.push(lexeme);
                         break;
                     }
-                    case (11): {
+                    case (12): {
                         this.currentCommand.pop();
                         this.currentCommand.push(lexeme);
                         break;
@@ -36,6 +36,11 @@ class Connection {
                     case (3): {
                         this.executeCommand();
                         this.currentCommand = [];
+                        break;
+                    }
+                    case (4): {
+                        this.currentCommand.push(lexeme);
+                        this.executeCommand();
                         break;
                     }
                     default: {
@@ -70,14 +75,14 @@ class Connection {
             if (!lastLexeme)
                 return;
             switch (lastLexeme.type) {
-                case (4): {
+                case (5): {
                     if (this.scanner.lineReady()) {
                         yield this.scanner.readCommand();
                         continue;
                     }
                     return;
                 }
-                case (10): {
+                case (11): {
                     const literalLength = lastLexeme.toLiteralLength();
                     const literal = this.scanner.readLiteral(literalLength);
                     if (!literal)

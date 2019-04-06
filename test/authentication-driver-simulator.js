@@ -15,6 +15,18 @@ const PASSWORD = "bigboi";
         channel.ack(msg);
 
         const request = JSON.parse(msg.content.toString());
+        if (request.messages.length === 0) {
+            channel.sendToQueue(msg.properties.replyTo,
+                Buffer.from(JSON.stringify({
+                    done: false,
+                    nextChallenge: (Buffer.from("Please present your PLAIN authentication tuple. ([authzid] authcid passwd)")).toString("base64")
+                })), {
+                    correlationId: msg.properties.correlationId,
+                    content_type: "application/json",
+                    content_encoding: "8bit"
+                });
+            return;
+        }
         const triplet = (Buffer.from(request.messages[0], "base64")).toString().split("\x00");
         if (triplet.length !== 3) {
             console.log("Auth was no good.");

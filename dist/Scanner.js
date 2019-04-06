@@ -47,7 +47,7 @@ class Scanner {
         if (!(tag.every(Scanner.isTagChar)))
             throw new Error("Invalid characters in tag.");
         this.scanCursor = (indexOfFirstSpace + ' '.length);
-        return new Lexeme_1.Lexeme(4, tag);
+        return new Lexeme_1.Lexeme(5, tag);
     }
     readCommand() {
         let indexOfEndOfCommand = -1;
@@ -63,7 +63,7 @@ class Scanner {
         if (!(commandName.every(Scanner.isAtomChar)))
             throw new Error("Invalid characters in command name.");
         this.scanCursor = indexOfEndOfCommand;
-        return new Lexeme_1.Lexeme(5, commandName);
+        return new Lexeme_1.Lexeme(6, commandName);
     }
     readAstring() {
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
@@ -109,7 +109,7 @@ class Scanner {
             return null;
         const oldScanCursor = this.scanCursor;
         this.scanCursor = (i + 1);
-        return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        return new Lexeme_1.Lexeme(10, this.receivedData.slice(oldScanCursor, this.scanCursor));
     }
     readAtom() {
         let indexOfEndOfToken = -1;
@@ -123,7 +123,7 @@ class Scanner {
             return null;
         const oldScanCursor = this.scanCursor;
         this.scanCursor = indexOfEndOfToken;
-        return new Lexeme_1.Lexeme(8, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
+        return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
     }
     readLiteralLength() {
         if (this.receivedData[this.scanCursor] !== '{'.charCodeAt(0))
@@ -139,7 +139,7 @@ class Scanner {
         }
         const oldScanCursor = this.scanCursor;
         this.scanCursor = (indexOfEndOfLiteralLength + '}\r\n'.length);
-        return new Lexeme_1.Lexeme(10, this.receivedData.slice(oldScanCursor, (indexOfEndOfLiteralLength + '}\r\n'.length)));
+        return new Lexeme_1.Lexeme(11, this.receivedData.slice(oldScanCursor, (indexOfEndOfLiteralLength + '}\r\n'.length)));
     }
     readList() {
         let indexOfEndOfToken = -1;
@@ -153,7 +153,7 @@ class Scanner {
             throw new Error("No end of list encountered.");
         const oldScanCursor = this.scanCursor;
         this.scanCursor = indexOfEndOfToken;
-        return new Lexeme_1.Lexeme(8, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
+        return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
     }
     readString() {
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
@@ -174,7 +174,39 @@ class Scanner {
             return null;
         const oldScanCursor = this.scanCursor;
         this.scanCursor = (this.scanCursor + length);
-        return new Lexeme_1.Lexeme(11, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        return new Lexeme_1.Lexeme(12, this.receivedData.slice(oldScanCursor, this.scanCursor));
+    }
+    readAbortableBase64() {
+        if (this.receivedData[this.scanCursor] === '*'.charCodeAt(0)) {
+            this.scanCursor++;
+            return new Lexeme_1.Lexeme(21, Buffer.from("*"));
+        }
+        let indexOfEndOfToken = -1;
+        for (let i = this.scanCursor; i < this.receivedData.length; i++) {
+            if (!(Scanner.isBase64Char(this.receivedData[i]))) {
+                indexOfEndOfToken = i;
+                break;
+            }
+        }
+        if (indexOfEndOfToken === -1)
+            return null;
+        const oldScanCursor = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return new Lexeme_1.Lexeme(13, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
+    }
+    readSASLMechanism() {
+        let indexOfEndOfToken = -1;
+        for (let i = this.scanCursor; i < this.receivedData.length; i++) {
+            if (!(Scanner.isSASLMechanismNameChar(this.receivedData[i]))) {
+                indexOfEndOfToken = i;
+                break;
+            }
+        }
+        if (indexOfEndOfToken === -1)
+            return null;
+        const oldScanCursor = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return new Lexeme_1.Lexeme(22, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
     }
     static isChar(char) {
         return (char >= 0x01 && char <= 0x7F);
@@ -209,7 +241,7 @@ class Scanner {
         return (Scanner.isAtomChar(char) || char === "]".charCodeAt(0));
     }
     static isBase64Char(char) {
-        return (Buffer.from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=").indexOf(char) !== -1);
+        return ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=".indexOf(String.fromCharCode(char)) !== -1);
     }
     static isWhitespace(char) {
         return (char === 0x20 || char === '\t'.charCodeAt(0));

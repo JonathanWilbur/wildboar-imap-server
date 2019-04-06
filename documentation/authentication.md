@@ -121,7 +121,7 @@ Continuation response:
 ```
 {
   done: false,
-  responseMessage: "ASweBLJ+ORTqwretJHGOQ/=="
+  nextChallenge: "ASweBLJ+ORTqwretJHGOQ/=="
   messages: [
     "ASweBLJ+ORTqwretJHGOQ/=="
   ]

@@ -104,6 +104,7 @@ class Scanner {
         return this.readAtom();
     }
 
+    // TODO: Make this return a Lexeme, for consistency.
     public readSpace () : boolean {
         if (this.receivedData[this.scanCursor] === ' '.charCodeAt(0)) {
             this.scanCursor++;
@@ -111,6 +112,7 @@ class Scanner {
         } else return false;
     }
 
+    // TODO: Make this return a Lexeme, for consistency.
     public readNewLine () : boolean {
         if (this.scanCursor >= this.receivedData.length - 1) return false;
         if (
@@ -229,6 +231,44 @@ class Scanner {
         );
     }
 
+    public readAbortableBase64 () : Lexeme | null {
+        if (this.receivedData[this.scanCursor] === '*'.charCodeAt(0)) {
+            this.scanCursor++;
+            return new Lexeme(LexemeType.ABORT, Buffer.from("*"));
+        }
+        let indexOfEndOfToken : number = -1;
+        for (let i : number = this.scanCursor; i < this.receivedData.length; i++) {
+            if (!(Scanner.isBase64Char(this.receivedData[i]))) {
+                indexOfEndOfToken = i;
+                break;
+            }
+        }
+        if (indexOfEndOfToken === -1) return null;
+        const oldScanCursor : number = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return new Lexeme(
+            LexemeType.BASE64,
+            this.receivedData.slice(oldScanCursor, indexOfEndOfToken)
+        );
+    }
+
+    public readSASLMechanism () : Lexeme | null {
+        let indexOfEndOfToken : number = -1;
+        for (let i : number = this.scanCursor; i < this.receivedData.length; i++) {
+            if (!(Scanner.isSASLMechanismNameChar(this.receivedData[i]))) {
+                indexOfEndOfToken = i;
+                break;
+            }
+        }
+        if (indexOfEndOfToken === -1) return null;
+        const oldScanCursor : number = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return new Lexeme(
+            LexemeType.SASL_MECHANISM,
+            this.receivedData.slice(oldScanCursor, indexOfEndOfToken)
+        );
+    }
+
     public static isChar (char : number) : boolean {
         return (char >= 0x01 && char <= 0x7F);
     }
@@ -275,7 +315,7 @@ class Scanner {
 
     public static isBase64Char (char : number) : boolean {
         // TODO: Cache this buffer.
-        return (Buffer.from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=").indexOf(char) !== -1);
+        return ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=".indexOf(String.fromCharCode(char)) !== -1);
     }
 
     public static isWhitespace (char : number) : boolean {
