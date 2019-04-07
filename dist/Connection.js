@@ -112,14 +112,6 @@ class Connection {
                         yield nextArgument.value;
                     }
                     else {
-                        this.server.logger.warn({
-                            message: `Command '${commandName}' not understood by this server.`,
-                            topic: "imap.command._unknown",
-                            command: commandName,
-                            socket: this.socket,
-                            connectionID: this.id,
-                            authenticatedUser: this.authenticatedUser
-                        });
                         this.scanner.skipLine();
                         yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
                     }

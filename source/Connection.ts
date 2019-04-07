@@ -145,18 +145,14 @@ class Connection implements Temporal, UniquelyIdentified {
                         if (nextArgument.done) return;
                         yield nextArgument.value;
                     } else {
-                        this.server.logger.warn({
-                            message: `Command '${commandName}' not understood by this server.`,
-                            topic: "imap.command._unknown",
-                            command: commandName,
-                            socket: this.socket,
-                            connectionID: this.id,
-                            authenticatedUser: this.authenticatedUser
-                        });
+                        /*
+                            It is unnecessary to do anything more than skip the
+                            line and yield an `END_OF_COMMAND` Lexeme, because
+                            the actual "command not understood" functionality
+                            should be handled by `executeCommand()`.
+                        */
                         this.scanner.skipLine();
                         yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
-                        // TODO: Simply read until the next newLine, then report the error.
-                        // TODO: Do something better, such as closing the connection.
                     }
                     continue;
                 }
