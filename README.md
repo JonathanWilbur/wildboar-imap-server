@@ -27,7 +27,7 @@ development.
 - [ ] Commands:
   - [ ] RFC 3501
     - [x] CAPABILITY
-    - [ ] NOOP
+    - [x] NOOP
     - [ ] LOGOUT
     - [ ] STARTTLS
     - [x] AUTHENTICATE
@@ -75,7 +75,7 @@ development.
   - [x] Confirm that all integers are safe.
   - [x] Confirm that all command names are atoms.
   - [x] Confirm that there are no duplicate plugins.
-- [ ] Add `capability` field to plugins.
+- [x] Add `capability` field to plugins.
 - [ ] Consider using nameless queues to make the queue list more readable.
 - [x] Make `ConfigurationSource` a class so you can keep the master variables list there.
 
