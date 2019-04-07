@@ -134,6 +134,13 @@ class EnvironmentVariablesConfigurationSource extends ConfigurationSource {
         return env;
     }
 
+    get imap_server_valediction () : string {
+        const DEFAULT_VALUE : string = "Wow. Just when I thought we were friends.";
+        const env : string | undefined = this.getString("imap.server.greeting");
+        if (!env) return DEFAULT_VALUE;
+        return env;
+    }
+
     get imap_server_permitted_sasl_mechanisms () : Set<string> {
         const DEFAULT_VALUE : Set<string> = new Set([ "PLAIN" ]);
         const env : string | undefined = this.getString("imap.server.permitted_sasl_mechanisms");

@@ -28,7 +28,7 @@ development.
   - [ ] RFC 3501
     - [x] CAPABILITY
     - [x] NOOP
-    - [ ] LOGOUT
+    - [x] LOGOUT
     - [ ] STARTTLS
     - [x] AUTHENTICATE
     - [x] LOGIN
@@ -78,6 +78,7 @@ development.
 - [x] Add `capability` field to plugins.
 - [ ] Consider using nameless queues to make the queue list more readable.
 - [x] Make `ConfigurationSource` a class so you can keep the master variables list there.
+- [ ] Create `ok`, `bad`, and `no` methods for replies.
 
 ### Alpha
 
@@ -107,6 +108,10 @@ IMAP Server; only testing is performed and bugs are fixed.
 - [ ] Invalid UTF fuzzing
 - [ ] Performance profiling
 - [ ] Denial of Service testing
+- [ ] Memory leak tests
+  - [ ] Repeatedly connecting and disconnecting
+  - [ ] Running commands repeatedly
+  - [ ] Repeatedly authenticating
 - [ ] 100% JSDoc Documentation
 
 ### Release Candidate
