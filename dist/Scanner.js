@@ -77,34 +77,24 @@ class Scanner {
         return true;
     }
     readTag() {
-        const indexOfFirstSpace = this.receivedData.indexOf(" ".charCodeAt(0), this.scanCursor);
-        if (indexOfFirstSpace === -1)
+        const oldScanCursor = this.scanCursor;
+        if (this.readImplicitlyTerminatedToken(Scanner.isTagChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("Tag cannot be zero-length.");
+            return new Lexeme_1.Lexeme(5, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
             return null;
-        if (this.scanCursor === indexOfFirstSpace)
-            throw new Error("Tag cannot be zero-length.");
-        const tag = this.receivedData.slice(this.scanCursor, indexOfFirstSpace);
-        if (!(tag.every(Scanner.isTagChar)))
-            throw new Error("Invalid characters in tag.");
-        this.scanCursor = (indexOfFirstSpace + ' '.length);
-        return new Lexeme_1.Lexeme(5, tag);
     }
     readCommand() {
-        let indexOfEndOfCommand = -1;
-        for (let i = this.scanCursor; i < this.receivedData.length; i++) {
-            if (!(Scanner.isAtomChar(this.receivedData[i]))) {
-                indexOfEndOfCommand = i;
-                break;
-            }
+        const oldScanCursor = this.scanCursor;
+        if (this.readImplicitlyTerminatedToken(Scanner.isAtomChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("Command cannot be zero-length.");
+            return new Lexeme_1.Lexeme(6, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
-        if (indexOfEndOfCommand === -1)
+        else
             return null;
-        if (this.scanCursor === indexOfEndOfCommand)
-            throw new Error("Command cannot be zero-length.");
-        const commandName = this.receivedData.slice(this.scanCursor, indexOfEndOfCommand);
-        if (!(commandName.every(Scanner.isAtomChar)))
-            throw new Error("Invalid characters in command name.");
-        this.scanCursor = indexOfEndOfCommand;
-        return new Lexeme_1.Lexeme(6, commandName);
     }
     readAstring() {
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
@@ -178,18 +168,14 @@ class Scanner {
             return null;
     }
     readList() {
-        let indexOfEndOfToken = -1;
-        for (let i = this.scanCursor; i < this.receivedData.length; i++) {
-            if (!(Scanner.isListChar(this.receivedData[i]))) {
-                indexOfEndOfToken = i;
-                break;
-            }
-        }
-        if (indexOfEndOfToken === -1)
-            throw new Error("No end of list encountered.");
         const oldScanCursor = this.scanCursor;
-        this.scanCursor = indexOfEndOfToken;
-        return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
+        if (this.readImplicitlyTerminatedToken(Scanner.isListChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("List cannot be zero-length.");
+            return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
     }
     readString() {
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
@@ -216,32 +202,22 @@ class Scanner {
             this.scanCursor++;
             return new Lexeme_1.Lexeme(21, Buffer.from("*"));
         }
-        let indexOfEndOfToken = -1;
-        for (let i = this.scanCursor; i < this.receivedData.length; i++) {
-            if (!(Scanner.isBase64Char(this.receivedData[i]))) {
-                indexOfEndOfToken = i;
-                break;
-            }
-        }
-        if (indexOfEndOfToken === -1)
-            return null;
         const oldScanCursor = this.scanCursor;
-        this.scanCursor = indexOfEndOfToken;
-        return new Lexeme_1.Lexeme(13, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
+        if (this.readImplicitlyTerminatedToken(Scanner.isBase64Char)) {
+            return new Lexeme_1.Lexeme(13, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
     }
     readSASLMechanism() {
-        let indexOfEndOfToken = -1;
-        for (let i = this.scanCursor; i < this.receivedData.length; i++) {
-            if (!(Scanner.isSASLMechanismNameChar(this.receivedData[i]))) {
-                indexOfEndOfToken = i;
-                break;
-            }
-        }
-        if (indexOfEndOfToken === -1)
-            return null;
         const oldScanCursor = this.scanCursor;
-        this.scanCursor = indexOfEndOfToken;
-        return new Lexeme_1.Lexeme(22, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
+        if (this.readImplicitlyTerminatedToken(Scanner.isSASLMechanismNameChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("SASL Mechanism cannot be zero-length.");
+            return new Lexeme_1.Lexeme(22, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
     }
     static isChar(char) {
         return (char >= 0x01 && char <= 0x7F);

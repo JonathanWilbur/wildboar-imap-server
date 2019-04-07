@@ -5,8 +5,10 @@ const Lexeme_1 = require("../../Lexeme");
 exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
     switch (currentCommand.length) {
         case (2): {
-            if (scanner.readSpace())
-                yield new Lexeme_1.Lexeme(2, Buffer.from(" "));
+            const space = scanner.readSpace();
+            if (!space)
+                return;
+            yield space;
         }
         case (3): {
             const saslMechanism = scanner.readSASLMechanism();
@@ -15,8 +17,10 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
             yield saslMechanism;
         }
         case (4): {
-            if (scanner.readNewLine())
-                yield new Lexeme_1.Lexeme(4, Buffer.from("\r\n"));
+            const newline = scanner.readNewLine();
+            if (!newline)
+                return;
+            yield newline;
         }
         default: {
             if (currentCommand[currentCommand.length - 1].type === 4) {

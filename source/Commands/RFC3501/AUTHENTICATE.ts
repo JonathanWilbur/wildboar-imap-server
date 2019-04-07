@@ -3,7 +3,6 @@ import { Connection } from "../../Connection";
 import { Lexeme } from "../../Lexeme";
 import { LexemeType } from "../../LexemeType";
 import { Scanner } from "../../Scanner";
-import { Server } from "../../Server";
 
 /*
 The scanner will scan all the way to the end of the command.
@@ -13,8 +12,9 @@ export default new CommandPlugin(
     function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
         switch (currentCommand.length) {
             case (2): {
-                if (scanner.readSpace())
-                    yield new Lexeme(LexemeType.WHITESPACE, Buffer.from(" "));
+                const space : Lexeme | null = scanner.readSpace();
+                if (!space) return;
+                yield space;
             }
             case (3): {
                 const saslMechanism : Lexeme | null = scanner.readSASLMechanism();
@@ -22,8 +22,9 @@ export default new CommandPlugin(
                 yield saslMechanism;
             }
             case (4): {
-                if (scanner.readNewLine())
-                    yield new Lexeme(LexemeType.NEWLINE, Buffer.from("\r\n"));
+                const newline : Lexeme | null = scanner.readNewLine();
+                if (!newline) return;
+                yield newline;
             }
             default: {
                 if (currentCommand[currentCommand.length - 1].type === LexemeType.NEWLINE) {

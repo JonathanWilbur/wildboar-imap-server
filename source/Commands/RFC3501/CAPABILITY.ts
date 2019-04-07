@@ -1,13 +1,13 @@
 import { CommandPlugin } from "../../CommandPlugin";
 import { Connection } from "../../Connection";
 import { Lexeme } from "../../Lexeme";
-import { LexemeType } from "../../LexemeType";
 import { Scanner } from "../../Scanner";
 
 export default new CommandPlugin(
     function* (scanner : Scanner, currentcommand : Lexeme[]) : IterableIterator<Lexeme> {
-        if (scanner.readNewLine())
-            yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
+        const newline : Lexeme | null = scanner.readCommandTerminatingNewLine();
+        if (!newline) return;
+        yield newline;
         return;
     },
     (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {

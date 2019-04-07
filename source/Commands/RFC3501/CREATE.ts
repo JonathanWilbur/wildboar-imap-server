@@ -1,22 +1,23 @@
 import { CommandPlugin } from "../../CommandPlugin";
 import { Connection } from "../../Connection";
 import { Lexeme } from "../../Lexeme";
-import { LexemeType } from "../../LexemeType";
 import { Scanner } from "../../Scanner";
 
 export default new CommandPlugin(
     function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
         if (currentCommand.length <= 2) {
-            if (scanner.readSpace())
-                yield new Lexeme(LexemeType.WHITESPACE, Buffer.from(" "));
+            const space : Lexeme | null = scanner.readSpace();
+            if (!space) return;
+            yield space;
         }
         if (currentCommand.length <= 3) {
             const mailboxName : Lexeme | null = scanner.readAstring();
             if (!mailboxName) return;
             yield mailboxName;
         }
-        if (scanner.readNewLine())
-            yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
+        const newline : Lexeme | null = scanner.readCommandTerminatingNewLine();
+        if (!newline) return;
+        yield newline;
         return;
     },
     async (connection : Connection, tag : string, command : string, args : Lexeme[]) => {

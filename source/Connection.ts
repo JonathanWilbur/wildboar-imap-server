@@ -80,13 +80,14 @@ class Connection implements Temporal, UniquelyIdentified {
             }
         });
 
-        socket.on("close", (had_error : boolean) : void => {
+        socket.on("close", (hadError : boolean) : void => {
             server.logger.info({
                 topic: "imap.socket.close",
                 message: `Socket for connection ${this.id} closed.`,
                 socket: this.socket,
                 connectionID: this.id,
-                authenticatedUser: this.authenticatedUser
+                authenticatedUser: this.authenticatedUser,
+                hadError: hadError
             });
         });
 
@@ -110,6 +111,7 @@ class Connection implements Temporal, UniquelyIdentified {
             if (this.currentCommand.length === 0 && this.scanner.lineReady()) {
                 const tag : Lexeme | null = this.scanner.readTag();
                 if (!tag) return;
+                this.scanner.readSpace();
                 yield tag;
             }
             const lastLexeme : Lexeme = this.currentCommand[this.currentCommand.length - 1];
@@ -133,8 +135,10 @@ class Connection implements Temporal, UniquelyIdentified {
                 }
                 case (LexemeType.END_OF_COMMAND): {
                     if (this.scanner.lineReady()) {
+                        // REVIEW: Is there a more elegant way to avoid repeating yourself?
                         const tag : Lexeme | null = this.scanner.readTag();
                         if (!tag) return;
+                        this.scanner.readSpace();
                         yield tag;
                         continue;
                     } else return;

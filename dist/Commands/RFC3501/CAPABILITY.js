@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
-const Lexeme_1 = require("../../Lexeme");
 exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentcommand) {
-    if (scanner.readNewLine())
-        yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
+    const newline = scanner.readCommandTerminatingNewLine();
+    if (!newline)
+        return;
+    yield newline;
     return;
 }, (connection, tag, command, args) => {
     connection.socket.write(`* ${command} ${connection.server.capabilities.join(" ")}\r\n`);

@@ -49,13 +49,14 @@ class Connection {
                 }
             }
         });
-        socket.on("close", (had_error) => {
+        socket.on("close", (hadError) => {
             server.logger.info({
                 topic: "imap.socket.close",
                 message: `Socket for connection ${this.id} closed.`,
                 socket: this.socket,
                 connectionID: this.id,
-                authenticatedUser: this.authenticatedUser
+                authenticatedUser: this.authenticatedUser,
+                hadError: hadError
             });
         });
         this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
@@ -73,6 +74,7 @@ class Connection {
                 const tag = this.scanner.readTag();
                 if (!tag)
                     return;
+                this.scanner.readSpace();
                 yield tag;
             }
             const lastLexeme = this.currentCommand[this.currentCommand.length - 1];
@@ -102,6 +104,7 @@ class Connection {
                         const tag = this.scanner.readTag();
                         if (!tag)
                             return;
+                        this.scanner.readSpace();
                         yield tag;
                         continue;
                     }
