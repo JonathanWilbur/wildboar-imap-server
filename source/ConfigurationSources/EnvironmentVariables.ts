@@ -16,46 +16,56 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
         return key.toUpperCase().replace(/\./g, "_");
     }
 
-    public getBoolean(key : string) : boolean | undefined {
-        if (key.length === 0) return undefined;
-        const environmentVariableName : string =
-            this.transformKeyNameToEnvironmentVariableName(key);
-        const environmentVariable : string | undefined
-            = (environmentVariableName in process.env ?
-                process.env[environmentVariableName] : undefined);
-        if (!environmentVariable) return undefined;
-        if (/^\s*True\s*$/i.test(environmentVariable)) return true;
-        if (/^\s*False\s*$/i.test(environmentVariable)) return false;
-        if (/^\s*Yes\s*$/i.test(environmentVariable)) return true;
-        if (/^\s*No\s*$/i.test(environmentVariable)) return false;
-        if (/^\s*T\s*$/i.test(environmentVariable)) return true;
-        if (/^\s*F\s*$/i.test(environmentVariable)) return false;
-        if (/^\s*Y\s*$/i.test(environmentVariable)) return true;
-        if (/^\s*N\s*$/i.test(environmentVariable)) return false;
-        if (/^\s*1\s*$/i.test(environmentVariable)) return true;
-        if (/^\s*0\s*$/i.test(environmentVariable)) return false;
-        if (/^\s*\+\s*$/i.test(environmentVariable)) return true;
-        if (/^\s*\-\s*$/i.test(environmentVariable)) return false;
+    public static convertStringToBoolean (str : string) : boolean | undefined {
+        if (/^\s*True\s*$/i.test(str)) return true;
+        if (/^\s*False\s*$/i.test(str)) return false;
+        if (/^\s*Yes\s*$/i.test(str)) return true;
+        if (/^\s*No\s*$/i.test(str)) return false;
+        if (/^\s*T\s*$/i.test(str)) return true;
+        if (/^\s*F\s*$/i.test(str)) return false;
+        if (/^\s*Y\s*$/i.test(str)) return true;
+        if (/^\s*N\s*$/i.test(str)) return false;
+        if (/^\s*1\s*$/i.test(str)) return true;
+        if (/^\s*0\s*$/i.test(str)) return false;
+        if (/^\s*\+\s*$/i.test(str)) return true;
+        if (/^\s*\-\s*$/i.test(str)) return false;
         return undefined;
     }
 
-    // TODO: Check for NaN, Infinity, etc.
-    public getInteger(key : string) : number | undefined {
-        if (key.length === 0) return undefined;
-        const environmentVariableName : string =
-            this.transformKeyNameToEnvironmentVariableName(key);
-        const environmentVariable : string | undefined
-            = (environmentVariableName in process.env ?
-                process.env[environmentVariableName] : undefined);
-        if (!environmentVariable) return undefined;
+    public static convertStringToInteger (str : string) : number | undefined {
         try {
-            return Number(environmentVariable);
+            const ret : number = Number.parseInt(str);
+            if (Number.isNaN(ret)) return undefined;
+            if (!Number.isSafeInteger(ret)) return undefined;
+            return ret;
         } catch (e) {
             return undefined;
         }
     }
 
-    public getString(key : string) : string | undefined {
+    public getBoolean (key : string) : boolean | undefined {
+        if (key.length === 0) return undefined;
+        const environmentVariableName : string =
+            this.transformKeyNameToEnvironmentVariableName(key);
+        const environmentVariable : string | undefined
+            = (environmentVariableName in process.env ?
+                process.env[environmentVariableName] : undefined);
+        if (!environmentVariable) return undefined;
+        return EnvironmentVariablesConfigurationSource.convertStringToBoolean(environmentVariable);
+    }
+
+    public getInteger (key : string) : number | undefined {
+        if (key.length === 0) return undefined;
+        const environmentVariableName : string =
+            this.transformKeyNameToEnvironmentVariableName(key);
+        const environmentVariable : string | undefined
+            = (environmentVariableName in process.env ?
+                process.env[environmentVariableName] : undefined);
+        if (!environmentVariable) return undefined;
+        return EnvironmentVariablesConfigurationSource.convertStringToInteger(environmentVariable);
+    }
+
+    public getString (key : string) : string | undefined {
         if (key.length === 0) return undefined;
         const environmentVariableName : string =
             this.transformKeyNameToEnvironmentVariableName(key);

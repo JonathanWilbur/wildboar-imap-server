@@ -12,6 +12,46 @@ class EnvironmentVariablesConfigurationSource {
     transformKeyNameToEnvironmentVariableName(key) {
         return key.toUpperCase().replace(/\./g, "_");
     }
+    static convertStringToBoolean(str) {
+        if (/^\s*True\s*$/i.test(str))
+            return true;
+        if (/^\s*False\s*$/i.test(str))
+            return false;
+        if (/^\s*Yes\s*$/i.test(str))
+            return true;
+        if (/^\s*No\s*$/i.test(str))
+            return false;
+        if (/^\s*T\s*$/i.test(str))
+            return true;
+        if (/^\s*F\s*$/i.test(str))
+            return false;
+        if (/^\s*Y\s*$/i.test(str))
+            return true;
+        if (/^\s*N\s*$/i.test(str))
+            return false;
+        if (/^\s*1\s*$/i.test(str))
+            return true;
+        if (/^\s*0\s*$/i.test(str))
+            return false;
+        if (/^\s*\+\s*$/i.test(str))
+            return true;
+        if (/^\s*\-\s*$/i.test(str))
+            return false;
+        return undefined;
+    }
+    static convertStringToInteger(str) {
+        try {
+            const ret = Number.parseInt(str);
+            if (Number.isNaN(ret))
+                return undefined;
+            if (!Number.isSafeInteger(ret))
+                return undefined;
+            return ret;
+        }
+        catch (e) {
+            return undefined;
+        }
+    }
     getBoolean(key) {
         if (key.length === 0)
             return undefined;
@@ -20,31 +60,7 @@ class EnvironmentVariablesConfigurationSource {
             process.env[environmentVariableName] : undefined);
         if (!environmentVariable)
             return undefined;
-        if (/^\s*True\s*$/i.test(environmentVariable))
-            return true;
-        if (/^\s*False\s*$/i.test(environmentVariable))
-            return false;
-        if (/^\s*Yes\s*$/i.test(environmentVariable))
-            return true;
-        if (/^\s*No\s*$/i.test(environmentVariable))
-            return false;
-        if (/^\s*T\s*$/i.test(environmentVariable))
-            return true;
-        if (/^\s*F\s*$/i.test(environmentVariable))
-            return false;
-        if (/^\s*Y\s*$/i.test(environmentVariable))
-            return true;
-        if (/^\s*N\s*$/i.test(environmentVariable))
-            return false;
-        if (/^\s*1\s*$/i.test(environmentVariable))
-            return true;
-        if (/^\s*0\s*$/i.test(environmentVariable))
-            return false;
-        if (/^\s*\+\s*$/i.test(environmentVariable))
-            return true;
-        if (/^\s*\-\s*$/i.test(environmentVariable))
-            return false;
-        return undefined;
+        return EnvironmentVariablesConfigurationSource.convertStringToBoolean(environmentVariable);
     }
     getInteger(key) {
         if (key.length === 0)
@@ -54,12 +70,7 @@ class EnvironmentVariablesConfigurationSource {
             process.env[environmentVariableName] : undefined);
         if (!environmentVariable)
             return undefined;
-        try {
-            return Number(environmentVariable);
-        }
-        catch (e) {
-            return undefined;
-        }
+        return EnvironmentVariablesConfigurationSource.convertStringToInteger(environmentVariable);
     }
     getString(key) {
         if (key.length === 0)

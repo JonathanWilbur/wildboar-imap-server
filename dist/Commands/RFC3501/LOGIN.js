@@ -30,9 +30,8 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
                 yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
             break;
         }
-        default: {
-            yield new Lexeme_1.Lexeme(0, Buffer.from("Too many arguments."));
-        }
+        default:
+            throw new Error("Too many arguments supplied to the LOGIN command.");
     }
 }, (connection, tag, command, args) => {
     const credentials = args.filter((lexeme) => {

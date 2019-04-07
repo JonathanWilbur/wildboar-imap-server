@@ -31,10 +31,8 @@ export default new CommandPlugin(
                     yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
                 break;
             }
-            default: {
-                yield new Lexeme(LexemeType.ERROR, Buffer.from("Too many arguments."));
-                // TODO: Report an error.
-            }
+            default:
+                throw new Error("Too many arguments supplied to the LOGIN command.");
         }
     },
     (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {
@@ -75,7 +73,8 @@ export default new CommandPlugin(
                         connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
                     }
                 } else {
-                    // TODO: Loop.
+                    // This is not supposed to happen, because the PLAIN
+                    // authentication mechanism only uses one message.
                     connection.socket.write(`${tag} NO ${command} Unexpected error.\r\n`);
                 }
             });
