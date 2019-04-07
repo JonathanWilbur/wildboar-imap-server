@@ -16,5 +16,6 @@ interface ConfigurationSource extends Temporal, TypedKeyValueStore, UniquelyIden
     queue_server_tcp_listening_port : number;
     queue_username : string;
     queue_password : string;
+    queue_rpc_message_timeout_in_milliseconds : number;
     driverless_authentication_credentials : { [ username : string ] : string };
 }

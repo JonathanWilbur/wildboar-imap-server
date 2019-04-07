@@ -45,7 +45,10 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
         // TODO: Make the response queue noAck. I think the @types library is missing that property.
         await this.channel.assertQueue(authenticationResponseQueueName, { exclusive: true });
         await this.channel.consume(authenticationResponseQueueName, (message : ConsumeMessage | null) : void => {
-            if (!message) return; // TODO: Do something more informative here.
+            // From the AMQPlib documentation:
+            // "If the consumer is cancelled by RabbitMQ, the message callback will be invoked with null."
+            // (http://www.squaremobius.net/amqp.node/channel_api.html#channel_consume)
+            if (!message) return;
             this.responseEmitter.emit(message.properties.correlationId, message);
         }, {
             noAck: true
@@ -60,7 +63,10 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
         // TODO: Make the response queue noAck. I think the @types library is missing that property.
         await this.channel.assertQueue(responseQueueName, { exclusive: true });
         await this.channel.consume(responseQueueName, (message : ConsumeMessage | null) : void => {
-            if (!message) return; // TODO: Do something more informative here.
+            // From the AMQPlib documentation:
+            // "If the consumer is cancelled by RabbitMQ, the message callback will be invoked with null."
+            // (http://www.squaremobius.net/amqp.node/channel_api.html#channel_consume)
+            if (!message) return;
             this.responseEmitter.emit(message.properties.correlationId, message);
         }, {
             noAck: true
@@ -68,7 +74,6 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
         return Promise.resolve(true);
     }
     
-    // TODO: This code is very similar to publishCommand. Attempt to deduplicate.
     public publishAuthentication (saslMechanism : string, message : AuthenticationRequest) : Promise<object> {
         const correlationId : string = `urn:uuid:${uuidv4()}`;
 
@@ -76,7 +81,7 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
         // if the authenticator misses some authentication requests.
         setTimeout(() => {
             this.responseEmitter.emit(correlationId, null);
-        }, 10000); // TODO: Change this to a configurable timeout.
+        }, this.configuration.queue_rpc_message_timeout_in_milliseconds);
 
         return new Promise<object>((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response : Message | null) : void => {
@@ -101,7 +106,7 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
                 correlationId: correlationId,
                 contentType: "application/json",
                 contentEncoding: "8bit",
-                // expiration: 10000, // TODO: Make this a configurable expiration.
+                expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
                 replyTo: `authentication.responses-${this.id}`
             });
         });
@@ -114,7 +119,7 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
         // if the authenticator misses some authentication requests.
         setTimeout(() => {
             this.responseEmitter.emit(correlationId, null);
-        }, 10000); // TODO: Change this to a configurable timeout.
+        }, this.configuration.queue_rpc_message_timeout_in_milliseconds);
 
         return new Promise<object>((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response : Message | null) : void => {
@@ -139,7 +144,7 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
                 correlationId: correlationId,
                 contentType: "application/json",
                 contentEncoding: "8bit",
-                // expiration: 10000, // TODO: Make this a configurable expiration.
+                expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
                 replyTo: `imap.${command}.responses-${this.id}`
             });
         });

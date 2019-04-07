@@ -177,6 +177,13 @@ class EnvironmentVariablesConfigurationSource {
             return true;
         }));
     }
+    get queue_rpc_message_timeout_in_milliseconds() {
+        const DEFAULT_VALUE = 10000;
+        const env = this.getInteger("queue.rpc_message_timeout_in_milliseconds");
+        if (!env)
+            return DEFAULT_VALUE;
+        return env;
+    }
     get driverless_authentication_credentials() {
         const DEFAULT_VALUE = {};
         const env = this.getString("driverless.authentication.credentials");

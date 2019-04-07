@@ -55,7 +55,7 @@ class AMQPMessageBroker {
         const correlationId = `urn:uuid:${uuid_1.v4()}`;
         setTimeout(() => {
             this.responseEmitter.emit(correlationId, null);
-        }, 10000);
+        }, this.configuration.queue_rpc_message_timeout_in_milliseconds);
         return new Promise((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response) => {
                 if (!response) {
@@ -74,6 +74,7 @@ class AMQPMessageBroker {
                 correlationId: correlationId,
                 contentType: "application/json",
                 contentEncoding: "8bit",
+                expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
                 replyTo: `authentication.responses-${this.id}`
             });
         });
@@ -82,7 +83,7 @@ class AMQPMessageBroker {
         const correlationId = `urn:uuid:${uuid_1.v4()}`;
         setTimeout(() => {
             this.responseEmitter.emit(correlationId, null);
-        }, 10000);
+        }, this.configuration.queue_rpc_message_timeout_in_milliseconds);
         return new Promise((resolve, reject) => {
             this.responseEmitter.once(correlationId, (response) => {
                 if (!response) {
@@ -101,6 +102,7 @@ class AMQPMessageBroker {
                 correlationId: correlationId,
                 contentType: "application/json",
                 contentEncoding: "8bit",
+                expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
                 replyTo: `imap.${command}.responses-${this.id}`
             });
         });

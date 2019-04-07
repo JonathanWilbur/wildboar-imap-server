@@ -184,6 +184,13 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
             }));
     }
 
+    get queue_rpc_message_timeout_in_milliseconds () : number {
+        const DEFAULT_VALUE : number = 10000;
+        const env : number | undefined = this.getInteger("queue.rpc_message_timeout_in_milliseconds");
+        if (!env) return DEFAULT_VALUE;
+        return env;
+    }
+
     get driverless_authentication_credentials () : { [ username : string ] : string } {
         const DEFAULT_VALUE : { [ username : string ] : string } = {};
         const env : string | undefined = this.getString("driverless.authentication.credentials");

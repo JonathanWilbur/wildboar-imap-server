@@ -64,3 +64,4 @@
 - [ ] Better constructors
 - [ ] Signal handling
 - [ ] Use `Set` instead of arrays where uniqueness is a requirement.
+- [ ] Add `isSet` to ConfigurationSource.
