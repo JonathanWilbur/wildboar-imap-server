@@ -70,10 +70,7 @@ development.
   - [ ] Average TCP data chunk size (to prevent slow loris attacks)
   - [ ] Average line length.
   - [ ] Authentication attempts per hour should be handled by the authorizer.
-- [ ] Options:
-  - [ ] ! Simple Authorization
-- [ ] Address Potential Concurrency Issues:
-  - [ ] Multiple socket writes at the same time.
+- [x] Simple Authorization
 - [x] Start-up checks:
   - [x] Confirm that all integers are safe.
   - [x] Confirm that all command names are atoms.
@@ -94,6 +91,9 @@ development.
 - [ ] Check for correct state at the start of commands.
 - [ ] Check `toString()` occurrences for UTF decoding safety.
   - [ ] Flag safe ones with #UTF_SAFE comments.
+- [ ] Support `SEARCH` tricks
+- [ ] Address Potential Concurrency Issues:
+  - [ ] Multiple socket writes at the same time.
 
 ### Beta
 
@@ -108,6 +108,7 @@ IMAP Server; only testing is performed and bugs are fixed.
 - [ ] Invalid UTF fuzzing
 - [ ] Performance profiling
 - [ ] Denial of Service testing
+- [ ] 100% JSDoc Documentation
 
 ### Release Candidate
 
@@ -115,6 +116,9 @@ Once the following requirements are met, Wildboar IMAP Server version 1.0.0
 will be released.
 
 ### Future Features
+
+The following features will be added some time after the release of version
+1.0.0.
 
 - [ ] Visual Studio Solution
 - [ ] Bazel build Configuration

@@ -171,4 +171,11 @@ class EnvironmentVariablesConfigurationSource extends ConfigurationSource {
         return ret;
     }
 
+    get simple_authorization () : boolean {
+        const DEFAULT_VALUE : boolean = false;
+        const env : boolean | undefined = this.getBoolean("imap.server.simple_authorization");
+        if (!env) return DEFAULT_VALUE;
+        return env;
+    }
+
 }

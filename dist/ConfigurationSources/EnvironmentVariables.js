@@ -160,6 +160,13 @@ class EnvironmentVariablesConfigurationSource extends ConfigurationSource_1.Conf
         });
         return ret;
     }
+    get simple_authorization() {
+        const DEFAULT_VALUE = false;
+        const env = this.getBoolean("imap.server.simple_authorization");
+        if (!env)
+            return DEFAULT_VALUE;
+        return env;
+    }
 }
 exports.EnvironmentVariablesConfigurationSource = EnvironmentVariablesConfigurationSource;
 //# sourceMappingURL=EnvironmentVariables.js.map

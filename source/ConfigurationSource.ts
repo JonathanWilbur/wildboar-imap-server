@@ -44,6 +44,7 @@ abstract class ConfigurationSource implements Temporal, TypedKeyValueStore, Uniq
     public abstract queue_password : string;
     public abstract queue_rpc_message_timeout_in_milliseconds : number;
     public abstract driverless_authentication_credentials : { [ username : string ] : string };
+    public abstract simple_authorization : boolean;
 
     public static convertStringToBoolean (str : string) : boolean | undefined {
         if (/^\s*True\s*$/i.test(str)) return true;
