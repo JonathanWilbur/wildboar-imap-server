@@ -170,8 +170,8 @@ class EnvironmentVariablesConfigurationSource {
         const env = this.getString("imap.server.permitted_sasl_mechanisms");
         if (!env)
             return DEFAULT_VALUE;
-        const ret = env.split(" ");
-        return new Set(ret
+        return new Set(env
+            .split(" ")
             .map((mechanism) => mechanism.toUpperCase())
             .filter((mechanism) => {
             if (!(Buffer.from(mechanism))

@@ -177,15 +177,15 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
         const DEFAULT_VALUE : Set<string> = new Set([ "PLAIN" ]);
         const env : string | undefined = this.getString("imap.server.permitted_sasl_mechanisms");
         if (!env) return DEFAULT_VALUE;
-        const ret : string[] = env.split(" ");
-        return new Set(ret
+        return new Set(env
+            .split(" ")
             .map((mechanism : string) : string => mechanism.toUpperCase())
             .filter((mechanism : string) : boolean => {
                 if (!(Buffer.from(mechanism))
                 .every(EnvironmentVariablesConfigurationSource.isSASLMechanismNameChar))
                     return false;
                 return true;
-            }));
+        }));
     }
 
     get queue_rpc_message_timeout_in_milliseconds () : number {

@@ -10,9 +10,9 @@ import { Scanner } from "./Scanner";
 import { Server } from "./Server";
 
 function *pluginIterator (directoryName : string) : IterableIterator<string> {
-    const entries : string[] = fs.readdirSync(directoryName, { encoding: "utf8" });
-    for (let i : number = 0; i < entries.length; i++) {
-        const fullEntryPath : string = path.join(directoryName, entries[i]);
+    const directorySet : Set<string> = new Set<string>(fs.readdirSync(directoryName, { encoding: "utf8" }));
+    for (let entry of directorySet.values()) {
+        const fullEntryPath : string = path.join(directoryName, entry);
         const stat : fs.Stats = fs.statSync(fullEntryPath);
         if (stat.isDirectory()) {
             const subdirectory = pluginIterator(fullEntryPath);
@@ -25,8 +25,6 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
             yield fullEntryPath;
     }
 }
-
-process.stdin.resume(); // REVIEW: Is this necessary?
 
 (async () => {
     const configuration : ConfigurationSource =

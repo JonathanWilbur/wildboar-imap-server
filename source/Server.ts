@@ -34,19 +34,17 @@ class Server implements Temporal, UniquelyIdentified {
     public static driverlessAuthenticationDesiredHashLengthInBytes = 64;
     public static driverlessAuthenticationKeyedHMACAlgorithm : string = "sha512";
 
-    // TODO: Make this a Set
-    public readonly supportedSASLAuthenticationMechanisms : string[] = [
+    public readonly supportedSASLAuthenticationMechanisms : Set<string> = new Set<string>([
         "PLAIN"
-    ];
+    ]);
 
-    // TODO: Make this a Set
-    public readonly capabilities : string[] = [
+    public readonly capabilities : Set<string> = new Set<string>([
         // These are always required, per RFC 3501, Section 7.2.1.
         "IMAP4rev1",
         "STARTTLS",
         "LOGINDISABLED",
         "AUTH=PLAIN"
-    ];
+    ]);
 
     constructor(
         readonly configuration : TypedKeyValueStore & ConfigurationSource,

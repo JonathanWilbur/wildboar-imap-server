@@ -57,19 +57,12 @@ development.
       - [ ] Queue can be reached.
       - [ ] Configuration source can be reached.
       - [ ] Listening on socket.
-- [ ] ! Graceful Shutdown
-  - [ ] ! ConfigurationSource
-  - [ ] ! Logger
-- [ ] ! Signal handling
-- [ ] ! Use `Set` instead of arrays where uniqueness is a requirement. (Check for string[])
+- [x] Graceful Shutdown
 - [ ] ! Add `isSet` to ConfigurationSource.
 - [ ] Healthcheck tool
 - [ ] ! Startup validation.
-- [ ] ! Check for correct state at the start of commands.
 - [ ] Use a `sensitiveCommandRunning` flag to prevent race conditions when a
   connection attempts two `APPEND`s at once, for instance.
-- [ ] ! Check `toString()` occurrences for UTF decoding safety.
-  - [ ] Flag safe ones with #UTF_SAFE comments.
 - [ ] Limit everything:
   - [ ] Maximum commands per minute.
   - [ ] Time since last command.
@@ -97,6 +90,10 @@ development.
 
 - [ ] AWS SQS message broker support
 - [ ] Update dependencies
+- [ ] Use `Set` instead of arrays where uniqueness is a requirement. (Check for string[])
+- [ ] Check for correct state at the start of commands.
+- [ ] Check `toString()` occurrences for UTF decoding safety.
+  - [ ] Flag safe ones with #UTF_SAFE comments.
 
 ### Beta
 

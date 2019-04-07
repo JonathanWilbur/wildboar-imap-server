@@ -7,9 +7,9 @@ const EnvironmentVariables_1 = require("./ConfigurationSources/EnvironmentVariab
 const Scanner_1 = require("./Scanner");
 const Server_1 = require("./Server");
 function* pluginIterator(directoryName) {
-    const entries = fs.readdirSync(directoryName, { encoding: "utf8" });
-    for (let i = 0; i < entries.length; i++) {
-        const fullEntryPath = path.join(directoryName, entries[i]);
+    const directorySet = new Set(fs.readdirSync(directoryName, { encoding: "utf8" }));
+    for (let entry of directorySet.values()) {
+        const fullEntryPath = path.join(directoryName, entry);
         const stat = fs.statSync(fullEntryPath);
         if (stat.isDirectory()) {
             const subdirectory = pluginIterator(fullEntryPath);
