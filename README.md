@@ -1,4 +1,4 @@
-# IMAPv4r1 Library in TypeScript
+# Wildboar IMAP Server
 
 * Author: [Jonathan M. Wilbur](https://jonathan.wilbur.space) <[jonathan@wilbur.space](mailto:jonathan@wilbur.space)>
 * Copyright Year: 2019
@@ -6,7 +6,7 @@
 
 Build by running `tsc` in the root directory.
 
-## Development
+## Usage
 
 ### Testing
 
@@ -16,3 +16,113 @@ Run `npm run-script test`.
 
 You can debug easily in VS Code. For some reason, breakpoints do not appear to
 work in `index.ts`. 
+
+## Development
+
+### Pre-Alpha
+
+Once the following requirements are met, Wildboar IMAP Server moves into Alpha
+development.
+
+- [ ] Commands:
+  - [ ] RFC 3501
+    - [x] CAPABILITY
+    - [ ] NOOP
+    - [ ] LOGOUT
+    - [ ] STARTTLS
+    - [x] AUTHENTICATE
+    - [x] LOGIN
+    - [ ] SELECT
+    - [ ] EXAMINE
+    - [x] CREATE
+    - [ ] DELETE
+    - [ ] RENAME
+    - [ ] SUBSCRIBE
+    - [ ] UNSUBSCRIBE
+    - [ ] LIST
+    - [ ] LSUB
+    - [ ] STATUS ("STATUS" SP mailbox SP "(" status-att *(SP status-att) ")") (status-att = "MESSAGES" / "RECENT" / "UIDNEXT" / "UIDVALIDITY" / "UNSEEN")
+    - [ ] APPEND (hard)
+    - [ ] CHECK
+    - [ ] CLOSE
+    - [ ] EXPUNGE
+    - [ ] SEARCH (very hard) (And search tricks)
+    - [ ] FETCH (hard)
+    - [ ] STORE (medium)
+    - [ ] COPY (medium)
+    - [ ] UID (medium)
+  - [ ] Custom commands:
+    - [ ] INFO / STATISTICS
+    - [ ] HEALTHCHECK
+      - [ ] Queue can be reached.
+      - [ ] Configuration source can be reached.
+      - [ ] Listening on socket.
+- [ ] ! Graceful Shutdown
+  - [ ] ! ConfigurationSource
+  - [ ] ! Logger
+- [ ] ! Signal handling
+- [ ] ! Use `Set` instead of arrays where uniqueness is a requirement. (Check for string[])
+- [ ] ! Add `isSet` to ConfigurationSource.
+- [ ] Healthcheck tool
+- [ ] ! Startup validation.
+- [ ] ! Check for correct state at the start of commands.
+- [ ] Use a `sensitiveCommandRunning` flag to prevent race conditions when a
+  connection attempts two `APPEND`s at once, for instance.
+- [ ] ! Check `toString()` occurrences for UTF decoding safety.
+  - [ ] Flag safe ones with #UTF_SAFE comments.
+- [ ] Limit everything:
+  - [ ] Maximum commands per minute.
+  - [ ] Time since last command.
+  - [x] Maximum command lexemes.
+  - [ ] Errors per minute.
+  - [ ] Average TCP data chunk size (to prevent slow loris attacks)
+  - [ ] Average line length.
+  - [ ] Authentication attempts per hour should be handled by the authorizer.
+- [ ] Options:
+  - [ ] ! Simple Authorization
+- [ ] Address Potential Concurrency Issues:
+  - [ ] Multiple socket writes at the same time.
+- [ ] Start-up checks:
+  - [ ] Confirm that all integers are safe.
+  - [ ] Confirm that all command names are atoms.
+  - [ ] Confirm that there are no duplicate plugins.
+- [ ] Make plugins follow serverless handler signatures.
+- [ ] Add `capability` field to plugins.
+- [ ] Consider using nameless queues to make the queue list more readable.
+
+### Alpha
+
+Once the following requirements are met, Wildboar IMAP Server moves into Beta
+development.
+
+- [ ] AWS SQS message broker support
+- [ ] Update dependencies
+
+### Beta
+
+Once the following requirements are met, Wildboar IMAP Server moves into
+Release Candidate development. In Beta, no new features are added to Wildboar
+IMAP Server; only testing is performed and bugs are fixed.
+
+- [ ] Static analysis
+- [ ] Fuzz testing
+- [ ] Achieve 100% test coverage
+- [ ] Resilience testing with Chaos Monkey
+- [ ] Invalid UTF fuzzing
+- [ ] Performance profiling
+- [ ] Denial of Service testing
+
+### Release Candidate
+
+Once the following requirements are met, Wildboar IMAP Server version 1.0.0
+will be released.
+
+### Future Features
+
+- [ ] Visual Studio Solution
+- [ ] Bazel build Configuration
+- [ ] Sentry Configuration
+- [ ] NPM Tasks
+- [ ] Drop capabilities
+- [ ] Cryptographically signed messages?
+- [ ] Add environment variable for signing up an account for the email list
