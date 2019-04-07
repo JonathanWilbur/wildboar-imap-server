@@ -110,9 +110,10 @@ class AMQPMessageBroker {
     publishEvent(topic, message) {
         this.channel.publish("events", topic, Buffer.from(JSON.stringify(message)));
     }
-    closeConnection() {
-        this.channel.close();
-        this.connection.close();
+    async closeConnection() {
+        await this.channel.close();
+        await this.connection.close();
+        return Promise.resolve(true);
     }
 }
 exports.default = AMQPMessageBroker;

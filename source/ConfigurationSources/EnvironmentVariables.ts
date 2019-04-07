@@ -12,6 +12,10 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
         return Promise.resolve(true);
     }
 
+    public close () : Promise<boolean> {
+        return Promise.resolve(true);
+    }
+
     private transformKeyNameToEnvironmentVariableName (key : string) : string {
         return key.toUpperCase().replace(/\./g, "_");
     }

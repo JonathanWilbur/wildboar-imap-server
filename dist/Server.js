@@ -22,7 +22,7 @@ class Server {
             "LOGINDISABLED",
             "AUTH=PLAIN"
         ];
-        net.createServer((socket) => {
+        const listeningSocket = net.createServer((socket) => {
             const connection = new Connection_1.Connection(this, socket);
         }).listen(this.configuration.imap_server_tcp_listening_port, this.configuration.imap_server_ip_bind_address, () => {
             this.logger.info({
@@ -30,6 +30,25 @@ class Server {
                 address: this.configuration.imap_server_ip_bind_address,
                 port: this.configuration.imap_server_tcp_listening_port,
                 serverID: this.id
+            });
+        });
+        [
+            "SIGTERM",
+            "SIGHUP",
+            "SIGINT"
+        ].forEach((signal) => {
+            process.on(signal, async () => {
+                this.logger.info({
+                    topic: "signals",
+                    message: `Received signal ${signal}. Shutting down server with id ${this.id} gracefully.`,
+                    signal: signal,
+                    server: this.id
+                });
+                await listeningSocket.close();
+                await this.configuration.close();
+                await this.messageBroker.closeConnection();
+                await this.logger.close();
+                process.exit(0);
             });
         });
     }

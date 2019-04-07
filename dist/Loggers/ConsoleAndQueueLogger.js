@@ -10,6 +10,9 @@ class ConsoleAndQueueLogger {
     initialize() {
         return Promise.resolve(true);
     }
+    async close() {
+        return Promise.resolve(true);
+    }
     debug(event) {
         if (console && (this.consoleLogLevel >= LogLevel_1.LogLevel.DEBUG))
             console.debug(`${ConsoleAndQueueLogger.DEBUG_ICON} ${event.message}`);

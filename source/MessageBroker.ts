@@ -9,5 +9,5 @@ interface MessageBroker extends UniquelyIdentified {
     // publishAuthorization () : void;
     publishCommand (authenticatedUser : string, command : string, message : object) : Promise<object>;
     publishEvent (topic : string, message : object) : void;
-    closeConnection () : void;
+    closeConnection () : Promise<boolean>;
 }

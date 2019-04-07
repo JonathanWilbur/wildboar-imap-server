@@ -26,6 +26,8 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
     }
 }
 
+process.stdin.resume(); // REVIEW: Is this necessary?
+
 (async () => {
     const configuration : ConfigurationSource =
         new EnvironmentVariablesConfigurationSource();

@@ -20,7 +20,9 @@ class DummyMessageBroker {
         return Promise.resolve({});
     }
     publishEvent(topic, message) { }
-    closeConnection() { }
+    closeConnection() {
+        return Promise.resolve(true);
+    }
 }
 exports.default = DummyMessageBroker;
 //# sourceMappingURL=DUMMY.js.map

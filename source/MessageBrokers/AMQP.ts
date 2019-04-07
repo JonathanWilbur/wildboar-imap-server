@@ -154,9 +154,10 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
         this.channel.publish("events", topic, Buffer.from(JSON.stringify(message)));
     }
 
-    public closeConnection () : void {
-        this.channel.close();
-        this.connection.close();
+    public async closeConnection () : Promise<boolean> {
+        await this.channel.close();
+        await this.connection.close();
+        return Promise.resolve(true);
     }
 
 }

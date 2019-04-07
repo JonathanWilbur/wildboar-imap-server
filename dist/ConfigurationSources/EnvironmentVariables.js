@@ -9,6 +9,9 @@ class EnvironmentVariablesConfigurationSource {
     initialize() {
         return Promise.resolve(true);
     }
+    close() {
+        return Promise.resolve(true);
+    }
     transformKeyNameToEnvironmentVariableName(key) {
         return key.toUpperCase().replace(/\./g, "_");
     }

@@ -25,6 +25,10 @@ class ConsoleAndQueueLogger implements Logger {
         return Promise.resolve(true);
     }
 
+    public async close () : Promise<boolean> {
+        return Promise.resolve(true);
+    }
+
     public debug (event : Messageable) : void {
         if (console && (this.consoleLogLevel >= LogLevel.DEBUG))
             console.debug(`${ConsoleAndQueueLogger.DEBUG_ICON} ${event.message}`);

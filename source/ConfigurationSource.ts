@@ -4,6 +4,7 @@ import { TypedKeyValueStore } from "./TypedKeyValueStore";
 export
 interface ConfigurationSource extends Temporal, TypedKeyValueStore, UniquelyIdentified {
     initialize () : Promise<boolean>;
+    close () : Promise<boolean>;
     imap_server_ip_bind_address : string;
     imap_server_tcp_listening_port : number;
     imap_server_domain : string;

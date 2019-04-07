@@ -23,6 +23,7 @@ function* pluginIterator(directoryName) {
             yield fullEntryPath;
     }
 }
+process.stdin.resume();
 (async () => {
     const configuration = new EnvironmentVariables_1.EnvironmentVariablesConfigurationSource();
     await configuration.initialize();

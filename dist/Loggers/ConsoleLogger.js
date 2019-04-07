@@ -4,6 +4,9 @@ class ConsoleLogger {
     initialize() {
         return Promise.resolve(true);
     }
+    close() {
+        return Promise.resolve(true);
+    }
     debug(event) {
         if (console)
             console.debug(`${ConsoleLogger.DEBUG_ICON} ${event.message}`);

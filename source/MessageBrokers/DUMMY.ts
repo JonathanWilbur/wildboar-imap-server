@@ -22,5 +22,7 @@ class DummyMessageBroker implements MessageBroker, UniquelyIdentified {
         return Promise.resolve({});
     }
     public publishEvent (topic : string, message : object) : void {}
-    public closeConnection () : void {}
+    public closeConnection () : Promise<boolean> {
+        return Promise.resolve(true);
+    }
 }

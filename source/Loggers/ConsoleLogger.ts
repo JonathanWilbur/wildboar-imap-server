@@ -14,6 +14,9 @@ class ConsoleLogger implements Logger {
     public initialize () : Promise<boolean> {
         return Promise.resolve(true);
     }
+    public close () : Promise<boolean> {
+        return Promise.resolve(true);
+    }
     public debug (event : Messageable) : void {
         if (console) console.debug(`${ConsoleLogger.DEBUG_ICON} ${event.message}`);
     }

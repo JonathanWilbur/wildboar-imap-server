@@ -34,14 +34,12 @@ class Server implements Temporal, UniquelyIdentified {
     public static driverlessAuthenticationDesiredHashLengthInBytes = 64;
     public static driverlessAuthenticationKeyedHMACAlgorithm : string = "sha512";
 
+    // TODO: Make this a Set
     public readonly supportedSASLAuthenticationMechanisms : string[] = [
         "PLAIN"
     ];
 
-    // public readonly extensions : string[] = [
-    //     `AUTH ${this.supportedSASLAuthenticationMechanisms.join(" ")}`
-    // ];
-
+    // TODO: Make this a Set
     public readonly capabilities : string[] = [
         // These are always required, per RFC 3501, Section 7.2.1.
         "IMAP4rev1",
@@ -56,20 +54,41 @@ class Server implements Temporal, UniquelyIdentified {
         readonly logger : Logger,
         readonly commandPlugins : { [ commandName : string ] : CommandPlugin }
     ) {
-        net.createServer((socket : net.Socket) : void => {
-            const connection : Connection = new Connection(this, socket);
-        }).listen(
-            this.configuration.imap_server_tcp_listening_port,
-            this.configuration.imap_server_ip_bind_address,
-            () : void => {
+        const listeningSocket : net.Server =
+            net.createServer((socket : net.Socket) : void => {
+                const connection : Connection = new Connection(this, socket);
+            }).listen(
+                this.configuration.imap_server_tcp_listening_port,
+                this.configuration.imap_server_ip_bind_address,
+                () : void => {
+                    this.logger.info({
+                        message: "Wildboar IMAP server started listening.",
+                        address: this.configuration.imap_server_ip_bind_address,
+                        port: this.configuration.imap_server_tcp_listening_port,
+                        serverID: this.id
+                    });
+                }
+            );
+
+        [
+            "SIGTERM",
+            "SIGHUP",
+            "SIGINT"
+        ].forEach((signal : string) : void => {
+            process.on(<any>signal, async () => {
                 this.logger.info({
-                    message: "Wildboar IMAP server started listening.",
-                    address: this.configuration.imap_server_ip_bind_address,
-                    port: this.configuration.imap_server_tcp_listening_port,
-                    serverID: this.id
+                    topic: "signals",
+                    message: `Received signal ${signal}. Shutting down server with id ${this.id} gracefully.`,
+                    signal: signal,
+                    server: this.id
                 });
-            }
-        );
+                await listeningSocket.close();
+                await this.configuration.close();
+                await this.messageBroker.closeConnection();
+                await this.logger.close();
+                process.exit(0);
+            });
+        });
     }
 
     public static passwordHash (password : string) : Promise<string> {
