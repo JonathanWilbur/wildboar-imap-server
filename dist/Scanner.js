@@ -252,7 +252,7 @@ class Scanner {
         return (Scanner.isAtomChar(char) || char === "]".charCodeAt(0));
     }
     static isBase64Char(char) {
-        return ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=".indexOf(String.fromCharCode(char)) !== -1);
+        return (Buffer.from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=").indexOf(char) !== -1);
     }
     static isWhitespace(char) {
         return (char === 0x20 || char === '\t'.charCodeAt(0));

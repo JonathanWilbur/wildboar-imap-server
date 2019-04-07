@@ -6,22 +6,23 @@ import { ConsoleAndQueueLogger } from "./Loggers/ConsoleAndQueueLogger";
 import { EnvironmentVariablesConfigurationSource } from "./ConfigurationSources/EnvironmentVariables";
 import { Logger } from "./Logger";
 import { MessageBroker } from "./MessageBroker";
+import { Scanner } from "./Scanner";
 import { Server } from "./Server";
 
 function *pluginIterator (directoryName : string) : IterableIterator<string> {
     const entries : string[] = fs.readdirSync(directoryName, { encoding: "utf8" });
     for (let i : number = 0; i < entries.length; i++) {
         const fullEntryPath : string = path.join(directoryName, entries[i]);
-        if (fs.statSync(fullEntryPath).isDirectory()) {
+        const stat : fs.Stats = fs.statSync(fullEntryPath);
+        if (stat.isDirectory()) {
             const subdirectory = pluginIterator(fullEntryPath);
             let iteration = subdirectory.next();
             while (!iteration.done) {
                 yield iteration.value;
                 iteration = subdirectory.next();
             }
-        } else if (fullEntryPath.endsWith(".js")) { // TODO: Make sure its a file!
+        } else if (fullEntryPath.endsWith(".js") && stat.isFile())
             yield fullEntryPath;
-        }
     }
 }
 
@@ -59,9 +60,12 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
     const commandPluginsIterator = pluginIterator(commandsDirectory);
     for (let plugin of commandPluginsIterator) {
         const commandName : string = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
-        // TODO: Check that every character is valid for a command.
-        plugins[commandName] = require(plugin).default;
-        if (console) console.log(`Loaded command plugin for command '${commandName}'.`);
+        if ((Buffer.from(commandName)).every(Scanner.isAtomChar)) {
+            plugins[commandName] = require(plugin).default;
+            if (console) console.log(`Loaded command plugin for command '${commandName}'.`);
+        } else {
+            if (console) console.error(`Invalid command name for plugin: ${commandName}. This plugin cannot be loaded, so it will be skipped.`);
+        }
     }
 
     /**

@@ -316,8 +316,7 @@ class Scanner {
     }
 
     public static isBase64Char (char : number) : boolean {
-        // TODO: Cache this buffer.
-        return ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=".indexOf(String.fromCharCode(char)) !== -1);
+        return (Buffer.from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=").indexOf(char) !== -1);
     }
 
     public static isWhitespace (char : number) : boolean {

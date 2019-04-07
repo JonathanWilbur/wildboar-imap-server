@@ -4,12 +4,14 @@ const fs = require("fs");
 const path = require("path");
 const ConsoleAndQueueLogger_1 = require("./Loggers/ConsoleAndQueueLogger");
 const EnvironmentVariables_1 = require("./ConfigurationSources/EnvironmentVariables");
+const Scanner_1 = require("./Scanner");
 const Server_1 = require("./Server");
 function* pluginIterator(directoryName) {
     const entries = fs.readdirSync(directoryName, { encoding: "utf8" });
     for (let i = 0; i < entries.length; i++) {
         const fullEntryPath = path.join(directoryName, entries[i]);
-        if (fs.statSync(fullEntryPath).isDirectory()) {
+        const stat = fs.statSync(fullEntryPath);
+        if (stat.isDirectory()) {
             const subdirectory = pluginIterator(fullEntryPath);
             let iteration = subdirectory.next();
             while (!iteration.done) {
@@ -17,9 +19,8 @@ function* pluginIterator(directoryName) {
                 iteration = subdirectory.next();
             }
         }
-        else if (fullEntryPath.endsWith(".js")) {
+        else if (fullEntryPath.endsWith(".js") && stat.isFile())
             yield fullEntryPath;
-        }
     }
 }
 (async () => {
@@ -51,9 +52,15 @@ function* pluginIterator(directoryName) {
     const commandPluginsIterator = pluginIterator(commandsDirectory);
     for (let plugin of commandPluginsIterator) {
         const commandName = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
-        plugins[commandName] = require(plugin).default;
-        if (console)
-            console.log(`Loaded command plugin for command '${commandName}'.`);
+        if ((Buffer.from(commandName)).every(Scanner_1.Scanner.isAtomChar)) {
+            plugins[commandName] = require(plugin).default;
+            if (console)
+                console.log(`Loaded command plugin for command '${commandName}'.`);
+        }
+        else {
+            if (console)
+                console.error(`Invalid command name for plugin: ${commandName}. This plugin cannot be loaded, so it will be skipped.`);
+        }
     }
     await Promise.all(Object.keys(plugins).map((commandName) => {
         return messageBroker.initializeCommandRPCQueue(commandName);
