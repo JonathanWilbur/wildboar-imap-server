@@ -9,8 +9,9 @@ export default new CommandPlugin(
     function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
         switch (currentCommand.length) {
             case (2): {
-                if (scanner.readSpace())
-                    yield new Lexeme(LexemeType.WHITESPACE, Buffer.from(" "));
+                const space : Lexeme | null = scanner.readSpace();
+                if (!space) return;
+                yield space;
             }
             case (3): {
                 const userid : Lexeme | null = scanner.readAstring();
@@ -18,8 +19,9 @@ export default new CommandPlugin(
                 yield userid;
             }
             case (4): {
-                if (scanner.readSpace())
-                    yield new Lexeme(LexemeType.WHITESPACE, Buffer.from(" "));
+                const space : Lexeme | null = scanner.readSpace();
+                if (!space) return;
+                yield space;
             }
             case (5): {
                 const password : Lexeme | null = scanner.readAstring();
@@ -27,8 +29,9 @@ export default new CommandPlugin(
                 yield password;
             }
             case (6): {
-                if (scanner.readNewLine())
-                    yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
+                const newline : Lexeme | null = scanner.readCommandTerminatingNewLine();
+                if (!newline) return;
+                yield newline;
                 break;
             }
             default:

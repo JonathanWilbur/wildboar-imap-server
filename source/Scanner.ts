@@ -60,6 +60,55 @@ class Scanner {
         }
     }
 
+    private readFixedLengthToken (token : Buffer) : boolean {
+        if ((this.scanCursor + token.length) > this.receivedData.length)
+            return false;
+        const indexOfToken : number =
+            this.receivedData.indexOf(token, this.scanCursor);
+        if (indexOfToken === this.scanCursor) {
+            this.scanCursor += token.length;
+            return true;
+        }
+        const troublemaker : Buffer = this.receivedData.slice(
+            this.scanCursor,
+            (this.scanCursor + token.length)
+        );
+        throw new Error(`Fixed-length token cannot be read: ${token.join(" ")}. Got ${troublemaker.join(" ")} instead.`);
+    }
+
+    private readStatedLengthToken (length : number) : boolean {
+        if (this.scanCursor + length > this.receivedData.length)
+            return false;
+        this.scanCursor = (this.scanCursor + length);
+        return true;
+    }
+
+    private readExplicitlyTerminatedToken (terminator : Buffer) : boolean {
+        const indexOfTerminator : number = 
+            this.receivedData.indexOf(terminator, this.scanCursor);
+        if (indexOfTerminator === -1) return false;
+        this.scanCursor = (indexOfTerminator + terminator.length);
+        return true;
+    }
+
+    private readImplicitlyTerminatedToken (matcher : (char : number) => boolean) : boolean {
+        let indexOfEndOfToken : number = -1;
+        for (let i : number = this.scanCursor; i < this.receivedData.length; i++) {
+            if (!(matcher(this.receivedData[i]))) {
+                indexOfEndOfToken = i;
+                break;
+            }
+        }
+        if (indexOfEndOfToken === -1) return false;
+        // const oldScanCursor : number = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return true;
+        // return new Lexeme(
+        //     LexemeType.ATOM,
+        //     this.receivedData.slice(oldScanCursor, indexOfEndOfToken)
+        // );
+    }
+
     public readTag () : Lexeme | null {
         const indexOfFirstSpace : number =
             this.receivedData.indexOf(" ".charCodeAt(0), this.scanCursor);
@@ -102,21 +151,21 @@ class Scanner {
     }
 
     public readSpace () : Lexeme | null {
-        if (this.receivedData[this.scanCursor] === ' '.charCodeAt(0)) {
-            this.scanCursor++;
-            return new Lexeme(LexemeType.WHITESPACE, Buffer.from(' '));
-        } else throw new Error("Space not found.");
+        if (this.readFixedLengthToken(Buffer.from(" ")))
+            return new Lexeme(LexemeType.WHITESPACE, Buffer.from(" "));
+        else return null;
     }
 
     public readNewLine () : Lexeme | null {
-        if (this.scanCursor >= this.receivedData.length - 1) return null;
-        if (
-            this.receivedData[this.scanCursor] === '\r'.charCodeAt(0) &&
-            this.receivedData[this.scanCursor + 1] === '\n'.charCodeAt(0)
-        ) {
-            this.scanCursor += 2;
+        if (this.readFixedLengthToken(Buffer.from("\r\n")))
             return new Lexeme(LexemeType.NEWLINE, Buffer.from("\r\n"));
-        } else throw new Error("Invalid CRLF newline.");
+        else return null;
+    }
+
+    public readCommandTerminatingNewLine () : Lexeme | null {
+        if (this.readFixedLengthToken(Buffer.from("\r\n")))
+            return new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
+        else return null;
     }
 
     public readDoubleQuotedString () : Lexeme | null {
@@ -144,40 +193,33 @@ class Scanner {
     }
 
     public readAtom () : Lexeme | null {
-        let indexOfEndOfToken : number = -1;
-        for (let i : number = this.scanCursor; i < this.receivedData.length; i++) {
-            if (!(Scanner.isAtomChar(this.receivedData[i]))) {
-                indexOfEndOfToken = i;
-                break;
-            }
-        }
-        if (indexOfEndOfToken === -1) return null;
         const oldScanCursor : number = this.scanCursor;
-        this.scanCursor = indexOfEndOfToken;
-        return new Lexeme(
-            LexemeType.ATOM,
-            this.receivedData.slice(oldScanCursor, indexOfEndOfToken)
-        );
+        if (this.readImplicitlyTerminatedToken(Scanner.isAtomChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("Atom cannot be zero-length.");
+            return new Lexeme(
+                LexemeType.ATOM,
+                this.receivedData.slice(oldScanCursor, this.scanCursor)
+            );
+        } else return null;
     }
 
     public readLiteralLength () : Lexeme | null {
-        if (this.receivedData[this.scanCursor] !== '{'.charCodeAt(0))
+        if (this.receivedData[this.scanCursor] !== "{".charCodeAt(0))
             return null;
-        const indexOfEndOfLiteralLength : number =
-            this.receivedData.indexOf("}\r\n", this.scanCursor);
-        if (indexOfEndOfLiteralLength === -1) return null;
-        let i : number = (this.scanCursor + 1);
-        while (i < indexOfEndOfLiteralLength) {
-            if (!Scanner.isDigit(this.receivedData[i]))
-                throw new Error("Non-digit detected in literal length.");
-            i++;
-        }
-        const oldScanCursor = this.scanCursor;
-        this.scanCursor = (indexOfEndOfLiteralLength + '}\r\n'.length);
-        return new Lexeme(
-            LexemeType.LITERAL_LENGTH,
-            this.receivedData.slice(oldScanCursor, (indexOfEndOfLiteralLength + '}\r\n'.length))
-        );
+        const oldScanCursor : number = this.scanCursor;
+        let i : number = (this.scanCursor + "{".length);
+        if (this.readExplicitlyTerminatedToken(Buffer.from("}\r\n"))) {
+            while (i < (this.scanCursor - "}\r\n".length)) {
+                if (!Scanner.isDigit(this.receivedData[i]))
+                    throw new Error(`Non-digit detected in literal length. Character code: ${this.receivedData[i]}.`);
+                i++;
+            }
+            return new Lexeme(
+                LexemeType.LITERAL_LENGTH,
+                this.receivedData.slice(oldScanCursor, this.scanCursor)
+            );
+        } else return null;
     }
 
     // NOTE: This code can possibly be deduped, because it came from readAtom().
@@ -216,14 +258,12 @@ class Scanner {
     }
 
     public readLiteral (length : number) : Lexeme | null {
-        if (this.scanCursor + length > this.receivedData.length)
-            return null;
-        const oldScanCursor = this.scanCursor;
-        this.scanCursor = (this.scanCursor + length);
-        return new Lexeme(
-            LexemeType.STRING_LITERAL,
-            this.receivedData.slice(oldScanCursor, this.scanCursor)
-        );
+        if (this.readStatedLengthToken(length)) 
+            return new Lexeme(
+                LexemeType.STRING_LITERAL,
+                this.receivedData.slice((this.scanCursor - length), this.scanCursor)
+            );
+        else return null;
     }
 
     public readAbortableBase64 () : Lexeme | null {

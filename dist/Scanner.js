@@ -39,6 +39,43 @@ class Scanner {
             return true;
         }
     }
+    readFixedLengthToken(token) {
+        if ((this.scanCursor + token.length) > this.receivedData.length)
+            return false;
+        const indexOfToken = this.receivedData.indexOf(token, this.scanCursor);
+        if (indexOfToken === this.scanCursor) {
+            this.scanCursor += token.length;
+            return true;
+        }
+        const troublemaker = this.receivedData.slice(this.scanCursor, (this.scanCursor + token.length));
+        throw new Error(`Fixed-length token cannot be read: ${token.join(" ")}. Got ${troublemaker.join(" ")} instead.`);
+    }
+    readStatedLengthToken(length) {
+        if (this.scanCursor + length > this.receivedData.length)
+            return false;
+        this.scanCursor = (this.scanCursor + length);
+        return true;
+    }
+    readExplicitlyTerminatedToken(terminator) {
+        const indexOfTerminator = this.receivedData.indexOf(terminator, this.scanCursor);
+        if (indexOfTerminator === -1)
+            return false;
+        this.scanCursor = (indexOfTerminator + terminator.length);
+        return true;
+    }
+    readImplicitlyTerminatedToken(matcher) {
+        let indexOfEndOfToken = -1;
+        for (let i = this.scanCursor; i < this.receivedData.length; i++) {
+            if (!(matcher(this.receivedData[i]))) {
+                indexOfEndOfToken = i;
+                break;
+            }
+        }
+        if (indexOfEndOfToken === -1)
+            return false;
+        this.scanCursor = indexOfEndOfToken;
+        return true;
+    }
     readTag() {
         const indexOfFirstSpace = this.receivedData.indexOf(" ".charCodeAt(0), this.scanCursor);
         if (indexOfFirstSpace === -1)
@@ -77,23 +114,22 @@ class Scanner {
         return this.readAtom();
     }
     readSpace() {
-        if (this.receivedData[this.scanCursor] === ' '.charCodeAt(0)) {
-            this.scanCursor++;
-            return new Lexeme_1.Lexeme(2, Buffer.from(' '));
-        }
+        if (this.readFixedLengthToken(Buffer.from(" ")))
+            return new Lexeme_1.Lexeme(2, Buffer.from(" "));
         else
-            throw new Error("Space not found.");
+            return null;
     }
     readNewLine() {
-        if (this.scanCursor >= this.receivedData.length - 1)
-            return null;
-        if (this.receivedData[this.scanCursor] === '\r'.charCodeAt(0) &&
-            this.receivedData[this.scanCursor + 1] === '\n'.charCodeAt(0)) {
-            this.scanCursor += 2;
+        if (this.readFixedLengthToken(Buffer.from("\r\n")))
             return new Lexeme_1.Lexeme(4, Buffer.from("\r\n"));
-        }
         else
-            throw new Error("Invalid CRLF newline.");
+            return null;
+    }
+    readCommandTerminatingNewLine() {
+        if (this.readFixedLengthToken(Buffer.from("\r\n")))
+            return new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
+        else
+            return null;
     }
     readDoubleQuotedString() {
         let i = (this.scanCursor + 1);
@@ -116,34 +152,30 @@ class Scanner {
         return new Lexeme_1.Lexeme(10, this.receivedData.slice(oldScanCursor, this.scanCursor));
     }
     readAtom() {
-        let indexOfEndOfToken = -1;
-        for (let i = this.scanCursor; i < this.receivedData.length; i++) {
-            if (!(Scanner.isAtomChar(this.receivedData[i]))) {
-                indexOfEndOfToken = i;
-                break;
-            }
-        }
-        if (indexOfEndOfToken === -1)
-            return null;
         const oldScanCursor = this.scanCursor;
-        this.scanCursor = indexOfEndOfToken;
-        return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, indexOfEndOfToken));
+        if (this.readImplicitlyTerminatedToken(Scanner.isAtomChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("Atom cannot be zero-length.");
+            return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
     }
     readLiteralLength() {
-        if (this.receivedData[this.scanCursor] !== '{'.charCodeAt(0))
+        if (this.receivedData[this.scanCursor] !== "{".charCodeAt(0))
             return null;
-        const indexOfEndOfLiteralLength = this.receivedData.indexOf("}\r\n", this.scanCursor);
-        if (indexOfEndOfLiteralLength === -1)
-            return null;
-        let i = (this.scanCursor + 1);
-        while (i < indexOfEndOfLiteralLength) {
-            if (!Scanner.isDigit(this.receivedData[i]))
-                throw new Error("Non-digit detected in literal length.");
-            i++;
-        }
         const oldScanCursor = this.scanCursor;
-        this.scanCursor = (indexOfEndOfLiteralLength + '}\r\n'.length);
-        return new Lexeme_1.Lexeme(11, this.receivedData.slice(oldScanCursor, (indexOfEndOfLiteralLength + '}\r\n'.length)));
+        let i = (this.scanCursor + "{".length);
+        if (this.readExplicitlyTerminatedToken(Buffer.from("}\r\n"))) {
+            while (i < (this.scanCursor - "}\r\n".length)) {
+                if (!Scanner.isDigit(this.receivedData[i]))
+                    throw new Error(`Non-digit detected in literal length. Character code: ${this.receivedData[i]}.`);
+                i++;
+            }
+            return new Lexeme_1.Lexeme(11, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
     }
     readList() {
         let indexOfEndOfToken = -1;
@@ -174,11 +206,10 @@ class Scanner {
         return this.readList();
     }
     readLiteral(length) {
-        if (this.scanCursor + length > this.receivedData.length)
+        if (this.readStatedLengthToken(length))
+            return new Lexeme_1.Lexeme(12, this.receivedData.slice((this.scanCursor - length), this.scanCursor));
+        else
             return null;
-        const oldScanCursor = this.scanCursor;
-        this.scanCursor = (this.scanCursor + length);
-        return new Lexeme_1.Lexeme(12, this.receivedData.slice(oldScanCursor, this.scanCursor));
     }
     readAbortableBase64() {
         if (this.receivedData[this.scanCursor] === '*'.charCodeAt(0)) {

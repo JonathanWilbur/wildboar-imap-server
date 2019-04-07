@@ -1,13 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
-const Lexeme_1 = require("../../Lexeme");
 const Server_1 = require("../../Server");
 exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
     switch (currentCommand.length) {
         case (2): {
-            if (scanner.readSpace())
-                yield new Lexeme_1.Lexeme(2, Buffer.from(" "));
+            const space = scanner.readSpace();
+            if (!space)
+                return;
+            yield space;
         }
         case (3): {
             const userid = scanner.readAstring();
@@ -16,8 +17,10 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
             yield userid;
         }
         case (4): {
-            if (scanner.readSpace())
-                yield new Lexeme_1.Lexeme(2, Buffer.from(" "));
+            const space = scanner.readSpace();
+            if (!space)
+                return;
+            yield space;
         }
         case (5): {
             const password = scanner.readAstring();
@@ -26,8 +29,10 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
             yield password;
         }
         case (6): {
-            if (scanner.readNewLine())
-                yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
+            const newline = scanner.readCommandTerminatingNewLine();
+            if (!newline)
+                return;
+            yield newline;
             break;
         }
         default:
