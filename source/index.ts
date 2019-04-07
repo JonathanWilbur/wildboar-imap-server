@@ -31,6 +31,11 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
         new EnvironmentVariablesConfigurationSource();
     await configuration.initialize();
 
+    for (let option of configuration.configurationOptions.values()) {
+        if (configuration.isSet(option))
+            if (console) console.log(`Configuration option ${option} is set to '${configuration.getString(option)}'.`);
+    }
+
     // Loading the message broker plugins
     const messageBrokersDirectory : string = path.join(__dirname, "MessageBrokers");
     const messageBrokerProtocols : { [ protocolName : string ] : string } = {};
@@ -60,6 +65,14 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
     const commandPluginsIterator = pluginIterator(commandsDirectory);
     for (let plugin of commandPluginsIterator) {
         const commandName : string = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
+        if (commandName in plugins) {
+            if (console) {
+                console.error(`Duplicate plugin for command '${commandName}'.`);
+                console.error(`The second plugin was located at ${plugin}.`);
+                console.error("Wildboar IMAP Server will shut down.");
+            }
+            process.exit(1);
+        }
         if ((Buffer.from(commandName)).every(Scanner.isAtomChar)) {
             plugins[commandName] = require(plugin).default;
             if (console) console.log(`Loaded command plugin for command '${commandName}'.`);

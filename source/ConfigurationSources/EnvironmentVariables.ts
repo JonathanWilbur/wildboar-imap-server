@@ -1,12 +1,7 @@
 import { ConfigurationSource } from "../ConfigurationSource";
-import { TypedKeyValueStore } from "../TypedKeyValueStore";
-import { v4 as uuidv4 } from "uuid";
 
 export
-class EnvironmentVariablesConfigurationSource implements ConfigurationSource,TypedKeyValueStore {
-
-    public readonly id : string = `urn:uuid:${uuidv4()}`;
-    public readonly creationTime : Date = new Date();
+class EnvironmentVariablesConfigurationSource extends ConfigurationSource {
 
     public initialize () : Promise<boolean> {
         return Promise.resolve(true);
@@ -16,79 +11,45 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
         return Promise.resolve(true);
     }
 
-    private transformKeyNameToEnvironmentVariableName (key : string) : string {
-        return key.toUpperCase().replace(/\./g, "_");
-    }
-
-    public static convertStringToBoolean (str : string) : boolean | undefined {
-        if (/^\s*True\s*$/i.test(str)) return true;
-        if (/^\s*False\s*$/i.test(str)) return false;
-        if (/^\s*Yes\s*$/i.test(str)) return true;
-        if (/^\s*No\s*$/i.test(str)) return false;
-        if (/^\s*T\s*$/i.test(str)) return true;
-        if (/^\s*F\s*$/i.test(str)) return false;
-        if (/^\s*Y\s*$/i.test(str)) return true;
-        if (/^\s*N\s*$/i.test(str)) return false;
-        if (/^\s*1\s*$/i.test(str)) return true;
-        if (/^\s*0\s*$/i.test(str)) return false;
-        if (/^\s*\+\s*$/i.test(str)) return true;
-        if (/^\s*\-\s*$/i.test(str)) return false;
-        return undefined;
-    }
-
-    public static convertStringToInteger (str : string) : number | undefined {
-        try {
-            const ret : number = Number.parseInt(str);
-            if (Number.isNaN(ret)) return undefined;
-            if (!Number.isSafeInteger(ret)) return undefined;
-            return ret;
-        } catch (e) {
-            return undefined;
-        }
-    }
-
-    // From IETF RFC 4422, Section 3.1:
-    // sasl-mech    = 1*20mech-char
-    // mech-char    = UPPER-ALPHA / DIGIT / HYPHEN / UNDERSCORE
-    // ; mech-char is restricted to A-Z (uppercase only), 0-9, -, and _
-    // ; from ASCII character set.
-    public static isSASLMechanismNameChar (char : number) : boolean {
-        return (
-            (char >= 0x41 && char <= 0x5A) ||
-            (char >= 0x30 && char <= 0x39) ||
-            (char === 0x2D) ||
-            (char === 0x5F)
-        );
+    isSet (setting : string) : boolean {
+        const environmentVariableName : string =
+            EnvironmentVariablesConfigurationSource.transformKeyNameToEnvironmentVariableName(setting);
+        if (environmentVariableName in process.env) return true;
+        else return false;
     }
 
     public getBoolean (key : string) : boolean | undefined {
         if (key.length === 0) return undefined;
         const environmentVariableName : string =
-            this.transformKeyNameToEnvironmentVariableName(key);
+            EnvironmentVariablesConfigurationSource.transformKeyNameToEnvironmentVariableName(key);
         const environmentVariable : string | undefined
             = (environmentVariableName in process.env ?
                 process.env[environmentVariableName] : undefined);
         if (!environmentVariable) return undefined;
-        return EnvironmentVariablesConfigurationSource.convertStringToBoolean(environmentVariable);
+        return ConfigurationSource.convertStringToBoolean(environmentVariable);
     }
 
     public getInteger (key : string) : number | undefined {
         if (key.length === 0) return undefined;
         const environmentVariableName : string =
-            this.transformKeyNameToEnvironmentVariableName(key);
+            EnvironmentVariablesConfigurationSource.transformKeyNameToEnvironmentVariableName(key);
         const environmentVariable : string | undefined
             = (environmentVariableName in process.env ?
                 process.env[environmentVariableName] : undefined);
         if (!environmentVariable) return undefined;
-        return EnvironmentVariablesConfigurationSource.convertStringToInteger(environmentVariable);
+        return ConfigurationSource.convertStringToInteger(environmentVariable);
     }
 
     public getString (key : string) : string | undefined {
         if (key.length === 0) return undefined;
         const environmentVariableName : string =
-            this.transformKeyNameToEnvironmentVariableName(key);
+            EnvironmentVariablesConfigurationSource.transformKeyNameToEnvironmentVariableName(key);
         return (environmentVariableName in process.env ?
             process.env[environmentVariableName] : undefined);
+    }
+
+    public static transformKeyNameToEnvironmentVariableName (key : string) : string {
+        return key.toUpperCase().replace(/\./g, "_");
     }
 
     /**

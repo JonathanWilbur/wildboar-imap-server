@@ -13,15 +13,15 @@ class Server {
         this.id = `urn:uuid:${uuid_1.v4()}`;
         this.creationTime = new Date();
         this.driverlessAuthenticationDatabase = this.configuration.driverless_authentication_credentials;
-        this.supportedSASLAuthenticationMechanisms = [
+        this.supportedSASLAuthenticationMechanisms = new Set([
             "PLAIN"
-        ];
-        this.capabilities = [
+        ]);
+        this.capabilities = new Set([
             "IMAP4rev1",
             "STARTTLS",
             "LOGINDISABLED",
             "AUTH=PLAIN"
-        ];
+        ]);
         const listeningSocket = net.createServer((socket) => {
             const connection = new Connection_1.Connection(this, socket);
         }).listen(this.configuration.imap_server_tcp_listening_port, this.configuration.imap_server_ip_bind_address, () => {

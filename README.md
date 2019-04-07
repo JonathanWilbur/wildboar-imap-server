@@ -58,11 +58,10 @@ development.
       - [ ] Configuration source can be reached.
       - [ ] Listening on socket.
 - [x] Graceful Shutdown
-- [ ] ! Add `isSet` to ConfigurationSource.
+- [x] Add `isSet` to ConfigurationSource.
 - [ ] Healthcheck tool
-- [ ] ! Startup validation.
 - [ ] Use a `sensitiveCommandRunning` flag to prevent race conditions when a
-  connection attempts two `APPEND`s at once, for instance.
+      connection attempts two `APPEND`s at once, for instance.
 - [ ] Limit everything:
   - [ ] Maximum commands per minute.
   - [ ] Time since last command.
@@ -75,13 +74,14 @@ development.
   - [ ] ! Simple Authorization
 - [ ] Address Potential Concurrency Issues:
   - [ ] Multiple socket writes at the same time.
-- [ ] Start-up checks:
-  - [ ] Confirm that all integers are safe.
-  - [ ] Confirm that all command names are atoms.
-  - [ ] Confirm that there are no duplicate plugins.
+- [x] Start-up checks:
+  - [x] Confirm that all integers are safe.
+  - [x] Confirm that all command names are atoms.
+  - [x] Confirm that there are no duplicate plugins.
 - [ ] Make plugins follow serverless handler signatures.
 - [ ] Add `capability` field to plugins.
 - [ ] Consider using nameless queues to make the queue list more readable.
+- [x] Make `ConfigurationSource` a class so you can keep the master variables list there.
 
 ### Alpha
 

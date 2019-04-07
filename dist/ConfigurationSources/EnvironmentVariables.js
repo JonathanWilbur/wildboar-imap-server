@@ -1,92 +1,49 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const uuid_1 = require("uuid");
-class EnvironmentVariablesConfigurationSource {
-    constructor() {
-        this.id = `urn:uuid:${uuid_1.v4()}`;
-        this.creationTime = new Date();
-    }
+const ConfigurationSource_1 = require("../ConfigurationSource");
+class EnvironmentVariablesConfigurationSource extends ConfigurationSource_1.ConfigurationSource {
     initialize() {
         return Promise.resolve(true);
     }
     close() {
         return Promise.resolve(true);
     }
-    transformKeyNameToEnvironmentVariableName(key) {
-        return key.toUpperCase().replace(/\./g, "_");
-    }
-    static convertStringToBoolean(str) {
-        if (/^\s*True\s*$/i.test(str))
+    isSet(setting) {
+        const environmentVariableName = EnvironmentVariablesConfigurationSource.transformKeyNameToEnvironmentVariableName(setting);
+        if (environmentVariableName in process.env)
             return true;
-        if (/^\s*False\s*$/i.test(str))
+        else
             return false;
-        if (/^\s*Yes\s*$/i.test(str))
-            return true;
-        if (/^\s*No\s*$/i.test(str))
-            return false;
-        if (/^\s*T\s*$/i.test(str))
-            return true;
-        if (/^\s*F\s*$/i.test(str))
-            return false;
-        if (/^\s*Y\s*$/i.test(str))
-            return true;
-        if (/^\s*N\s*$/i.test(str))
-            return false;
-        if (/^\s*1\s*$/i.test(str))
-            return true;
-        if (/^\s*0\s*$/i.test(str))
-            return false;
-        if (/^\s*\+\s*$/i.test(str))
-            return true;
-        if (/^\s*\-\s*$/i.test(str))
-            return false;
-        return undefined;
-    }
-    static convertStringToInteger(str) {
-        try {
-            const ret = Number.parseInt(str);
-            if (Number.isNaN(ret))
-                return undefined;
-            if (!Number.isSafeInteger(ret))
-                return undefined;
-            return ret;
-        }
-        catch (e) {
-            return undefined;
-        }
-    }
-    static isSASLMechanismNameChar(char) {
-        return ((char >= 0x41 && char <= 0x5A) ||
-            (char >= 0x30 && char <= 0x39) ||
-            (char === 0x2D) ||
-            (char === 0x5F));
     }
     getBoolean(key) {
         if (key.length === 0)
             return undefined;
-        const environmentVariableName = this.transformKeyNameToEnvironmentVariableName(key);
+        const environmentVariableName = EnvironmentVariablesConfigurationSource.transformKeyNameToEnvironmentVariableName(key);
         const environmentVariable = (environmentVariableName in process.env ?
             process.env[environmentVariableName] : undefined);
         if (!environmentVariable)
             return undefined;
-        return EnvironmentVariablesConfigurationSource.convertStringToBoolean(environmentVariable);
+        return ConfigurationSource_1.ConfigurationSource.convertStringToBoolean(environmentVariable);
     }
     getInteger(key) {
         if (key.length === 0)
             return undefined;
-        const environmentVariableName = this.transformKeyNameToEnvironmentVariableName(key);
+        const environmentVariableName = EnvironmentVariablesConfigurationSource.transformKeyNameToEnvironmentVariableName(key);
         const environmentVariable = (environmentVariableName in process.env ?
             process.env[environmentVariableName] : undefined);
         if (!environmentVariable)
             return undefined;
-        return EnvironmentVariablesConfigurationSource.convertStringToInteger(environmentVariable);
+        return ConfigurationSource_1.ConfigurationSource.convertStringToInteger(environmentVariable);
     }
     getString(key) {
         if (key.length === 0)
             return undefined;
-        const environmentVariableName = this.transformKeyNameToEnvironmentVariableName(key);
+        const environmentVariableName = EnvironmentVariablesConfigurationSource.transformKeyNameToEnvironmentVariableName(key);
         return (environmentVariableName in process.env ?
             process.env[environmentVariableName] : undefined);
+    }
+    static transformKeyNameToEnvironmentVariableName(key) {
+        return key.toUpperCase().replace(/\./g, "_");
     }
     get queue_protocol() {
         const DEFAULT_VALUE = "AMQP";

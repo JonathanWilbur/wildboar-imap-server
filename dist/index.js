@@ -23,10 +23,14 @@ function* pluginIterator(directoryName) {
             yield fullEntryPath;
     }
 }
-process.stdin.resume();
 (async () => {
     const configuration = new EnvironmentVariables_1.EnvironmentVariablesConfigurationSource();
     await configuration.initialize();
+    for (let option of configuration.configurationOptions.values()) {
+        if (configuration.isSet(option))
+            if (console)
+                console.log(`Configuration option ${option} is set to '${configuration.getString(option)}'.`);
+    }
     const messageBrokersDirectory = path.join(__dirname, "MessageBrokers");
     const messageBrokerProtocols = {};
     const messageBrokerPluginsIterator = pluginIterator(messageBrokersDirectory);
@@ -53,6 +57,14 @@ process.stdin.resume();
     const commandPluginsIterator = pluginIterator(commandsDirectory);
     for (let plugin of commandPluginsIterator) {
         const commandName = path.basename(plugin).replace(/\.js$/, "").toUpperCase();
+        if (commandName in plugins) {
+            if (console) {
+                console.error(`Duplicate plugin for command '${commandName}'.`);
+                console.error(`The second plugin was located at ${plugin}.`);
+                console.error("Wildboar IMAP Server will shut down.");
+            }
+            process.exit(1);
+        }
         if ((Buffer.from(commandName)).every(Scanner_1.Scanner.isAtomChar)) {
             plugins[commandName] = require(plugin).default;
             if (console)

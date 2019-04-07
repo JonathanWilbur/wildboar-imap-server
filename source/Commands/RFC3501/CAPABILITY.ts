@@ -11,7 +11,7 @@ export default new CommandPlugin(
         return;
     },
     (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {
-        connection.socket.write(`* ${command} ${connection.server.capabilities.join(" ")}\r\n`);
+        connection.socket.write(`* ${command} ${Array.from(connection.server.capabilities.values()).join(" ")}\r\n`);
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
 );

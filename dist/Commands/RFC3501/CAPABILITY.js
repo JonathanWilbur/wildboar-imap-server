@@ -8,7 +8,7 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentc
     yield newline;
     return;
 }, (connection, tag, command, args) => {
-    connection.socket.write(`* ${command} ${connection.server.capabilities.join(" ")}\r\n`);
+    connection.socket.write(`* ${command} ${Array.from(connection.server.capabilities.values()).join(" ")}\r\n`);
     connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
 });
 //# sourceMappingURL=CAPABILITY.js.map
