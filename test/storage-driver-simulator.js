@@ -17,8 +17,8 @@ amqp.connect("amqp://localhost:5672", (err, connection) => {
                     ]
                 })), {
                     correlationId: msg.properties.correlationId,
-                    content_type: "application/json",
-                    content_encoding: "8bit"
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
                 });
         });
 
@@ -36,8 +36,8 @@ amqp.connect("amqp://localhost:5672", (err, connection) => {
                     ]
                 })), {
                     correlationId: msg.properties.correlationId,
-                    content_type: "application/json",
-                    content_encoding: "8bit"
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
                 });
         });
 
@@ -47,8 +47,8 @@ amqp.connect("amqp://localhost:5672", (err, connection) => {
                     created: true
                 })), {
                     correlationId: msg.properties.correlationId,
-                    content_type: "application/json",
-                    content_encoding: "8bit"
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
                 });
         });
 
@@ -60,8 +60,8 @@ amqp.connect("amqp://localhost:5672", (err, connection) => {
                     recent: 3
                 })), {
                     correlationId: msg.properties.correlationId,
-                    content_type: "application/json",
-                    content_encoding: "8bit"
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
                 });
         });
 
@@ -73,8 +73,8 @@ amqp.connect("amqp://localhost:5672", (err, connection) => {
                     recent: 3
                 })), {
                     correlationId: msg.properties.correlationId,
-                    content_type: "application/json",
-                    content_encoding: "8bit"
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
                 });
         });
 

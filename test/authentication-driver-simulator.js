@@ -22,8 +22,8 @@ const PASSWORD = "bigboi";
                     nextChallenge: (Buffer.from("Please present your PLAIN authentication tuple. ([authzid] authcid passwd)")).toString("base64")
                 })), {
                     correlationId: msg.properties.correlationId,
-                    content_type: "application/json",
-                    content_encoding: "8bit"
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
                 });
             return;
         }
@@ -40,8 +40,8 @@ const PASSWORD = "bigboi";
                     authenticatedUser: authzid
                 })), {
                     correlationId: msg.properties.correlationId,
-                    content_type: "application/json",
-                    content_encoding: "8bit"
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
                 });
         } else {
             channel.sendToQueue(msg.properties.replyTo,
@@ -49,8 +49,8 @@ const PASSWORD = "bigboi";
                     done: true
                 })), {
                     correlationId: msg.properties.correlationId,
-                    content_type: "application/json",
-                    content_encoding: "8bit"
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
                 });
         }
     });
