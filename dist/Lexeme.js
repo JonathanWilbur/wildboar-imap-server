@@ -32,7 +32,14 @@ class Lexeme {
         const match = /^\{(\d+)\}\r\n$/.exec(this.token.toString());
         if (!match)
             throw new Error("Invalid literal length lexeme. THIS ERROR SHOULD NEVER OCCUR.");
-        return parseInt(match[1]);
+        const ret = parseInt(match[1]);
+        if (Number.isNaN(ret))
+            throw new Error("Invalid literal length.");
+        if (!Number.isSafeInteger(ret))
+            throw new Error("Excessively large literal length.");
+        if (ret < 0)
+            throw new Error("Literal length cannot be negative.");
+        return ret;
     }
 }
 exports.Lexeme = Lexeme;
