@@ -4,6 +4,7 @@ class CommandPlugin {
     constructor(argumentsScanner, callback) {
         this.argumentsScanner = argumentsScanner;
         this.callback = callback;
+        this.contributesCapabilities = [];
     }
 }
 exports.CommandPlugin = CommandPlugin;

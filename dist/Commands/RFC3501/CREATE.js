@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
-exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
+const lexer = function* (scanner, currentCommand) {
     if (currentCommand.length <= 2) {
         const space = scanner.readSpace();
         if (!space)
@@ -19,11 +19,14 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
         return;
     yield newline;
     return;
-}, async (connection, tag, command, args) => {
+};
+const handler = async (connection, tag, command, args) => {
     const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {});
     if ("created" in response && response["created"])
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
     else
         connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
-});
+};
+const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
+exports.default = plugin;
 //# sourceMappingURL=CREATE.js.map

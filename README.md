@@ -75,7 +75,6 @@ development.
   - [x] Confirm that all integers are safe.
   - [x] Confirm that all command names are atoms.
   - [x] Confirm that there are no duplicate plugins.
-- [ ] Make plugins follow serverless handler signatures.
 - [ ] Add `capability` field to plugins.
 - [ ] Consider using nameless queues to make the queue list more readable.
 - [x] Make `ConfigurationSource` a class so you can keep the master variables list there.

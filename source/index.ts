@@ -60,6 +60,7 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
     if (console) console.log(`Loaded message broker plugin for protocol '${queueProtocol}'.`);
 
     // Loading the command plugins
+    const capabilities : Set<string> = new Set();
     const commandsDirectory : string = path.join(__dirname, "Commands");
     const plugins : { [ commandName : string ] : CommandPlugin } = {};
     const commandPluginsIterator = pluginIterator(commandsDirectory);
@@ -75,6 +76,9 @@ function *pluginIterator (directoryName : string) : IterableIterator<string> {
         }
         if ((Buffer.from(commandName)).every(Scanner.isAtomChar)) {
             plugins[commandName] = require(plugin).default;
+            plugins[commandName].contributesCapabilities.forEach((capability : string) : void => {
+                capabilities.add(capability);
+            });
             if (console) console.log(`Loaded command plugin for command '${commandName}'.`);
         } else {
             if (console) console.error(`Invalid command name for plugin: ${commandName}. This plugin cannot be loaded, so it will be skipped.`);

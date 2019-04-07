@@ -13,15 +13,6 @@ class Server {
         this.id = `urn:uuid:${uuid_1.v4()}`;
         this.creationTime = new Date();
         this.driverlessAuthenticationDatabase = this.configuration.driverless_authentication_credentials;
-        this.supportedSASLAuthenticationMechanisms = new Set([
-            "PLAIN"
-        ]);
-        this.capabilities = new Set([
-            "IMAP4rev1",
-            "STARTTLS",
-            "LOGINDISABLED",
-            "AUTH=PLAIN"
-        ]);
         const listeningSocket = net.createServer((socket) => {
             const connection = new Connection_1.Connection(this, socket);
         }).listen(this.configuration.imap_server_tcp_listening_port, this.configuration.imap_server_ip_bind_address, () => {
@@ -52,6 +43,19 @@ class Server {
             });
         });
     }
+    get capabilities() {
+        let commandCapabilities = new Set();
+        for (let [name, plugin] of Object.entries(this.commandPlugins)) {
+            plugin.contributesCapabilities.forEach((capability) => {
+                commandCapabilities.add(capability);
+            });
+        }
+        return new Set([
+            "IMAP4rev1",
+        ].concat(Array.from(this.configuration.imap_server_permitted_sasl_mechanisms.values())
+            .map((mechanism) => `AUTH=${mechanism}`), Array.from(commandCapabilities.values())));
+    }
+    ;
     static passwordHash(password) {
         return new Promise((resolve, reject) => {
             crypto.pbkdf2(password, Server.driverlessAuthenticationPasswordSalt, Server.driverlessAuthenticationHashRounds, Server.driverlessAuthenticationDesiredHashLengthInBytes, Server.driverlessAuthenticationKeyedHMACAlgorithm, (err, derivedKey) => {

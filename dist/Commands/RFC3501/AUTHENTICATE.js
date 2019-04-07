@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
 const Lexeme_1 = require("../../Lexeme");
-exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
+const lexer = function* (scanner, currentCommand) {
     switch (currentCommand.length) {
         case (2): {
             const space = scanner.readSpace();
@@ -37,7 +37,8 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
             }
         }
     }
-}, (connection, tag, command, args) => {
+};
+const handler = (connection, tag, command, args) => {
     const saslMechanism = args[3].toString();
     const saslResponses = args.filter((lexeme) => {
         return (lexeme.type === 13);
@@ -63,5 +64,7 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
                 connection.socket.write(`+ ${response["nextChallenge"]}\r\n`);
         }
     });
-});
+};
+const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
+exports.default = plugin;
 //# sourceMappingURL=AUTHENTICATE.js.map

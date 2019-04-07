@@ -34,17 +34,27 @@ class Server implements Temporal, UniquelyIdentified {
     public static driverlessAuthenticationDesiredHashLengthInBytes = 64;
     public static driverlessAuthenticationKeyedHMACAlgorithm : string = "sha512";
 
-    public readonly supportedSASLAuthenticationMechanisms : Set<string> = new Set<string>([
-        "PLAIN"
-    ]);
+    public get capabilities () : Set<string> {
 
-    public readonly capabilities : Set<string> = new Set<string>([
-        // These are always required, per RFC 3501, Section 7.2.1.
-        "IMAP4rev1",
-        "STARTTLS",
-        "LOGINDISABLED",
-        "AUTH=PLAIN"
-    ]);
+        let commandCapabilities : Set<string> = new Set<string>();
+        for (let [name, plugin] of Object.entries(this.commandPlugins)) {
+            plugin.contributesCapabilities.forEach((capability : string) : void => {
+                commandCapabilities.add(capability);
+            });
+        }
+
+        return new Set<string>([
+            // These are always required, per RFC 3501, Section 7.2.1.
+            "IMAP4rev1",
+            // "STARTTLS",
+            // "LOGINDISABLED",
+            // "AUTH=PLAIN"
+        ].concat(
+            Array.from(this.configuration.imap_server_permitted_sasl_mechanisms.values())
+            .map((mechanism : string) : string => `AUTH=${mechanism}`),
+            Array.from(commandCapabilities.values())
+        ));
+    };
 
     constructor(
         readonly configuration : TypedKeyValueStore & ConfigurationSource,

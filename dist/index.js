@@ -52,6 +52,7 @@ function* pluginIterator(directoryName) {
     await messageBroker.initialize();
     if (console)
         console.log(`Loaded message broker plugin for protocol '${queueProtocol}'.`);
+    const capabilities = new Set();
     const commandsDirectory = path.join(__dirname, "Commands");
     const plugins = {};
     const commandPluginsIterator = pluginIterator(commandsDirectory);
@@ -67,6 +68,9 @@ function* pluginIterator(directoryName) {
         }
         if ((Buffer.from(commandName)).every(Scanner_1.Scanner.isAtomChar)) {
             plugins[commandName] = require(plugin).default;
+            plugins[commandName].contributesCapabilities.forEach((capability) => {
+                capabilities.add(capability);
+            });
             if (console)
                 console.log(`Loaded command plugin for command '${commandName}'.`);
         }

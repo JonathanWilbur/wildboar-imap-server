@@ -1,1 +1,1 @@
-{"version":3,"file":"CommandPlugin.js","sourceRoot":"","sources":["../source/CommandPlugin.ts"],"names":[],"mappings":";;AAIA,MACM,aAAa;IACf,YACa,gBAA6F,EAC7F,QAA6F;QAD7F,qBAAgB,GAAhB,gBAAgB,CAA6E;QAC7F,aAAQ,GAAR,QAAQ,CAAqF;IACvG,CAAC;CACP;AAND,sCAMC"}
+{"version":3,"file":"CommandPlugin.js","sourceRoot":"","sources":["../source/CommandPlugin.ts"],"names":[],"mappings":";;AAIA,MACM,aAAa;IAEf,YACa,gBAA6F,EAC7F,QAA6F;QAD7F,qBAAgB,GAAhB,gBAAgB,CAA6E;QAC7F,aAAQ,GAAR,QAAQ,CAAqF;QAHnG,4BAAuB,GAAc,EAAE,CAAC;IAI5C,CAAC;CACP;AAPD,sCAOC"}

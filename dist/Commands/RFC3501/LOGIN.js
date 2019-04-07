@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
 const Server_1 = require("../../Server");
-exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentCommand) {
+const lexer = function* (scanner, currentCommand) {
     switch (currentCommand.length) {
         case (2): {
             const space = scanner.readSpace();
@@ -38,7 +38,8 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
         default:
             throw new Error("Too many arguments supplied to the LOGIN command.");
     }
-}, (connection, tag, command, args) => {
+};
+const handler = (connection, tag, command, args) => {
     const credentials = args.filter((lexeme) => {
         return (lexeme.type === 9 ||
             lexeme.type === 10 ||
@@ -82,5 +83,7 @@ exports.default = new CommandPlugin_1.CommandPlugin(function* (scanner, currentC
             }
         });
     }
-});
+};
+const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
+exports.default = plugin;
 //# sourceMappingURL=LOGIN.js.map
