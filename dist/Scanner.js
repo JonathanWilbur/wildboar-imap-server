@@ -42,7 +42,9 @@ class Scanner {
     readTag() {
         const indexOfFirstSpace = this.receivedData.indexOf(" ".charCodeAt(0), this.scanCursor);
         if (indexOfFirstSpace === -1)
-            throw new Error("No first space.");
+            return null;
+        if (this.scanCursor === indexOfFirstSpace)
+            throw new Error("Tag cannot be zero-length.");
         const tag = this.receivedData.slice(this.scanCursor, indexOfFirstSpace);
         if (!(tag.every(Scanner.isTagChar)))
             throw new Error("Invalid characters in tag.");
@@ -58,7 +60,9 @@ class Scanner {
             }
         }
         if (indexOfEndOfCommand === -1)
-            throw new Error("No end of command.");
+            return null;
+        if (this.scanCursor === indexOfEndOfCommand)
+            throw new Error("Command cannot be zero-length.");
         const commandName = this.receivedData.slice(this.scanCursor, indexOfEndOfCommand);
         if (!(commandName.every(Scanner.isAtomChar)))
             throw new Error("Invalid characters in command name.");
@@ -75,21 +79,21 @@ class Scanner {
     readSpace() {
         if (this.receivedData[this.scanCursor] === ' '.charCodeAt(0)) {
             this.scanCursor++;
-            return true;
+            return new Lexeme_1.Lexeme(2, Buffer.from(' '));
         }
         else
-            return false;
+            throw new Error("Space not found.");
     }
     readNewLine() {
         if (this.scanCursor >= this.receivedData.length - 1)
-            return false;
+            return null;
         if (this.receivedData[this.scanCursor] === '\r'.charCodeAt(0) &&
             this.receivedData[this.scanCursor + 1] === '\n'.charCodeAt(0)) {
             this.scanCursor += 2;
-            return true;
+            return new Lexeme_1.Lexeme(4, Buffer.from("\r\n"));
         }
         else
-            return false;
+            throw new Error("Invalid CRLF newline.");
     }
     readDoubleQuotedString() {
         let i = (this.scanCursor + 1);

@@ -107,14 +107,19 @@ class Connection implements Temporal, UniquelyIdentified {
                 this.scanner.skipLine();
                 return;
             }
-            if (this.currentCommand.length === 0 && this.scanner.lineReady()) 
-                yield this.scanner.readTag();
+            if (this.currentCommand.length === 0 && this.scanner.lineReady()) {
+                const tag : Lexeme | null = this.scanner.readTag();
+                if (!tag) return;
+                yield tag;
+            }
             const lastLexeme : Lexeme = this.currentCommand[this.currentCommand.length - 1];
             if (!lastLexeme) return;
             switch (<number>lastLexeme.type) {
                 case (LexemeType.TAG): {
                     if (this.scanner.lineReady()) {
-                        yield this.scanner.readCommand();
+                        const command : Lexeme | null = this.scanner.readCommand();
+                        if (!command) return;
+                        yield command;
                         continue;
                     }
                     return;
@@ -128,7 +133,9 @@ class Connection implements Temporal, UniquelyIdentified {
                 }
                 case (LexemeType.END_OF_COMMAND): {
                     if (this.scanner.lineReady()) {
-                        yield this.scanner.readTag();
+                        const tag : Lexeme | null = this.scanner.readTag();
+                        if (!tag) return;
+                        yield tag;
                         continue;
                     } else return;
                 }

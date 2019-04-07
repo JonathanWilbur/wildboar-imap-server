@@ -69,15 +69,22 @@ class Connection {
                 this.scanner.skipLine();
                 return;
             }
-            if (this.currentCommand.length === 0 && this.scanner.lineReady())
-                yield this.scanner.readTag();
+            if (this.currentCommand.length === 0 && this.scanner.lineReady()) {
+                const tag = this.scanner.readTag();
+                if (!tag)
+                    return;
+                yield tag;
+            }
             const lastLexeme = this.currentCommand[this.currentCommand.length - 1];
             if (!lastLexeme)
                 return;
             switch (lastLexeme.type) {
                 case (5): {
                     if (this.scanner.lineReady()) {
-                        yield this.scanner.readCommand();
+                        const command = this.scanner.readCommand();
+                        if (!command)
+                            return;
+                        yield command;
                         continue;
                     }
                     return;
@@ -92,7 +99,10 @@ class Connection {
                 }
                 case (3): {
                     if (this.scanner.lineReady()) {
-                        yield this.scanner.readTag();
+                        const tag = this.scanner.readTag();
+                        if (!tag)
+                            return;
+                        yield tag;
                         continue;
                     }
                     else
