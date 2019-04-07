@@ -10,7 +10,7 @@ interface ConfigurationSource extends Temporal, TypedKeyValueStore, UniquelyIden
     imap_server_hostname : string;
     imap_server_servername : string;
     imap_server_greeting : string;
-    imap_server_permitted_sasl_mechanisms : string[];
+    imap_server_permitted_sasl_mechanisms : Set<string>;
     queue_protocol : string;
     queue_server_hostname : string;
     queue_server_tcp_listening_port : number;

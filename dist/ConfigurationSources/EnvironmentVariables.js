@@ -52,6 +52,12 @@ class EnvironmentVariablesConfigurationSource {
             return undefined;
         }
     }
+    static isSASLMechanismNameChar(char) {
+        return ((char >= 0x41 && char <= 0x5A) ||
+            (char >= 0x30 && char <= 0x39) ||
+            (char === 0x2D) ||
+            (char === 0x5F));
+    }
     getBoolean(key) {
         if (key.length === 0)
             return undefined;
@@ -157,11 +163,19 @@ class EnvironmentVariablesConfigurationSource {
         return env;
     }
     get imap_server_permitted_sasl_mechanisms() {
-        const DEFAULT_VALUE = ["PLAIN"];
+        const DEFAULT_VALUE = new Set(["PLAIN"]);
         const env = this.getString("imap.server.permitted_sasl_mechanisms");
         if (!env)
             return DEFAULT_VALUE;
-        return env.split(" ");
+        const ret = env.split(" ");
+        return new Set(ret
+            .map((mechanism) => mechanism.toUpperCase())
+            .filter((mechanism) => {
+            if (!(Buffer.from(mechanism))
+                .every(EnvironmentVariablesConfigurationSource.isSASLMechanismNameChar))
+                return false;
+            return true;
+        }));
     }
     get driverless_authentication_credentials() {
         const DEFAULT_VALUE = {};

@@ -43,6 +43,20 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
         }
     }
 
+    // From IETF RFC 4422, Section 3.1:
+    // sasl-mech    = 1*20mech-char
+    // mech-char    = UPPER-ALPHA / DIGIT / HYPHEN / UNDERSCORE
+    // ; mech-char is restricted to A-Z (uppercase only), 0-9, -, and _
+    // ; from ASCII character set.
+    public static isSASLMechanismNameChar (char : number) : boolean {
+        return (
+            (char >= 0x41 && char <= 0x5A) ||
+            (char >= 0x30 && char <= 0x39) ||
+            (char === 0x2D) ||
+            (char === 0x5F)
+        );
+    }
+
     public getBoolean (key : string) : boolean | undefined {
         if (key.length === 0) return undefined;
         const environmentVariableName : string =
@@ -155,12 +169,19 @@ class EnvironmentVariablesConfigurationSource implements ConfigurationSource,Typ
         return env;
     }
 
-    get imap_server_permitted_sasl_mechanisms () : string[] {
-        const DEFAULT_VALUE : string[] = [ "PLAIN" ];
+    get imap_server_permitted_sasl_mechanisms () : Set<string> {
+        const DEFAULT_VALUE : Set<string> = new Set([ "PLAIN" ]);
         const env : string | undefined = this.getString("imap.server.permitted_sasl_mechanisms");
         if (!env) return DEFAULT_VALUE;
-        // TODO: Validate SASL Mechanism names.
-        return env.split(" ");
+        const ret : string[] = env.split(" ");
+        return new Set(ret
+            .map((mechanism : string) : string => mechanism.toUpperCase())
+            .filter((mechanism : string) : boolean => {
+                if (!(Buffer.from(mechanism))
+                .every(EnvironmentVariablesConfigurationSource.isSASLMechanismNameChar))
+                    return false;
+                return true;
+            }));
     }
 
     get driverless_authentication_credentials () : { [ username : string ] : string } {
