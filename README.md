@@ -29,7 +29,7 @@ development.
     - [x] CAPABILITY
     - [x] NOOP
     - [x] LOGOUT
-    - [ ] STARTTLS
+    - [x] STARTTLS
     - [x] AUTHENTICATE
     - [x] LOGIN
     - [ ] SELECT
