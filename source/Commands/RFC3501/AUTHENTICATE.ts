@@ -3,6 +3,7 @@ import { Connection } from "../../Connection";
 import { Lexeme } from "../../Lexeme";
 import { LexemeType } from "../../LexemeType";
 import { Scanner } from "../../Scanner";
+import { ConnectionState } from "../../ConnectionState";
 
 const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
     switch (currentCommand.length) {
@@ -36,6 +37,10 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
 };
 
 const handler = (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {
+    if (connection.state !== ConnectionState.NOT_AUTHENTICATED) {
+        connection.socket.write(`${tag} BAD ${command} not allowed in the current state.\r\n`);
+        return;
+    }
     const saslMechanism : string = args[3].toString();
     const saslResponses : Lexeme[] = args.filter((lexeme : Lexeme) : boolean => {
         return (lexeme.type === LexemeType.BASE64);

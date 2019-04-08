@@ -4,6 +4,7 @@ import { Lexeme } from "../../Lexeme";
 import { LexemeType } from "../../LexemeType";
 import { Scanner } from "../../Scanner";
 import { Server } from "../../Server";
+import { ConnectionState } from "../../ConnectionState";
 
 const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
     switch (currentCommand.length) {
@@ -39,6 +40,10 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
 };
 
 const handler = (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {
+    if (connection.state !== ConnectionState.NOT_AUTHENTICATED) {
+        connection.socket.write(`${tag} BAD ${command} not allowed in the current state.\r\n`);
+        return;
+    }
     const credentials : Lexeme[] = args.filter((lexeme : Lexeme) : boolean => {
         return (
             lexeme.type === LexemeType.ATOM ||

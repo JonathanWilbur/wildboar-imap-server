@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
 const Lexeme_1 = require("../../Lexeme");
+const ConnectionState_1 = require("../../ConnectionState");
 const lexer = function* (scanner, currentCommand) {
     switch (currentCommand.length) {
         case (2): {
@@ -39,6 +40,10 @@ const lexer = function* (scanner, currentCommand) {
     }
 };
 const handler = (connection, tag, command, args) => {
+    if (connection.state !== ConnectionState_1.ConnectionState.NOT_AUTHENTICATED) {
+        connection.socket.write(`${tag} BAD ${command} not allowed in the current state.\r\n`);
+        return;
+    }
     const saslMechanism = args[3].toString();
     const saslResponses = args.filter((lexeme) => {
         return (lexeme.type === 13);
