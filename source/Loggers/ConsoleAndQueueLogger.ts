@@ -30,9 +30,9 @@ class ConsoleAndQueueLogger implements Logger {
     }
 
     public debug (event : Messageable) : void {
-        if (console && (this.consoleLogLevel >= LogLevel.DEBUG))
+        if (console && (this.consoleLogLevel <= LogLevel.DEBUG))
             console.debug(`${ConsoleAndQueueLogger.DEBUG_ICON} ${event.message}`);
-        if (this.queueLogLevel >= LogLevel.DEBUG) {
+        if (this.queueLogLevel <= LogLevel.DEBUG) {
             (<any>event)["severity"] = "DEBUG";
             if (event.topic) this.messageBroker.publishEvent(event.topic, event);
             else this.messageBroker.publishEvent("imap", event);
@@ -40,9 +40,9 @@ class ConsoleAndQueueLogger implements Logger {
     }
 
     public info (event : Messageable) : void {
-        if (console && (this.consoleLogLevel >= LogLevel.INFO))
+        if (console && (this.consoleLogLevel <= LogLevel.INFO))
             console.info(`${ConsoleAndQueueLogger.INFO_ICON} ${event.message}`);
-        if (this.queueLogLevel >= LogLevel.INFO) {
+        if (this.queueLogLevel <= LogLevel.INFO) {
             (<any>event)["severity"] = "INFO";
             if (event.topic) this.messageBroker.publishEvent(event.topic, event);
             else this.messageBroker.publishEvent("imap", event);
@@ -50,9 +50,9 @@ class ConsoleAndQueueLogger implements Logger {
     }
 
     public warn (event : Messageable) : void {
-        if (console && (this.consoleLogLevel >= LogLevel.WARN))
+        if (console && (this.consoleLogLevel <= LogLevel.WARN))
             console.warn(`${ConsoleAndQueueLogger.WARN_ICON} ${event.message}`);
-        if (this.queueLogLevel >= LogLevel.WARN) {
+        if (this.queueLogLevel <= LogLevel.WARN) {
             (<any>event)["severity"] = "WARN";
             if (event.topic) this.messageBroker.publishEvent(event.topic, event);
             else this.messageBroker.publishEvent("imap", event);
@@ -60,9 +60,9 @@ class ConsoleAndQueueLogger implements Logger {
     }
 
     public error (event : Messageable) : void {
-        if (console && (this.consoleLogLevel >= LogLevel.ERROR))
+        if (console && (this.consoleLogLevel <= LogLevel.ERROR))
             console.error(`${ConsoleAndQueueLogger.ERROR_ICON} ${event.message}`);
-        if (this.queueLogLevel >= LogLevel.ERROR) {
+        if (this.queueLogLevel <= LogLevel.ERROR) {
             (<any>event)["severity"] = "ERROR";
             this.messageBroker.publishEvent("imap.error", event);
         }

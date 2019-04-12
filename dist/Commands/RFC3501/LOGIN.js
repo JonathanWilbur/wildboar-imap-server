@@ -40,12 +40,8 @@ const lexer = function* (scanner, currentCommand) {
             throw new Error("Too many arguments supplied to the LOGIN command.");
     }
 };
-const handler = (connection, tag, command, args) => {
-    if (connection.state !== ConnectionState_1.ConnectionState.NOT_AUTHENTICATED) {
-        connection.socket.write(`${tag} BAD ${command} not allowed in the current state.\r\n`);
-        return;
-    }
-    const credentials = args.filter((lexeme) => {
+const handler = async (connection, tag, command, lexemes) => {
+    const credentials = lexemes.filter((lexeme) => {
         return (lexeme.type === 9 ||
             lexeme.type === 10 ||
             lexeme.type === 12);
@@ -58,37 +54,38 @@ const handler = (connection, tag, command, args) => {
     if (username in connection.server.driverlessAuthenticationDatabase) {
         Server_1.Server.passwordHash(password).then((passhash) => {
             if (connection.server.driverlessAuthenticationDatabase[username] === passhash) {
-                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
                 connection.authenticatedUser = username;
+                connection.state = ConnectionState_1.ConnectionState.AUTHENTICATED;
+                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
             }
             else
                 connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
         });
     }
     else {
-        connection.server.messageBroker.publishAuthentication("PLAIN", {
+        const response = await connection.server.messageBroker.publishAuthentication("PLAIN", {
             messages: [
                 (Buffer.from(`${username}\x00${username}\x00${password}`)).toString("base64")
             ]
-        })
-            .then((response) => {
-            if (!("done" in response))
-                throw Error(`Authentication driver response using mechanism 'PLAIN' did not include a "done" field.`);
-            if (response["done"]) {
-                if ("authenticatedUser" in response && typeof response["authenticatedUser"] === "string") {
-                    connection.authenticatedUser = response["authenticatedUser"];
-                    connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
-                }
-                else {
-                    connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
-                }
+        });
+        if (!("done" in response))
+            throw Error(`Authentication driver response using mechanism 'PLAIN' did not include a "done" field.`);
+        if (response["done"]) {
+            if ("authenticatedUser" in response && typeof response["authenticatedUser"] === "string") {
+                connection.authenticatedUser = response["authenticatedUser"];
+                connection.state = ConnectionState_1.ConnectionState.AUTHENTICATED;
+                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
             }
             else {
-                connection.socket.write(`${tag} NO ${command} Unexpected error.\r\n`);
+                connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
             }
-        });
+        }
+        else {
+            connection.socket.write(`${tag} NO ${command} Unexpected error.\r\n`);
+        }
     }
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
+plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
 exports.default = plugin;
 //# sourceMappingURL=LOGIN.js.map

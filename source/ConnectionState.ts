@@ -1,7 +1,7 @@
 export
 enum ConnectionState {
-    NOT_AUTHENTICATED = 1,
-    AUTHENTICATED = 2,
-    SELECTED = 3,
-    LOGOUT = 4
+    NOT_AUTHENTICATED = 0b0000_0001,
+    AUTHENTICATED = 0b0000_0010,
+    SELECTED = 0b0000_0100,
+    LOGOUT = 0b0000_1000
 }

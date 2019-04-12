@@ -10,7 +10,7 @@ const lexer = function* (scanner : Scanner, currentcommand : Lexeme[]) : Iterabl
     return;
 };
 
-const handler = (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {
+const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {
     connection.socket.write(`* ${command} ${Array.from(connection.server.capabilities.values()).join(" ")}\r\n`);
     connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
 };

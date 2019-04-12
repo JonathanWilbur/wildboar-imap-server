@@ -34,13 +34,13 @@ class Connection {
                         break;
                     }
                     case (3): {
-                        this.executeCommand();
+                        this.executeCommand(this.currentCommand.slice(0));
                         this.currentCommand = [];
                         break;
                     }
                     case (4): {
                         this.currentCommand.push(lexeme);
-                        this.executeCommand();
+                        this.executeCommand(this.currentCommand.slice(0));
                         break;
                     }
                     default: {
@@ -133,25 +133,13 @@ class Connection {
             }
         }
     }
-    executeCommand() {
-        if (this.currentCommand.length < 2)
+    async executeCommand(lexemes) {
+        if (lexemes.length < 2)
             return;
-        const commandName = this.currentCommand[1].toString();
-        if (commandName in this.server.commandPlugins) {
-            const commandPlugin = this.server.commandPlugins[commandName];
-            try {
-                commandPlugin.callback(this, this.currentCommand[0].toString(), this.currentCommand[1].toString(), this.currentCommand);
-            }
-            catch (e) {
-                this.server.logger.error({
-                    topic: `imap.commands.${commandName}`,
-                    message: e.message,
-                    error: e
-                });
-                this.currentCommand.push(new Lexeme_1.Lexeme(0, Buffer.from(e.message || "")));
-            }
-        }
-        else {
+        const tag = lexemes[0].toString();
+        const commandName = lexemes[1].toString();
+        if (!(commandName in this.server.commandPlugins)) {
+            this.socket.write(`${tag} BAD Command '${commandName}' not understood by this server.\r\n`);
             this.server.logger.warn({
                 message: `Command '${commandName}' not understood by this server.`,
                 topic: "imap.command._unknown",
@@ -160,7 +148,83 @@ class Connection {
                 connectionID: this.id,
                 authenticatedUser: this.authenticatedUser
             });
+            return;
         }
+        const commandPlugin = this.server.commandPlugins[commandName];
+        if (!(commandPlugin.mayExecuteWhileInConnectionState(this.state))) {
+            this.socket.write(`${tag} NO Command '${commandName}' not allowed in the current state.\r\n`);
+            this.server.logger.warn({
+                message: `Command '${commandName}' not allowed in the current state.`,
+                topic: "imap.command._wrongstate",
+                command: commandName,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser
+            });
+            return;
+        }
+        try {
+            const authorized = await this.checkAuthorization(lexemes);
+            if (!authorized) {
+                this.socket.write(`${tag} NO Command '${commandName}' not authorized.\r\n`);
+                this.server.logger.warn({
+                    message: `Command '${commandName}' not authorized.`,
+                    topic: "imap.command._prohibited",
+                    command: commandName,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser
+                });
+                return;
+            }
+        }
+        catch (e) {
+            this.socket.write(`${tag} NO Internal error. Sorry!\r\n`);
+            return;
+        }
+        try {
+            await commandPlugin.callback(this, tag, commandName, lexemes);
+            this.server.logger.info({
+                message: `Command '${commandName}' executed.`,
+                topic: `imap.command.${commandName}`,
+                command: commandName,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser
+            });
+        }
+        catch (e) {
+            this.currentCommand = [];
+            this.socket.write(`${tag} NO Command '${commandName}' encountered an error.\r\n`);
+            this.server.logger.error({
+                topic: `imap.commands.${commandName}`,
+                message: e.message,
+                error: e
+            });
+        }
+    }
+    async checkAuthorization(lexemes) {
+        if (this.server.configuration.simple_authorization)
+            return true;
+        if (lexemes.length < 2)
+            return false;
+        const tag = lexemes[0].toString();
+        const commandName = lexemes[1].toString();
+        const authorization = await this.server.messageBroker.publishAuthorization(this, {
+            command: {
+                tag: tag,
+                name: commandName,
+                args: lexemes.slice(2).map((arg) => arg.toString())
+            }
+        });
+        if ("authorized" in authorization && typeof authorization["authorized"] === "boolean") {
+            if (authorization["authorized"])
+                return true;
+            else
+                return false;
+        }
+        else
+            throw new Error(`Internal error when trying to authorize command '${commandName}'.`);
     }
     close() {
         this.socket.end();

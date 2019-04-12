@@ -22,8 +22,14 @@ const lexer = function* (scanner, currentCommand) {
     return;
 };
 const handler = async (connection, tag, command, lexemes) => {
-    const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {});
-    if ("created" in response && response["created"])
+    if (lexemes.length !== 4) {
+        connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        return;
+    }
+    const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+        mailboxName: lexemes[3].toString()
+    });
+    if ("ok" in response && response["ok"])
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
     else
         connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
@@ -31,4 +37,4 @@ const handler = async (connection, tag, command, lexemes) => {
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
 plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.AUTHENTICATED;
 exports.default = plugin;
-//# sourceMappingURL=CREATE.js.map
+//# sourceMappingURL=SELECT.js.map

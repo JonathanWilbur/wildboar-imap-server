@@ -5,6 +5,10 @@ class CommandPlugin {
         this.argumentsScanner = argumentsScanner;
         this.callback = callback;
         this.contributesCapabilities = [];
+        this.acceptableConnectionState = null;
+    }
+    mayExecuteWhileInConnectionState(state) {
+        return ((this.acceptableConnectionState === null) || (state === this.acceptableConnectionState));
     }
 }
 exports.CommandPlugin = CommandPlugin;

@@ -64,13 +64,13 @@ class Connection implements Temporal, UniquelyIdentified {
                         break;
                     }
                     case (LexemeType.END_OF_COMMAND): {
-                        this.executeCommand();
+                        this.executeCommand(this.currentCommand.slice(0));
                         this.currentCommand = [];
                         break;
                     }
                     case (LexemeType.NEWLINE): {
                         this.currentCommand.push(lexeme);
-                        this.executeCommand();
+                        this.executeCommand(this.currentCommand.slice(0));
                         break;
                     }
                     default: {
@@ -179,30 +179,14 @@ class Connection implements Temporal, UniquelyIdentified {
      * @summary Executes the current command plugin's callback.
      * @private
      */
-    private executeCommand () : void {
-        if (this.currentCommand.length < 2) return;
-        const commandName : string = this.currentCommand[1].toString(); // #UTF_SAFE
-        if (commandName in this.server.commandPlugins) {
-            const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
-            try {
-                commandPlugin.callback(
-                    this,
-                    this.currentCommand[0].toString(), // #UTF_SAFE
-                    this.currentCommand[1].toString(), // #UTF_SAFE
-                    this.currentCommand
-                );
-            } catch (e) {
-                this.server.logger.error({
-                    topic: `imap.commands.${commandName}`,
-                    message: e.message,
-                    error: e
-                });
-                this.currentCommand.push(new Lexeme(
-                    LexemeType.ERROR,
-                    Buffer.from(e.message || "")
-                ));
-            }
-        } else {
+    private async executeCommand (lexemes : Lexeme[]) {
+        if (lexemes.length < 2) return;
+        const tag : string = lexemes[0].toString(); // #UTF_SAFE
+        const commandName : string = lexemes[1].toString(); // #UTF_SAFE
+
+        // Check that the command exists
+        if (!(commandName in this.server.commandPlugins)) {
+            this.socket.write(`${tag} BAD Command '${commandName}' not understood by this server.\r\n`);
             this.server.logger.warn({
                 message: `Command '${commandName}' not understood by this server.`,
                 topic: "imap.command._unknown",
@@ -211,7 +195,84 @@ class Connection implements Temporal, UniquelyIdentified {
                 connectionID: this.id,
                 authenticatedUser: this.authenticatedUser
             });
+            return;
         }
+        const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
+
+        // Check that the command may be executed in this state.
+        if (!(commandPlugin.mayExecuteWhileInConnectionState(this.state))) {
+            this.socket.write(`${tag} NO Command '${commandName}' not allowed in the current state.\r\n`);
+            this.server.logger.warn({
+                message: `Command '${commandName}' not allowed in the current state.`,
+                topic: "imap.command._wrongstate",
+                command: commandName,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser
+            });
+            return;
+        }
+
+        // Check that this command is authorized.
+        try {
+            const authorized : boolean = await this.checkAuthorization(lexemes);
+            if (!authorized) {
+                this.socket.write(`${tag} NO Command '${commandName}' not authorized.\r\n`);
+                this.server.logger.warn({
+                    message: `Command '${commandName}' not authorized.`,
+                    topic: "imap.command._prohibited",
+                    command: commandName,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser
+                });
+                return;
+            }
+        } catch (e) {
+            this.socket.write(`${tag} NO Internal error. Sorry!\r\n`);
+            return;
+        }
+
+        // Finally, execute the command.
+        try {
+            await commandPlugin.callback(this, tag, commandName, lexemes);
+            this.server.logger.info({
+                message: `Command '${commandName}' executed.`,
+                topic: `imap.command.${commandName}`,
+                command: commandName,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser
+            });
+        } catch (e) {
+            this.currentCommand = [];
+            this.socket.write(`${tag} NO Command '${commandName}' encountered an error.\r\n`);
+            this.server.logger.error({
+                topic: `imap.commands.${commandName}`,
+                message: e.message,
+                error: e
+            });
+        }
+    }
+
+    private async checkAuthorization (lexemes : Lexeme[]) : Promise<boolean> {
+        if (this.server.configuration.simple_authorization) return true;
+        if (lexemes.length < 2) return false;
+        const tag : string = lexemes[0].toString(); // #UTF_SAFE
+        const commandName : string = lexemes[1].toString(); // #UTF_SAFE
+        const authorization : object =
+            await this.server.messageBroker.publishAuthorization(this, {
+                command: {
+                    tag: tag,
+                    name: commandName,
+                    args: lexemes.slice(2).map((arg : Lexeme) => arg.toString())
+                }
+            });
+        if ("authorized" in authorization && typeof (<any>authorization)["authorized"] === "boolean") {
+            if ((<any>authorization)["authorized"]) return true;
+            else return false;
+        } else
+            throw new Error(`Internal error when trying to authorize command '${commandName}'.`);
     }
 
     public close () : void {

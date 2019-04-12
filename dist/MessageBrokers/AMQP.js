@@ -25,16 +25,23 @@ class AMQPMessageBroker {
         await this.channel.assertQueue("events.imap", { durable: false });
         await this.channel.bindQueue("events.imap", "events", "imap");
         await this.channel.assertExchange("authentication", "direct", { durable: true });
-        await this.channel.assertQueue("authorization", { durable: false });
+        await this.channel.assertQueue("authorization.imap", { durable: false });
+        await this.channel.assertExchange("authorization", "direct", { durable: true });
+        await this.channel.bindQueue("authorization.imap", "authorization", "imap");
         const authenticationResponseQueueName = `authentication.responses-${this.id}`;
         await this.channel.assertQueue(authenticationResponseQueueName, { exclusive: true });
         await this.channel.consume(authenticationResponseQueueName, (message) => {
             if (!message)
                 return;
             this.responseEmitter.emit(message.properties.correlationId, message);
-        }, {
-            noAck: true
-        });
+        }, { noAck: true });
+        const authorizationResponseQueueName = `authorization.responses-${this.id}`;
+        await this.channel.assertQueue(authorizationResponseQueueName, { exclusive: true });
+        await this.channel.consume(authorizationResponseQueueName, (message) => {
+            if (!message)
+                return;
+            this.responseEmitter.emit(message.properties.correlationId, message);
+        }, { noAck: true });
         return Promise.resolve(true);
     }
     async initializeCommandRPCQueue(commandName) {
@@ -79,6 +86,57 @@ class AMQPMessageBroker {
             });
         });
     }
+    publishAuthorization(connection, message) {
+        const correlationId = `urn:uuid:${uuid_1.v4()}`;
+        setTimeout(() => {
+            this.responseEmitter.emit(correlationId, null);
+        }, this.configuration.queue_rpc_message_timeout_in_milliseconds);
+        return new Promise((resolve, reject) => {
+            this.responseEmitter.once(correlationId, (response) => {
+                if (!response) {
+                    reject(new Error(`Authorization request timed out!`));
+                    return;
+                }
+                try {
+                    resolve(JSON.parse(response.content.toString()));
+                }
+                catch (error) {
+                    reject(error);
+                }
+            });
+            message.protocol = "imap";
+            message.protocolVersion = 4;
+            message.server = {
+                id: connection.server.id,
+                creationTime: connection.server.creationTime
+            };
+            message.messageBroker = {
+                id: this.id,
+                creationTime: this.creationTime
+            };
+            message.connection = {
+                id: connection.id,
+                creationTime: connection.creationTime,
+                currentlySelectedMailbox: connection.currentlySelectedMailbox,
+                authenticatedUser: connection.authenticatedUser,
+                connectionState: connection.state,
+                socket: {
+                    localAddress: connection.socket.localAddress,
+                    localPort: connection.socket.localPort,
+                    remoteFamily: connection.socket.remoteFamily,
+                    remoteAddress: connection.socket.remoteAddress,
+                    remotePort: connection.socket.remotePort
+                }
+            };
+            this.channel.publish("authorization", "imap", Buffer.from(JSON.stringify(message)), {
+                correlationId: correlationId,
+                contentType: "application/json",
+                contentEncoding: "8bit",
+                expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
+                replyTo: `authorization.responses-${this.id}`
+            });
+        });
+    }
     publishCommand(authenticatedUser, command, message) {
         const correlationId = `urn:uuid:${uuid_1.v4()}`;
         setTimeout(() => {
@@ -98,6 +156,7 @@ class AMQPMessageBroker {
                 }
             });
             message["command"] = command;
+            message["authenticatedUser"] = authenticatedUser;
             this.channel.publish("imap.commands", command, Buffer.from(JSON.stringify(message)), {
                 correlationId: correlationId,
                 contentType: "application/json",

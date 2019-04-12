@@ -39,37 +39,33 @@ const lexer = function* (scanner, currentCommand) {
         }
     }
 };
-const handler = (connection, tag, command, args) => {
-    if (connection.state !== ConnectionState_1.ConnectionState.NOT_AUTHENTICATED) {
-        connection.socket.write(`${tag} BAD ${command} not allowed in the current state.\r\n`);
-        return;
-    }
-    const saslMechanism = args[3].toString();
-    const saslResponses = args.filter((lexeme) => {
+const handler = async (connection, tag, command, lexemes) => {
+    const saslMechanism = lexemes[3].toString();
+    const saslResponses = lexemes.filter((lexeme) => {
         return (lexeme.type === 13);
     });
-    connection.server.messageBroker.publishAuthentication(saslMechanism, {
+    const response = await connection.server.messageBroker.publishAuthentication(saslMechanism, {
         messages: saslResponses.map((saslResponse) => saslResponse.toString())
-    })
-        .then((response) => {
-        if (!("done" in response))
-            throw Error(`Authentication driver response using mechanism '${saslMechanism}' did not include a "done" field.`);
-        if (response["done"]) {
-            if ("authenticatedUser" in response && typeof response["authenticatedUser"] === "string") {
-                connection.authenticatedUser = response["authenticatedUser"];
-                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
-            }
-            else {
-                connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
-            }
-            connection.currentCommand = [];
+    });
+    if (!("done" in response))
+        throw new Error(`Authentication driver response using mechanism '${saslMechanism}' did not include a "done" field.`);
+    if (response["done"]) {
+        if ("authenticatedUser" in response && typeof response["authenticatedUser"] === "string") {
+            connection.authenticatedUser = response["authenticatedUser"];
+            connection.state = ConnectionState_1.ConnectionState.AUTHENTICATED;
+            connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
         }
         else {
-            if ("nextChallenge" in response && typeof response["nextChallenge"] === "string")
-                connection.socket.write(`+ ${response["nextChallenge"]}\r\n`);
+            connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
         }
-    });
+        connection.currentCommand = [];
+    }
+    else {
+        if ("nextChallenge" in response && typeof response["nextChallenge"] === "string")
+            connection.socket.write(`+ ${response["nextChallenge"]}\r\n`);
+    }
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
+plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
 exports.default = plugin;
 //# sourceMappingURL=AUTHENTICATE.js.map

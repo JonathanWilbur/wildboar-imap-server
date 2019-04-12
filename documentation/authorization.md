@@ -80,3 +80,15 @@ it may be more effective for such a server to be implemented as a web
 application, rather than another IMAP server, or for direct access to be
 granted to the storage media. With direct access to the S3 bucket or MongoDB
 database on which the emails are stored, an administrator may have
+
+## Authorization Responses
+
+```json
+{
+        id: "urn:uuid:123"
+        authorized: false,
+        reasons: [
+                "Too many cooks."
+        ]
+}
+```

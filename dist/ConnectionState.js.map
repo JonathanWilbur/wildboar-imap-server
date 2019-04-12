@@ -1,1 +1,1 @@
-{"version":3,"file":"ConnectionState.js","sourceRoot":"","sources":["../source/ConnectionState.ts"],"names":[],"mappings":";;AAAA,IACK,eAKJ;AAND,WACK,eAAe;IAChB,+EAAqB,CAAA;IACrB,uEAAiB,CAAA;IACjB,6DAAY,CAAA;IACZ,yDAAU,CAAA;AACd,CAAC,EALI,eAAe,GAAf,uBAAe,KAAf,uBAAe,QAKnB"}
+{"version":3,"file":"ConnectionState.js","sourceRoot":"","sources":["../source/ConnectionState.ts"],"names":[],"mappings":";;AAAA,IACK,eAKJ;AAND,WACK,eAAe;IAChB,+EAA+B,CAAA;IAC/B,uEAA2B,CAAA;IAC3B,6DAAsB,CAAA;IACtB,yDAAoB,CAAA;AACxB,CAAC,EALI,eAAe,GAAf,uBAAe,KAAf,uBAAe,QAKnB"}

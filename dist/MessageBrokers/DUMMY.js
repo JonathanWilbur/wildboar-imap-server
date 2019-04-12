@@ -19,6 +19,9 @@ class DummyMessageBroker {
     publishAuthentication(saslMechanism, message) {
         return Promise.resolve({});
     }
+    publishAuthorization(connection, message) {
+        return Promise.resolve({});
+    }
     publishEvent(topic, message) { }
     closeConnection() {
         return Promise.resolve(true);

@@ -14,9 +14,9 @@ class ConsoleAndQueueLogger {
         return Promise.resolve(true);
     }
     debug(event) {
-        if (console && (this.consoleLogLevel >= LogLevel_1.LogLevel.DEBUG))
+        if (console && (this.consoleLogLevel <= LogLevel_1.LogLevel.DEBUG))
             console.debug(`${ConsoleAndQueueLogger.DEBUG_ICON} ${event.message}`);
-        if (this.queueLogLevel >= LogLevel_1.LogLevel.DEBUG) {
+        if (this.queueLogLevel <= LogLevel_1.LogLevel.DEBUG) {
             event["severity"] = "DEBUG";
             if (event.topic)
                 this.messageBroker.publishEvent(event.topic, event);
@@ -25,9 +25,9 @@ class ConsoleAndQueueLogger {
         }
     }
     info(event) {
-        if (console && (this.consoleLogLevel >= LogLevel_1.LogLevel.INFO))
+        if (console && (this.consoleLogLevel <= LogLevel_1.LogLevel.INFO))
             console.info(`${ConsoleAndQueueLogger.INFO_ICON} ${event.message}`);
-        if (this.queueLogLevel >= LogLevel_1.LogLevel.INFO) {
+        if (this.queueLogLevel <= LogLevel_1.LogLevel.INFO) {
             event["severity"] = "INFO";
             if (event.topic)
                 this.messageBroker.publishEvent(event.topic, event);
@@ -36,9 +36,9 @@ class ConsoleAndQueueLogger {
         }
     }
     warn(event) {
-        if (console && (this.consoleLogLevel >= LogLevel_1.LogLevel.WARN))
+        if (console && (this.consoleLogLevel <= LogLevel_1.LogLevel.WARN))
             console.warn(`${ConsoleAndQueueLogger.WARN_ICON} ${event.message}`);
-        if (this.queueLogLevel >= LogLevel_1.LogLevel.WARN) {
+        if (this.queueLogLevel <= LogLevel_1.LogLevel.WARN) {
             event["severity"] = "WARN";
             if (event.topic)
                 this.messageBroker.publishEvent(event.topic, event);
@@ -47,9 +47,9 @@ class ConsoleAndQueueLogger {
         }
     }
     error(event) {
-        if (console && (this.consoleLogLevel >= LogLevel_1.LogLevel.ERROR))
+        if (console && (this.consoleLogLevel <= LogLevel_1.LogLevel.ERROR))
             console.error(`${ConsoleAndQueueLogger.ERROR_ICON} ${event.message}`);
-        if (this.queueLogLevel >= LogLevel_1.LogLevel.ERROR) {
+        if (this.queueLogLevel <= LogLevel_1.LogLevel.ERROR) {
             event["severity"] = "ERROR";
             this.messageBroker.publishEvent("imap.error", event);
         }

@@ -9,7 +9,7 @@ const lexer = function* (scanner, currentcommand) {
     yield newline;
     return;
 };
-const handler = (connection, tag, command, args) => {
+const handler = async (connection, tag, command, lexemes) => {
     connection.state = ConnectionState_1.ConnectionState.LOGOUT;
     connection.authenticatedUser = "";
     connection.socket.write(`* BYE ${connection.server.configuration.imap_server_valediction}\r\n`);

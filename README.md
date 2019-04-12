@@ -52,6 +52,7 @@ development.
     - [ ] COPY (medium)
     - [ ] UID (medium)
   - [ ] Custom commands:
+    - [ ] ERROR (Intentionally throws an error, for testing purposes)
     - [ ] INFO / STATISTICS
     - [ ] HEALTHCHECK
       - [ ] Queue can be reached.
@@ -79,6 +80,11 @@ development.
 - [ ] Consider using nameless queues to make the queue list more readable.
 - [x] Make `ConfigurationSource` a class so you can keep the master variables list there.
 - [ ] Create `ok`, `bad`, and `no` methods for replies.
+- [ ] Use `jsonschema` to validate RPC responses.
+- [ ] Add `getStrings()` to `TypedKeyValueStore`
+  - This is for, among other things, indicating which commands should go through authorization.
+- [ ] Add `commands_needing_authorization` configuration directive.
+- [ ] Is `LexemeType.ERROR` really necessary anymore?
 
 ### Alpha
 
@@ -112,6 +118,8 @@ IMAP Server; only testing is performed and bugs are fixed.
   - [ ] Repeatedly connecting and disconnecting
   - [ ] Running commands repeatedly
   - [ ] Repeatedly authenticating
+- [ ] Test for timing attacks
+- [ ] Test for directory traversal
 - [ ] 100% JSDoc Documentation
 
 ### Release Candidate

@@ -11,7 +11,7 @@ const lexer = function* (scanner : Scanner, currentcommand : Lexeme[]) : Iterabl
     return;
 };
 
-const handler = (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {
+const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {
     connection.state = ConnectionState.LOGOUT;
     connection.authenticatedUser = "";
     connection.socket.write(`* BYE ${connection.server.configuration.imap_server_valediction}\r\n`);

@@ -8,7 +8,7 @@ const lexer = function* (scanner, currentcommand) {
     yield newline;
     return;
 };
-const handler = (connection, tag, command, args) => {
+const handler = async (connection, tag, command, lexemes) => {
     connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);

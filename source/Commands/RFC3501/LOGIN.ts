@@ -39,12 +39,8 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
     }
 };
 
-const handler = (connection : Connection, tag : string, command : string, args : Lexeme[]) : void => {
-    if (connection.state !== ConnectionState.NOT_AUTHENTICATED) {
-        connection.socket.write(`${tag} BAD ${command} not allowed in the current state.\r\n`);
-        return;
-    }
-    const credentials : Lexeme[] = args.filter((lexeme : Lexeme) : boolean => {
+const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {
+    const credentials : Lexeme[] = lexemes.filter((lexeme : Lexeme) : boolean => {
         return (
             lexeme.type === LexemeType.ATOM ||
             lexeme.type === LexemeType.QUOTED_STRING ||
@@ -59,35 +55,36 @@ const handler = (connection : Connection, tag : string, command : string, args :
     if (username in connection.server.driverlessAuthenticationDatabase) {
         Server.passwordHash(password).then((passhash : string) : void => {
             if (connection.server.driverlessAuthenticationDatabase[username] === passhash) {
-                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
                 connection.authenticatedUser = username;
+                connection.state = ConnectionState.AUTHENTICATED;
+                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
             } else
             connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
         });
     } else {
-        connection.server.messageBroker.publishAuthentication("PLAIN", {
+        const response : object = await connection.server.messageBroker.publishAuthentication("PLAIN", {
             messages: [
                 (Buffer.from(`${username}\x00${username}\x00${password}`)).toString("base64")
             ]
-        })
-        .then((response : object) => {
-            if (!("done" in response))
-                throw Error(`Authentication driver response using mechanism 'PLAIN' did not include a "done" field.`);
-            if ((<any>response)["done"]) {
-                if ("authenticatedUser" in response && typeof (<any>response)["authenticatedUser"] === "string") {
-                    connection.authenticatedUser = (<any>response)["authenticatedUser"];
-                    connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
-                } else {
-                    connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
-                }
-            } else {
-                // This is not supposed to happen, because the PLAIN
-                // authentication mechanism only uses one message.
-                connection.socket.write(`${tag} NO ${command} Unexpected error.\r\n`);
-            }
         });
+        if (!("done" in response))
+            throw Error(`Authentication driver response using mechanism 'PLAIN' did not include a "done" field.`);
+        if ((<any>response)["done"]) {
+            if ("authenticatedUser" in response && typeof (<any>response)["authenticatedUser"] === "string") {
+                connection.authenticatedUser = (<any>response)["authenticatedUser"];
+                connection.state = ConnectionState.AUTHENTICATED;
+                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+            } else {
+                connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+            }
+        } else {
+            // This is not supposed to happen, because the PLAIN
+            // authentication mechanism only uses one message.
+            connection.socket.write(`${tag} NO ${command} Unexpected error.\r\n`);
+        }
     }
 };
 
 const plugin : CommandPlugin = new CommandPlugin(lexer, handler);
+plugin.acceptableConnectionState = ConnectionState.NOT_AUTHENTICATED;
 export default plugin;

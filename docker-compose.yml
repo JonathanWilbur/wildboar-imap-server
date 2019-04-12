@@ -12,6 +12,7 @@ services:
     # depends_on:
     #   - messagebroker
     environment:
+      IMAP_SERVER_SIMPLE_AUTHORIZATION: 'TRUE'
       QUEUE_SERVER_HOSTNAME: 'messagebroker'
     hostname: 'imaphost'
     networks:
@@ -23,12 +24,13 @@ services:
     command: '/usr/local/bin/node --inspect=0.0.0.0:5858 /srv/dist/index.js'
     container_name: 'imapdebug'
     environment:
-      # QUEUE_PROTOCOL: 'DUMMY'
-      QUEUE_PROTOCOL: 'AMQP'
-      QUEUE_SERVER_HOSTNAME: 'messagebroker'
+      QUEUE_PROTOCOL: 'DUMMY'
+      # QUEUE_PROTOCOL: 'AMQP'
+      # QUEUE_SERVER_HOSTNAME: 'messagebroker'
       # The password below is 'oops'.
       DRIVERLESS_AUTHENTICATION_CREDENTIALS: 'jwilbur:3e51e41a6620077a3693048796face0838c5837be2c4f20c78518c38b62f41c31d7845a5bd4b86513b933f7633f2aad7e91409d64b94cfa9fd2464f5c8758f37'
       IMAP_SERVER_PERMITTED_SASL_MECHANISMS: 'PLAIN DIGEST CRAM-MD5'
+      IMAP_SERVER_SIMPLE_AUTHORIZATION: 'TRUE'
     hostname: 'imapdebug'
     image: 'node:11.12.0-alpine'
     networks:

@@ -1,4 +1,5 @@
 import { AuthenticationRequest } from "../AuthenticationRequest";
+import { AuthorizationRequest } from "../AuthorizationRequest";
 import { connect, Channel, Connection, ConsumeMessage, Message } from "amqplib";
 import { EventEmitter } from "events";
 import { URL } from "url";
@@ -6,6 +7,7 @@ import { UniquelyIdentified } from "wildboar-microservices-ts";
 import { ConfigurationSource } from "../ConfigurationSource";
 import { MessageBroker } from "../MessageBroker";
 import { v4 as uuidv4 } from "uuid";
+import { Connection as IMAPConnection } from "../Connection";
 
 export default
 class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
@@ -31,12 +33,18 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
     public async initialize () : Promise<boolean> {
         this.connection = await connect(this.queueURI.toString());
         this.channel = await this.connection.createChannel();
+
         await this.channel.assertExchange("imap.commands", "direct", { durable: true });
+
         await this.channel.assertExchange("events", "topic", { durable: true });
         await this.channel.assertQueue("events.imap", { durable: false });
         await this.channel.bindQueue("events.imap", "events", "imap");
+
         await this.channel.assertExchange("authentication", "direct", { durable: true });
-        await this.channel.assertQueue("authorization", { durable: false });
+
+        await this.channel.assertQueue("authorization.imap", { durable: false });
+        await this.channel.assertExchange("authorization", "direct", { durable: true });
+        await this.channel.bindQueue("authorization.imap", "authorization", "imap");
 
         // There only needs to be one authn response queue, because the
         // responses are all roughly the same, despite different SASL
@@ -50,9 +58,21 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
             // (http://www.squaremobius.net/amqp.node/channel_api.html#channel_consume)
             if (!message) return;
             this.responseEmitter.emit(message.properties.correlationId, message);
-        }, {
-            noAck: true
-        });
+        }, { noAck: true });
+
+        // There only needs to be one authz response queue, because the
+        // responses are all the same.
+        const authorizationResponseQueueName : string = `authorization.responses-${this.id}`;
+        // TODO: Make the response queue noAck. I think the @types library is missing that property.
+        await this.channel.assertQueue(authorizationResponseQueueName, { exclusive: true });
+        await this.channel.consume(authorizationResponseQueueName, (message : ConsumeMessage | null) : void => {
+            // From the AMQPlib documentation:
+            // "If the consumer is cancelled by RabbitMQ, the message callback will be invoked with null."
+            // (http://www.squaremobius.net/amqp.node/channel_api.html#channel_consume)
+            if (!message) return;
+            this.responseEmitter.emit(message.properties.correlationId, message);
+        }, { noAck: true });
+
         return Promise.resolve(true);
     }
 
@@ -102,13 +122,74 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
             // race condition where the storage driver responds before the
             // event listener is established.
             this.channel.publish("authentication", saslMechanism,
-            Buffer.from(JSON.stringify(message)), {
-                correlationId: correlationId,
-                contentType: "application/json",
-                contentEncoding: "8bit",
-                expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
-                replyTo: `authentication.responses-${this.id}`
+                Buffer.from(JSON.stringify(message)), {
+                    correlationId: correlationId,
+                    contentType: "application/json",
+                    contentEncoding: "8bit",
+                    expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
+                    replyTo: `authentication.responses-${this.id}`
+                });
+        });
+    }
+
+    public publishAuthorization (connection : IMAPConnection, message : AuthorizationRequest) : Promise<object> {
+        const correlationId : string = `urn:uuid:${uuidv4()}`;
+
+        // This induces a timeout, so that we do not accumulate event listeners
+        // if the authenticator misses some authentication requests.
+        setTimeout(() => {
+            this.responseEmitter.emit(correlationId, null);
+        }, this.configuration.queue_rpc_message_timeout_in_milliseconds);
+
+        return new Promise<object>((resolve, reject) => {
+            this.responseEmitter.once(correlationId, (response : Message | null) : void => {
+                if (!response) {
+                    reject(new Error(`Authorization request timed out!`));
+                    return;
+                }
+                try {
+                    resolve(JSON.parse(response.content.toString()));
+                } catch (error) {
+                    reject(error);
+                }
             });
+
+            message.protocol = "imap";
+            message.protocolVersion = 4;
+            message.server = {
+                id: connection.server.id,
+                creationTime: connection.server.creationTime
+            };
+            message.messageBroker = {
+                id: this.id,
+                creationTime: this.creationTime
+            };
+            message.connection = {
+                id: connection.id,
+                creationTime: connection.creationTime,
+                currentlySelectedMailbox: connection.currentlySelectedMailbox,
+                authenticatedUser: connection.authenticatedUser,
+                connectionState: connection.state,
+                socket: {
+                    localAddress: connection.socket.localAddress,
+                    localPort: connection.socket.localPort,
+                    remoteFamily: connection.socket.remoteFamily,
+                    remoteAddress: connection.socket.remoteAddress,
+                    remotePort: connection.socket.remotePort
+                }
+            };
+            
+            // This MUST occur AFTER this.responseEmitter.once() to prevent a
+            // race condition where the storage driver responds before the
+            // event listener is established.
+            this.channel.publish("authorization", "imap",
+                Buffer.from(JSON.stringify(message)), {
+                    correlationId: correlationId,
+                    contentType: "application/json",
+                    contentEncoding: "8bit",
+                    expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
+                    replyTo: `authorization.responses-${this.id}`
+                });
         });
     }
 
@@ -135,18 +216,19 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
             });
 
             (<any>message)["command"] = command;
+            (<any>message)["authenticatedUser"] = authenticatedUser;
 
             // This MUST occur AFTER this.responseEmitter.once() to prevent a
             // race condition where the storage driver responds before the
             // event listener is established.
             this.channel.publish("imap.commands", command,
-            Buffer.from(JSON.stringify(message)), {
-                correlationId: correlationId,
-                contentType: "application/json",
-                contentEncoding: "8bit",
-                expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
-                replyTo: `imap.${command}.responses-${this.id}`
-            });
+                Buffer.from(JSON.stringify(message)), {
+                    correlationId: correlationId,
+                    contentType: "application/json",
+                    contentEncoding: "8bit",
+                    expiration: this.configuration.queue_rpc_message_timeout_in_milliseconds,
+                    replyTo: `imap.${command}.responses-${this.id}`
+                });
         });
     }
 
