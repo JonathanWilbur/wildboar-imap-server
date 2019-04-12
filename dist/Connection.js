@@ -210,6 +210,8 @@ class Connection {
             return false;
         const tag = lexemes[0].toString();
         const commandName = lexemes[1].toString();
+        if (!(this.server.configuration.imap_server_commands_requiring_authorization.has(commandName)))
+            return true;
         const authorization = await this.server.messageBroker.publishAuthorization(this, {
             command: {
                 tag: tag,

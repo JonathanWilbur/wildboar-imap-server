@@ -38,6 +38,7 @@ abstract class ConfigurationSource implements Temporal, TypedKeyValueStore, Uniq
     public abstract imap_server_greeting : string;
     public abstract imap_server_valediction : string;
     public abstract imap_server_permitted_sasl_mechanisms : Set<string>;
+    public abstract imap_server_commands_requiring_authorization : Set<string>;
     public abstract queue_protocol : string;
     public abstract queue_server_hostname : string;
     public abstract queue_server_tcp_listening_port : number;

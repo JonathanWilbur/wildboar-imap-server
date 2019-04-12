@@ -174,6 +174,23 @@ class EnvironmentVariablesConfigurationSource extends ConfigurationSource_1.Conf
             return DEFAULT_VALUE;
         return env;
     }
+    get imap_server_commands_requiring_authorization() {
+        const DEFAULT_VALUE = new Set([
+            "CREATE",
+            "DELETE",
+            "RENAME",
+            "COPY",
+            "CLOSE"
+        ]);
+        const env = this.getString("imap.server.commands_requiring_authorization");
+        if (!env)
+            return DEFAULT_VALUE;
+        const ret = new Set([]);
+        env.split(" ").forEach((command) => {
+            ret.add(command);
+        });
+        return ret;
+    }
 }
 exports.EnvironmentVariablesConfigurationSource = EnvironmentVariablesConfigurationSource;
 //# sourceMappingURL=EnvironmentVariables.js.map

@@ -260,6 +260,8 @@ class Connection implements Temporal, UniquelyIdentified {
         if (lexemes.length < 2) return false;
         const tag : string = lexemes[0].toString(); // #UTF_SAFE
         const commandName : string = lexemes[1].toString(); // #UTF_SAFE
+        if (!(this.server.configuration.imap_server_commands_requiring_authorization.has(commandName)))
+            return true;
         const authorization : object =
             await this.server.messageBroker.publishAuthorization(this, {
                 command: {

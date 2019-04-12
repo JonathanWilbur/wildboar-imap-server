@@ -185,4 +185,21 @@ class EnvironmentVariablesConfigurationSource extends ConfigurationSource {
         return env;
     }
 
+    get imap_server_commands_requiring_authorization () : Set<string> {
+        const DEFAULT_VALUE : Set<string> = new Set<string>([
+            "CREATE",
+            "DELETE",
+            "RENAME",
+            "COPY",
+            "CLOSE"
+        ]);
+        const env : string | undefined = this.getString("imap.server.commands_requiring_authorization");
+        if (!env) return DEFAULT_VALUE;
+        const ret : Set<string> = new Set<string>([]);
+        env.split(" ").forEach((command : string) : void => {
+            ret.add(command);
+        });
+        return ret;
+    }
+
 }
