@@ -196,7 +196,8 @@ class Connection {
         }
         catch (e) {
             this.currentCommand = [];
-            this.socket.write(`${tag} NO Command '${commandName}' encountered an error.\r\n`);
+            if (this.socket.writable)
+                this.socket.write(`${tag} NO Command '${commandName}' encountered an error.\r\n`);
             this.server.logger.error({
                 topic: `imap.commands.${commandName}`,
                 message: e.message,
@@ -228,6 +229,8 @@ class Connection {
         }
         else
             throw new Error(`Internal error when trying to authorize command '${commandName}'.`);
+    }
+    respond(tag, code, message) {
     }
     close() {
         this.socket.end();

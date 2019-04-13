@@ -87,6 +87,7 @@ development.
   - This is for, among other things, indicating which commands should go through authorization.
 - [x] Add `commands_needing_authorization` configuration directive.
 - [ ] Is `LexemeType.ERROR` really necessary anymore?
+- [ ] Implement an interface for command callbacks to write to the socket in a more controlled manner.
 
 ### Alpha
 
@@ -100,8 +101,12 @@ development.
 - [ ] Check `toString()` occurrences for UTF decoding safety.
   - [ ] Flag safe ones with `#UTF_SAFE` comments.
 - [ ] Support `SEARCH` tricks
-- [ ] Address Potential Concurrency Issues:
-  - [ ] Multiple socket writes at the same time.
+- [x] Address Potential Concurrency Issues: (See `./documentation/concurrency.md`.)
+  - [x] If responses are written line-by-line, could lines of responses be interlaced?
+  - [x] Even if responses are written all at the same time, is it possible for socket writes to overlap?
+  - [x] Is a DoS Possible by calling `LOGOUT` shortly after running a command?
+- [ ] Error reporting with the [NodeJS Report API](https://nodejs.org/dist/latest-v11.x/docs/api/report.html)
+- [ ] Assertions
 
 ### Beta
 
@@ -143,3 +148,4 @@ The following features will be added some time after the release of version
 - [ ] Drop capabilities
 - [ ] Cryptographically signed messages?
 - [ ] Add environment variable for signing up an account for the email list
+- [ ] Run each connection in a [NodeJS Worker Thread](https://nodejs.org/dist/latest-v11.x/docs/api/worker_threads.html)

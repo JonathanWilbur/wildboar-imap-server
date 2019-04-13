@@ -247,7 +247,8 @@ class Connection implements Temporal, UniquelyIdentified {
             });
         } catch (e) {
             this.currentCommand = [];
-            this.socket.write(`${tag} NO Command '${commandName}' encountered an error.\r\n`);
+            if (this.socket.writable)
+                this.socket.write(`${tag} NO Command '${commandName}' encountered an error.\r\n`);
             this.server.logger.error({
                 topic: `imap.commands.${commandName}`,
                 message: e.message,
