@@ -26,35 +26,38 @@ development.
 
 - [ ] Commands:
   - [ ] RFC 3501
-    - [x] CAPABILITY
-    - [x] NOOP
-    - [x] LOGOUT
-    - [x] STARTTLS
-    - [x] AUTHENTICATE
-    - [x] LOGIN
-    - [ ] SELECT
-    - [ ] EXAMINE
-    - [x] CREATE
-    - [ ] DELETE
-    - [ ] RENAME
-    - [ ] SUBSCRIBE
-    - [ ] UNSUBSCRIBE
-    - [ ] LIST
-    - [ ] LSUB
-    - [ ] STATUS ("STATUS" SP mailbox SP "(" status-att *(SP status-att) ")") (status-att = "MESSAGES" / "RECENT" / "UIDNEXT" / "UIDVALIDITY" / "UNSEEN")
-    - [ ] APPEND (hard)
-    - [ ] CHECK
-    - [ ] CLOSE
-    - [ ] EXPUNGE
-    - [ ] SEARCH (very hard) (And search tricks)
-    - [ ] FETCH (hard)
-    - [ ] STORE (medium)
-    - [ ] COPY (medium)
-    - [ ] UID (medium)
+    - [x] `CAPABILITY`
+    - [x] `NOOP`
+    - [x] `LOGOUT`
+    - [x] `STARTTLS`
+    - [x] `AUTHENTICATE`
+    - [x] `LOGIN`
+    - [ ] `SELECT`
+    - [ ] `EXAMINE`
+    - [x] `CREATE`
+    - [ ] `DELETE`
+    - [ ] `RENAME`
+    - [ ] `SUBSCRIBE`
+    - [ ] `UNSUBSCRIBE`
+    - [ ] `LIST`
+    - [ ] `LSUB`
+    - [ ] `STATUS` ("STATUS" SP mailbox SP "(" status-att *(SP status-att) ")") (status-att = "MESSAGES" / "RECENT" / "UIDNEXT" / "UIDVALIDITY" / "UNSEEN")
+    - [ ] `APPEND` (hard)
+    - [ ] `CHECK`
+    - [ ] `CLOSE`
+    - [ ] `EXPUNGE`
+    - [ ] `SEARCH` (very hard) (And search tricks)
+    - [ ] `FETCH` (hard)
+    - [ ] `STORE` (medium)
+    - [ ] `COPY` (medium)
+    - [ ] `UID` (medium)
   - [ ] Custom commands:
-    - [ ] ERROR (Intentionally throws an error, for testing purposes)
-    - [ ] INFO / STATISTICS
-    - [ ] HEALTHCHECK
+    - [ ] `ERROR` (Intentionally throws an error, for testing purposes)
+    - [ ] `TRESPASS` (Intentionally rejects on authorization)
+    - [ ] `STATISTICS`
+    - [ ] `CONNECTIONS`
+    - [ ] `CONFIGURATION` (Displays configuration options)
+    - [ ] `HEALTHCHECK`
       - [ ] Queue can be reached.
       - [ ] Configuration source can be reached.
       - [ ] Listening on socket.
@@ -68,7 +71,7 @@ development.
   - [ ] Time since last command.
   - [x] Maximum command lexemes.
   - [ ] Errors per minute.
-  - [ ] Average TCP data chunk size (to prevent slow loris attacks)
+  - [ ] Average TCP data chunk size (to prevent Slow Loris attacks)
   - [ ] Average line length.
   - [ ] Authentication attempts per hour should be handled by the authorizer.
 - [x] Simple Authorization
@@ -80,10 +83,9 @@ development.
 - [ ] Consider using nameless queues to make the queue list more readable.
 - [x] Make `ConfigurationSource` a class so you can keep the master variables list there.
 - [ ] Create `ok`, `bad`, and `no` methods for replies.
-- [ ] Use `jsonschema` to validate RPC responses.
-- [ ] Add `getStrings()` to `TypedKeyValueStore`
+- [ ] Use [`ajv`](https://www.npmjs.com/package/ajv) to validate RPC responses.
   - This is for, among other things, indicating which commands should go through authorization.
-- [ ] Add `commands_needing_authorization` configuration directive.
+- [x] Add `commands_needing_authorization` configuration directive.
 - [ ] Is `LexemeType.ERROR` really necessary anymore?
 
 ### Alpha
@@ -93,10 +95,10 @@ development.
 
 - [ ] AWS SQS message broker support
 - [ ] Update dependencies
-- [ ] Use `Set` instead of arrays where uniqueness is a requirement. (Check for string[])
+- [ ] Use `Set` instead of arrays where uniqueness is a requirement. (Check for `string[]`)
 - [ ] Check for correct state at the start of commands.
 - [ ] Check `toString()` occurrences for UTF decoding safety.
-  - [ ] Flag safe ones with #UTF_SAFE comments.
+  - [ ] Flag safe ones with `#UTF_SAFE` comments.
 - [ ] Support `SEARCH` tricks
 - [ ] Address Potential Concurrency Issues:
   - [ ] Multiple socket writes at the same time.
@@ -120,12 +122,14 @@ IMAP Server; only testing is performed and bugs are fixed.
   - [ ] Repeatedly authenticating
 - [ ] Test for timing attacks
 - [ ] Test for directory traversal
-- [ ] 100% JSDoc Documentation
 
 ### Release Candidate
 
 Once the following requirements are met, Wildboar IMAP Server version 1.0.0
 will be released.
+
+- [ ] 100% JSDoc Documentation
+- [ ] User Acceptance Testing
 
 ### Future Features
 
