@@ -7,14 +7,14 @@ class Lexeme {
     }
     toString() {
         switch (this.type) {
-            case (5):
-            case (9):
-            case (12):
+            case (4):
+            case (8):
+            case (11):
                 return this.token.toString();
-            case (6): return this.token.toString().toUpperCase();
-            case (7): return "(";
-            case (8): return ")";
-            case (10): {
+            case (5): return this.token.toString().toUpperCase();
+            case (6): return "(";
+            case (7): return ")";
+            case (9): {
                 if (this.token.length <= 2)
                     return "";
                 return this.token
@@ -27,7 +27,7 @@ class Lexeme {
         }
     }
     toLiteralLength() {
-        if (this.type !== 11)
+        if (this.type !== 10)
             throw new Error("Invalid Lexeme type: literal length cannot be parsed.");
         const match = /^\{(\d+)\}\r\n$/.exec(this.token.toString());
         if (!match)

@@ -98,10 +98,6 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
 
     private respondToLexeme (lexeme : Lexeme) : void {
         switch (<number>lexeme.type) {
-            case (LexemeType.ERROR): {
-                this.currentCommand = [];
-                break;
-            }
             case (LexemeType.LITERAL_LENGTH): {
                 this.writeContinuationRequest("Ready for literal data.");
                 this.currentCommand.push(lexeme);
@@ -194,10 +190,6 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                         yield tag;
                         continue;
                     } else return;
-                }
-                case (LexemeType.ERROR): {
-                    this.scanner.skipLine();
-                    return;
                 }
                 default: {
                     const tag : string = this.currentCommand[0].toString(); // #UTF_SAFE

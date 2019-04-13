@@ -81,7 +81,7 @@ class Scanner {
         if (this.readImplicitlyTerminatedToken(Scanner.isTagChar)) {
             if (this.scanCursor === oldScanCursor)
                 throw new Error("Tag cannot be zero-length.");
-            return new Lexeme_1.Lexeme(5, this.receivedData.slice(oldScanCursor, this.scanCursor));
+            return new Lexeme_1.Lexeme(4, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
         else
             return null;
@@ -91,7 +91,7 @@ class Scanner {
         if (this.readImplicitlyTerminatedToken(Scanner.isAtomChar)) {
             if (this.scanCursor === oldScanCursor)
                 throw new Error("Command cannot be zero-length.");
-            return new Lexeme_1.Lexeme(6, this.receivedData.slice(oldScanCursor, this.scanCursor));
+            return new Lexeme_1.Lexeme(5, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
         else
             return null;
@@ -105,19 +105,19 @@ class Scanner {
     }
     readSpace() {
         if (this.readFixedLengthToken(Buffer.from(" ")))
-            return new Lexeme_1.Lexeme(2, Buffer.from(" "));
+            return new Lexeme_1.Lexeme(1, Buffer.from(" "));
         else
             return null;
     }
     readNewLine() {
         if (this.readFixedLengthToken(Buffer.from("\r\n")))
-            return new Lexeme_1.Lexeme(4, Buffer.from("\r\n"));
+            return new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
         else
             return null;
     }
     readCommandTerminatingNewLine() {
         if (this.readFixedLengthToken(Buffer.from("\r\n")))
-            return new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
+            return new Lexeme_1.Lexeme(2, Buffer.from("\r\n"));
         else
             return null;
     }
@@ -139,14 +139,14 @@ class Scanner {
             return null;
         const oldScanCursor = this.scanCursor;
         this.scanCursor = (i + 1);
-        return new Lexeme_1.Lexeme(10, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, this.scanCursor));
     }
     readAtom() {
         const oldScanCursor = this.scanCursor;
         if (this.readImplicitlyTerminatedToken(Scanner.isAtomChar)) {
             if (this.scanCursor === oldScanCursor)
                 throw new Error("Atom cannot be zero-length.");
-            return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, this.scanCursor));
+            return new Lexeme_1.Lexeme(8, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
         else
             return null;
@@ -162,7 +162,7 @@ class Scanner {
                     throw new Error(`Non-digit detected in literal length. Character code: ${this.receivedData[i]}.`);
                 i++;
             }
-            return new Lexeme_1.Lexeme(11, this.receivedData.slice(oldScanCursor, this.scanCursor));
+            return new Lexeme_1.Lexeme(10, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
         else
             return null;
@@ -172,7 +172,7 @@ class Scanner {
         if (this.readImplicitlyTerminatedToken(Scanner.isListChar)) {
             if (this.scanCursor === oldScanCursor)
                 throw new Error("List cannot be zero-length.");
-            return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, this.scanCursor));
+            return new Lexeme_1.Lexeme(8, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
         else
             return null;
@@ -193,18 +193,18 @@ class Scanner {
     }
     readLiteral(length) {
         if (this.readStatedLengthToken(length))
-            return new Lexeme_1.Lexeme(12, this.receivedData.slice((this.scanCursor - length), this.scanCursor));
+            return new Lexeme_1.Lexeme(11, this.receivedData.slice((this.scanCursor - length), this.scanCursor));
         else
             return null;
     }
     readAbortableBase64() {
         if (this.receivedData[this.scanCursor] === '*'.charCodeAt(0)) {
             this.scanCursor++;
-            return new Lexeme_1.Lexeme(21, Buffer.from("*"));
+            return new Lexeme_1.Lexeme(20, Buffer.from("*"));
         }
         const oldScanCursor = this.scanCursor;
         if (this.readImplicitlyTerminatedToken(Scanner.isBase64Char)) {
-            return new Lexeme_1.Lexeme(13, this.receivedData.slice(oldScanCursor, this.scanCursor));
+            return new Lexeme_1.Lexeme(12, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
         else
             return null;
@@ -214,7 +214,7 @@ class Scanner {
         if (this.readImplicitlyTerminatedToken(Scanner.isSASLMechanismNameChar)) {
             if (this.scanCursor === oldScanCursor)
                 throw new Error("SASL Mechanism cannot be zero-length.");
-            return new Lexeme_1.Lexeme(22, this.receivedData.slice(oldScanCursor, this.scanCursor));
+            return new Lexeme_1.Lexeme(21, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
         else
             return null;

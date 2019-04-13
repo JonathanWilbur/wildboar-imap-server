@@ -81,26 +81,22 @@ class Connection {
     }
     respondToLexeme(lexeme) {
         switch (lexeme.type) {
-            case (0): {
-                this.currentCommand = [];
-                break;
-            }
-            case (11): {
+            case (10): {
                 this.writeContinuationRequest("Ready for literal data.");
                 this.currentCommand.push(lexeme);
                 break;
             }
-            case (12): {
+            case (11): {
                 this.currentCommand.pop();
                 this.currentCommand.push(lexeme);
                 break;
             }
-            case (3): {
+            case (2): {
                 this.executeCommand(this.currentCommand.slice(0));
                 this.currentCommand = [];
                 break;
             }
-            case (4): {
+            case (3): {
                 this.currentCommand.push(lexeme);
                 this.executeCommand(this.currentCommand.slice(0));
                 break;
@@ -127,7 +123,7 @@ class Connection {
             if (!lastLexeme)
                 return;
             switch (lastLexeme.type) {
-                case (5): {
+                case (4): {
                     if (this.scanner.lineReady()) {
                         const command = this.scanner.readCommand();
                         if (!command)
@@ -137,7 +133,7 @@ class Connection {
                     }
                     return;
                 }
-                case (11): {
+                case (10): {
                     const literalLength = lastLexeme.toLiteralLength();
                     const literal = this.scanner.readLiteral(literalLength);
                     if (!literal)
@@ -145,7 +141,7 @@ class Connection {
                     yield literal;
                     continue;
                 }
-                case (3): {
+                case (2): {
                     if (this.scanner.lineReady()) {
                         const tag = this.scanner.readTag();
                         if (!tag)
@@ -156,10 +152,6 @@ class Connection {
                     }
                     else
                         return;
-                }
-                case (0): {
-                    this.scanner.skipLine();
-                    return;
                 }
                 default: {
                     const tag = this.currentCommand[0].toString();
@@ -181,7 +173,7 @@ class Connection {
                     }
                     else {
                         this.scanner.skipLine();
-                        yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
+                        yield new Lexeme_1.Lexeme(2, Buffer.from("\r\n"));
                     }
                     continue;
                 }

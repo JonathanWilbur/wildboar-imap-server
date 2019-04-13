@@ -24,7 +24,7 @@ const lexer = function* (scanner, currentCommand) {
             yield newline;
         }
         default: {
-            if (currentCommand[currentCommand.length - 1].type === 4) {
+            if (currentCommand[currentCommand.length - 1].type === 3) {
                 const saslMessage = scanner.readAbortableBase64();
                 if (!saslMessage)
                     return;
@@ -32,7 +32,7 @@ const lexer = function* (scanner, currentCommand) {
             }
             else {
                 if (scanner.readNewLine())
-                    yield new Lexeme_1.Lexeme(4, Buffer.from("\r\n"));
+                    yield new Lexeme_1.Lexeme(3, Buffer.from("\r\n"));
                 else
                     return;
             }
@@ -42,7 +42,7 @@ const lexer = function* (scanner, currentCommand) {
 const handler = async (connection, tag, command, lexemes) => {
     const saslMechanism = lexemes[3].toString();
     const saslResponses = lexemes.filter((lexeme) => {
-        return (lexeme.type === 13);
+        return (lexeme.type === 12);
     });
     const response = await connection.server.messageBroker.publishAuthentication(saslMechanism, {
         messages: saslResponses.map((saslResponse) => saslResponse.toString())

@@ -42,9 +42,9 @@ const lexer = function* (scanner, currentCommand) {
 };
 const handler = async (connection, tag, command, lexemes) => {
     const credentials = lexemes.filter((lexeme) => {
-        return (lexeme.type === 9 ||
-            lexeme.type === 10 ||
-            lexeme.type === 12);
+        return (lexeme.type === 8 ||
+            lexeme.type === 9 ||
+            lexeme.type === 11);
     });
     const username = credentials[0].toString().toLowerCase();
     const password = credentials[1].toString();

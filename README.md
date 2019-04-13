@@ -33,7 +33,7 @@ development.
     - [x] `AUTHENTICATE`
     - [x] `LOGIN`
     - [x] `SELECT`
-    - [ ] `EXAMINE`
+    - [x] `EXAMINE`
     - [x] `CREATE`
     - [ ] `DELETE`
     - [ ] `RENAME`
@@ -82,13 +82,14 @@ development.
 - [x] Add `capability` field to plugins.
 - [ ] Consider using nameless queues to make the queue list more readable.
 - [x] Make `ConfigurationSource` a class so you can keep the master variables list there.
-- [ ] Create `ok`, `bad`, and `no` methods for replies.
-- [ ] Use [`ajv`](https://www.npmjs.com/package/ajv) to validate RPC responses.
-  - This is for, among other things, indicating which commands should go through authorization.
 - [x] Add `commands_needing_authorization` configuration directive.
-- [ ] Is `LexemeType.ERROR` really necessary anymore?
-- [ ] Implement an interface for command callbacks to write to the socket in a more controlled manner.
-- [ ] Catch errors in non-arguments lexing.
+- [x] Is `LexemeType.ERROR` really necessary anymore? Nope. Deleted.
+- [x] Implement an interface for command callbacks to write to the socket in a more controlled manner.
+- [x] Catch errors in non-arguments lexing.
+
+These are not requirements, but may become features of this release:
+
+- [ ] Use [`ajv`](https://www.npmjs.com/package/ajv) to validate RPC responses.
 
 ### Alpha
 
