@@ -39,8 +39,8 @@ development.
     - [x] `RENAME`
     - [x] `SUBSCRIBE`
     - [x] `UNSUBSCRIBE`
-    - [ ] `LIST`
-    - [ ] `LSUB`
+    - [x] `LIST`
+    - [x] `LSUB`
     - [ ] `STATUS` ("STATUS" SP mailbox SP "(" status-att *(SP status-att) ")") (status-att = "MESSAGES" / "RECENT" / "UIDNEXT" / "UIDVALIDITY" / "UNSEEN")
     - [ ] `APPEND` (hard)
     - [ ] `CHECK`
