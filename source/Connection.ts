@@ -37,11 +37,25 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
         readonly server : Server,
         private readonly socket : net.Socket
     ) {
-        // TODO: Handle other socket events.
+        this.socket.setTimeout(this.server.configuration.imap_server_tcp_socket_timeout_in_milliseconds);
         this.socket.on("close", this.socketCloseHandler);
         this.socket.on("data", this.socketDataHandler);
-        
+        // "end" not used.
+        this.socket.on("error", this.socketErrorHandler);
+        this.socket.on("timeout", this.socketTimeoutHandler);
         this.writeData("OK " + this.server.configuration.imap_server_greeting);
+    }
+
+    private socketCloseHandler = (hadError : boolean) : void => {
+        this.server.logger.info({
+            topic: "tcp.close",
+            message: `Socket for IMAP connection ${this.id} closed.`,
+            socket: this.socket,
+            connectionID: this.id,
+            authenticatedUser: this.authenticatedUser,
+            hadError: hadError,
+            applicationLayerProtocol: "IMAP"
+        });
     }
 
     private socketDataHandler = (data : Buffer) : void => {
@@ -56,16 +70,31 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
         }
     }
 
-    private socketCloseHandler = (hadError : boolean) : void => {
-        this.server.logger.info({
-            topic: "imap.socket.close",
-            message: `Socket for connection ${this.id} closed.`,
+    private socketErrorHandler = (e : Error) : void => {
+        this.server.logger.error({
+            topic: "tcp.error",
+            message: e.message,
+            error: e,
             socket: this.socket,
             connectionID: this.id,
             authenticatedUser: this.authenticatedUser,
-            hadError: hadError
+            applicationLayerProtocol: "IMAP"
         });
-    }
+        // The socket is automatically closed after encountering an error.
+    };
+
+    private socketTimeoutHandler = () => {
+        this.writeData("BYE TCP Socket timed out.");
+        this.close();
+        this.server.logger.warn({
+            message: `TCP Socket for IMAP connection ${this.id} timed out.`,
+            topic: "tcp.timeout",
+            socket: this.socket,
+            connectionID: this.id,
+            authenticatedUser: this.authenticatedUser,
+            applicationLayerProtocol: "IMAP"
+        });
+    };
 
     private respondToLexeme (lexeme : Lexeme) : void {
         switch (<number>lexeme.type) {

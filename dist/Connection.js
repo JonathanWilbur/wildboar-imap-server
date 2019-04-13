@@ -16,6 +16,17 @@ class Connection {
         this.authenticatedUser = "";
         this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
         this.currentCommand = [];
+        this.socketCloseHandler = (hadError) => {
+            this.server.logger.info({
+                topic: "tcp.close",
+                message: `Socket for IMAP connection ${this.id} closed.`,
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser,
+                hadError: hadError,
+                applicationLayerProtocol: "IMAP"
+            });
+        };
         this.socketDataHandler = (data) => {
             this.scanner.enqueueData(data);
             try {
@@ -28,18 +39,34 @@ class Connection {
                 this.close();
             }
         };
-        this.socketCloseHandler = (hadError) => {
-            this.server.logger.info({
-                topic: "imap.socket.close",
-                message: `Socket for connection ${this.id} closed.`,
+        this.socketErrorHandler = (e) => {
+            this.server.logger.error({
+                topic: "tcp.error",
+                message: e.message,
+                error: e,
                 socket: this.socket,
                 connectionID: this.id,
                 authenticatedUser: this.authenticatedUser,
-                hadError: hadError
+                applicationLayerProtocol: "IMAP"
             });
         };
-        this.socket.on("data", this.socketDataHandler);
+        this.socketTimeoutHandler = () => {
+            this.writeData("BYE TCP Socket timed out.");
+            this.close();
+            this.server.logger.warn({
+                message: `TCP Socket for IMAP connection ${this.id} timed out.`,
+                topic: "tcp.timeout",
+                socket: this.socket,
+                connectionID: this.id,
+                authenticatedUser: this.authenticatedUser,
+                applicationLayerProtocol: "IMAP"
+            });
+        };
+        this.socket.setTimeout(this.server.configuration.imap_server_tcp_socket_timeout_in_milliseconds);
         this.socket.on("close", this.socketCloseHandler);
+        this.socket.on("data", this.socketDataHandler);
+        this.socket.on("error", this.socketErrorHandler);
+        this.socket.on("timeout", this.socketTimeoutHandler);
         this.writeData("OK " + this.server.configuration.imap_server_greeting);
     }
     get socketString() {

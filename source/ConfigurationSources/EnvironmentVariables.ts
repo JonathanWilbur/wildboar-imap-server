@@ -106,6 +106,13 @@ class EnvironmentVariablesConfigurationSource extends ConfigurationSource {
         return env;
     }
 
+    get imap_server_tcp_socket_timeout_in_milliseconds () : number {
+        const DEFAULT_VALUE : number = 30000;
+        const env : number | undefined = this.getInteger("imap.server.tcp.socket_timeout");
+        if (!env) return DEFAULT_VALUE;
+        return env;
+    }
+
     get imap_server_domain () : string {
         const DEFAULT_VALUE : string = "";
         const env : string | undefined = this.getString("imap.server.domain");

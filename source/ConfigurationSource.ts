@@ -32,6 +32,7 @@ abstract class ConfigurationSource implements Temporal, TypedKeyValueStore, Uniq
     public abstract getString (key : string) : string | undefined;
     public abstract imap_server_ip_bind_address : string;
     public abstract imap_server_tcp_listening_port : number;
+    public abstract imap_server_tcp_socket_timeout_in_milliseconds : number;
     public abstract imap_server_domain : string;
     public abstract imap_server_hostname : string;
     public abstract imap_server_servername : string;
