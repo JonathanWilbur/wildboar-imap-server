@@ -14,7 +14,7 @@ const handler = async (connection, tag, command, lexemes) => {
     });
     if ("ok" in response && response["ok"]) {
         connection.currentlySelectedMailbox = mailboxName;
-        connection.hasWritePermissionOnCurrentlySelectedMailbox = true;
+        connection.hasWritePermissionOnCurrentlySelectedMailbox = false;
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
     else
@@ -23,4 +23,4 @@ const handler = async (connection, tag, command, lexemes) => {
 const plugin = new CommandPlugin_1.CommandPlugin(SimpleMailboxLexer_1.lexer, handler);
 plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.AUTHENTICATED;
 exports.default = plugin;
-//# sourceMappingURL=SELECT.js.map
+//# sourceMappingURL=EXAMINE.js.map
