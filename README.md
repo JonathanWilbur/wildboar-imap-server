@@ -35,10 +35,10 @@ development.
     - [x] `SELECT`
     - [x] `EXAMINE`
     - [x] `CREATE`
-    - [ ] `DELETE`
+    - [x] `DELETE`
     - [ ] `RENAME`
-    - [ ] `SUBSCRIBE`
-    - [ ] `UNSUBSCRIBE`
+    - [x] `SUBSCRIBE`
+    - [x] `UNSUBSCRIBE`
     - [ ] `LIST`
     - [ ] `LSUB`
     - [ ] `STATUS` ("STATUS" SP mailbox SP "(" status-att *(SP status-att) ")") (status-att = "MESSAGES" / "RECENT" / "UIDNEXT" / "UIDVALIDITY" / "UNSEEN")
