@@ -12,6 +12,7 @@ class Connection {
         this.creationTime = new Date();
         this.scanner = new Scanner_1.Scanner();
         this.currentlySelectedMailbox = "INBOX";
+        this.hasWritePermissionOnCurrentlySelectedMailbox = true;
         this.authenticatedUser = "";
         this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
         this.currentCommand = [];

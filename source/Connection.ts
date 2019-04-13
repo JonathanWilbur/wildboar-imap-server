@@ -15,6 +15,7 @@ class Connection implements Temporal, UniquelyIdentified {
     public readonly creationTime : Date = new Date();
     public readonly scanner = new Scanner();
     public currentlySelectedMailbox : string = "INBOX";
+    public hasWritePermissionOnCurrentlySelectedMailbox : boolean = true;
     public authenticatedUser : string = "";
     public state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
     public currentCommand : Lexeme[] = [];

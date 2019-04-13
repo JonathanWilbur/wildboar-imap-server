@@ -22,8 +22,15 @@ const lexer = function* (scanner, currentCommand) {
     return;
 };
 const handler = async (connection, tag, command, lexemes) => {
-    const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {});
-    if ("created" in response && response["created"])
+    if (lexemes.length !== 4) {
+        connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        return;
+    }
+    const mailboxName = lexemes[3].toString();
+    const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+        mailboxName: mailboxName
+    });
+    if ("ok" in response && response["ok"])
         connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
     else
         connection.socket.write(`${tag} NO ${command} Failed.\r\n`);

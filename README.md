@@ -32,7 +32,7 @@ development.
     - [x] `STARTTLS`
     - [x] `AUTHENTICATE`
     - [x] `LOGIN`
-    - [ ] `SELECT`
+    - [x] `SELECT`
     - [ ] `EXAMINE`
     - [x] `CREATE`
     - [ ] `DELETE`
