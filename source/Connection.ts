@@ -37,61 +37,22 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
         readonly server : Server,
         private readonly socket : net.Socket
     ) {
-        this.socket.on("data", this.socketDataHandler);
+        // TODO: Handle other socket events.
         this.socket.on("close", this.socketCloseHandler);
+        this.socket.on("data", this.socketDataHandler);
+        
         this.writeData("OK " + this.server.configuration.imap_server_greeting);
     }
 
     private socketDataHandler = (data : Buffer) : void => {
         this.scanner.enqueueData(data);
-        for (let lexeme of this.lexemeStream()) {
-            switch (<number>lexeme.type) {
-                case (LexemeType.ERROR): {
-                    this.currentCommand = [];
-                    break;
-                }
-                case (LexemeType.LITERAL_LENGTH): {
-                    this.writeContinuationRequest("Ready for literal data.");
-                    this.currentCommand.push(lexeme);
-                    break;
-                }
-                case (LexemeType.STRING_LITERAL): {
-                    /**
-                     * We remove the literal length indicator entirely.
-                     * Since it ALWAYS comes before the literal and serves
-                     * no other purpose than indicating the length of the
-                     * literal, which can be obtained from the literal
-                     * lexeme itself, it is useless at this point.
-                     * 
-                     * The advantage of doing this is simplicity: if there
-                     * are a fixed number of arguments expected in a
-                     * command that accepts literals, the number of lexemes
-                     * passed to the command plugin's callback can be used
-                     * directly, rather than a complicated scheme to
-                     * determine how many arguments have been received.
-                     * Every lexeme after [0] and [1] are arguments, and
-                     * each argument is represented on only a single
-                     * lexeme. This greatly simplifies the per-command
-                     * argument lexing.
-                     */
-                    this.currentCommand.pop();
-                    this.currentCommand.push(lexeme);
-                    break;
-                }
-                case (LexemeType.END_OF_COMMAND): {
-                    this.executeCommand(this.currentCommand.slice(0));
-                    this.currentCommand = [];
-                    break;
-                }
-                case (LexemeType.NEWLINE): {
-                    this.currentCommand.push(lexeme);
-                    this.executeCommand(this.currentCommand.slice(0));
-                    break;
-                }
-                default: {
-                    this.currentCommand.push(lexeme);
-                }
+        try {
+            for (let lexeme of this.lexemeStream()) {
+                this.respondToLexeme(lexeme);
             }
+        } catch (e) {
+            this.writeData("BAD Closing connection.");
+            this.close();
         }
     }
 
@@ -104,6 +65,56 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
             authenticatedUser: this.authenticatedUser,
             hadError: hadError
         });
+    }
+
+    private respondToLexeme (lexeme : Lexeme) : void {
+        switch (<number>lexeme.type) {
+            case (LexemeType.ERROR): {
+                this.currentCommand = [];
+                break;
+            }
+            case (LexemeType.LITERAL_LENGTH): {
+                this.writeContinuationRequest("Ready for literal data.");
+                this.currentCommand.push(lexeme);
+                break;
+            }
+            case (LexemeType.STRING_LITERAL): {
+                /**
+                 * We remove the literal length indicator entirely.
+                 * Since it ALWAYS comes before the literal and serves
+                 * no other purpose than indicating the length of the
+                 * literal, which can be obtained from the literal
+                 * lexeme itself, it is useless at this point.
+                 * 
+                 * The advantage of doing this is simplicity: if there
+                 * are a fixed number of arguments expected in a
+                 * command that accepts literals, the number of lexemes
+                 * passed to the command plugin's callback can be used
+                 * directly, rather than a complicated scheme to
+                 * determine how many arguments have been received.
+                 * Every lexeme after [0] and [1] are arguments, and
+                 * each argument is represented on only a single
+                 * lexeme. This greatly simplifies the per-command
+                 * argument lexing.
+                 */
+                this.currentCommand.pop();
+                this.currentCommand.push(lexeme);
+                break;
+            }
+            case (LexemeType.END_OF_COMMAND): {
+                this.executeCommand(this.currentCommand.slice(0));
+                this.currentCommand = [];
+                break;
+            }
+            case (LexemeType.NEWLINE): {
+                this.currentCommand.push(lexeme);
+                this.executeCommand(this.currentCommand.slice(0));
+                break;
+            }
+            default: {
+                this.currentCommand.push(lexeme);
+            }
+        }
     }
 
     /**
@@ -160,13 +171,21 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                     return;
                 }
                 default: {
-                    const commandName : string = this.currentCommand[1].toString();
+                    const tag : string = this.currentCommand[0].toString(); // #UTF_SAFE
+                    const commandName : string = this.currentCommand[1].toString(); // #UTF_SAFE
                     if (commandName in this.server.commandPlugins) {
                         const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
-                        const nextArgument : IteratorResult<Lexeme> =
-                            commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
-                        if (nextArgument.done) return;
-                        yield nextArgument.value;
+                        try {
+                            const nextArgument : IteratorResult<Lexeme> =
+                                commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
+                            if (nextArgument.done) return;
+                            yield nextArgument.value;
+                        } catch (e) {
+                            this.writeStatus(tag, "BAD", "ALERT", commandName, "Bad arguments.");
+                            this.scanner.skipLine();
+                            this.currentCommand = [];
+                            return;
+                        }
                     } else {
                         /*
                             It is unnecessary to do anything more than skip the

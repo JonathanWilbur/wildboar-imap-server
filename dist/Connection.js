@@ -18,36 +18,14 @@ class Connection {
         this.currentCommand = [];
         this.socketDataHandler = (data) => {
             this.scanner.enqueueData(data);
-            for (let lexeme of this.lexemeStream()) {
-                switch (lexeme.type) {
-                    case (0): {
-                        this.currentCommand = [];
-                        break;
-                    }
-                    case (11): {
-                        this.writeContinuationRequest("Ready for literal data.");
-                        this.currentCommand.push(lexeme);
-                        break;
-                    }
-                    case (12): {
-                        this.currentCommand.pop();
-                        this.currentCommand.push(lexeme);
-                        break;
-                    }
-                    case (3): {
-                        this.executeCommand(this.currentCommand.slice(0));
-                        this.currentCommand = [];
-                        break;
-                    }
-                    case (4): {
-                        this.currentCommand.push(lexeme);
-                        this.executeCommand(this.currentCommand.slice(0));
-                        break;
-                    }
-                    default: {
-                        this.currentCommand.push(lexeme);
-                    }
+            try {
+                for (let lexeme of this.lexemeStream()) {
+                    this.respondToLexeme(lexeme);
                 }
+            }
+            catch (e) {
+                this.writeData("BAD Closing connection.");
+                this.close();
             }
         };
         this.socketCloseHandler = (hadError) => {
@@ -73,6 +51,37 @@ class Connection {
             ret[property] = this.socket[property];
         }
         return ret;
+    }
+    respondToLexeme(lexeme) {
+        switch (lexeme.type) {
+            case (0): {
+                this.currentCommand = [];
+                break;
+            }
+            case (11): {
+                this.writeContinuationRequest("Ready for literal data.");
+                this.currentCommand.push(lexeme);
+                break;
+            }
+            case (12): {
+                this.currentCommand.pop();
+                this.currentCommand.push(lexeme);
+                break;
+            }
+            case (3): {
+                this.executeCommand(this.currentCommand.slice(0));
+                this.currentCommand = [];
+                break;
+            }
+            case (4): {
+                this.currentCommand.push(lexeme);
+                this.executeCommand(this.currentCommand.slice(0));
+                break;
+            }
+            default: {
+                this.currentCommand.push(lexeme);
+            }
+        }
     }
     *lexemeStream() {
         while (true) {
@@ -126,13 +135,22 @@ class Connection {
                     return;
                 }
                 default: {
+                    const tag = this.currentCommand[0].toString();
                     const commandName = this.currentCommand[1].toString();
                     if (commandName in this.server.commandPlugins) {
                         const commandPlugin = this.server.commandPlugins[commandName];
-                        const nextArgument = commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
-                        if (nextArgument.done)
+                        try {
+                            const nextArgument = commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
+                            if (nextArgument.done)
+                                return;
+                            yield nextArgument.value;
+                        }
+                        catch (e) {
+                            this.writeStatus(tag, "BAD", "ALERT", commandName, "Bad arguments.");
+                            this.scanner.skipLine();
+                            this.currentCommand = [];
                             return;
-                        yield nextArgument.value;
+                        }
                     }
                     else {
                         this.scanner.skipLine();
