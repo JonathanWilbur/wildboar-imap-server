@@ -120,13 +120,7 @@ class AMQPMessageBroker {
                 currentlySelectedMailbox: connection.currentlySelectedMailbox,
                 authenticatedUser: connection.authenticatedUser,
                 connectionState: connection.state,
-                socket: {
-                    localAddress: connection.socket.localAddress,
-                    localPort: connection.socket.localPort,
-                    remoteFamily: connection.socket.remoteFamily,
-                    remoteAddress: connection.socket.remoteAddress,
-                    remotePort: connection.socket.remotePort
-                }
+                socket: connection.socketReport
             };
             this.channel.publish("authorization", "imap", Buffer.from(JSON.stringify(message)), {
                 correlationId: correlationId,

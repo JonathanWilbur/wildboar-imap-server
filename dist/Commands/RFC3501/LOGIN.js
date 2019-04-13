@@ -56,10 +56,10 @@ const handler = async (connection, tag, command, lexemes) => {
             if (connection.server.driverlessAuthenticationDatabase[username] === passhash) {
                 connection.authenticatedUser = username;
                 connection.state = ConnectionState_1.ConnectionState.AUTHENTICATED;
-                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+                connection.writeOk(tag, command);
             }
             else
-                connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+                connection.writeStatus(tag, "NO", "", command, "Incorrect username or password.");
         });
     }
     else {
@@ -74,14 +74,14 @@ const handler = async (connection, tag, command, lexemes) => {
             if ("authenticatedUser" in response && typeof response["authenticatedUser"] === "string") {
                 connection.authenticatedUser = response["authenticatedUser"];
                 connection.state = ConnectionState_1.ConnectionState.AUTHENTICATED;
-                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+                connection.writeOk(tag, command);
             }
             else {
-                connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+                connection.writeStatus(tag, "NO", "", command, "Incorrect username or password.");
             }
         }
         else {
-            connection.socket.write(`${tag} NO ${command} Unexpected error.\r\n`);
+            connection.writeStatus(tag, "NO", "", command, "Failed.");
         }
     }
 };

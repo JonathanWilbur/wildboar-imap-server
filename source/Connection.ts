@@ -24,10 +24,19 @@ class Connection implements Temporal, UniquelyIdentified {
         return `${this.socket.remoteFamily}:${this.socket.remoteAddress}:${this.socket.remotePort}`;
     }
 
+    public get socketReport () {
+        const ret : object = {};
+        for (let property in this.socket) {
+            (<any>ret)[property] = (<any>this.socket)[property];
+        }
+        return ret;
+    }
+
     constructor (
         readonly server : Server,
-        readonly socket : net.Socket
+        private readonly socket : net.Socket
     ) {
+        // TODO: Move this hander out of the constructor.
         socket.on("data", (data : Buffer) => {
             this.scanner.enqueueData(data);
             for (let lexeme of this.lexemeStream()) {
@@ -81,6 +90,7 @@ class Connection implements Temporal, UniquelyIdentified {
             }
         });
 
+        // TODO: Move this hander out of the constructor.
         socket.on("close", (hadError : boolean) : void => {
             server.logger.info({
                 topic: "imap.socket.close",
@@ -277,6 +287,28 @@ class Connection implements Temporal, UniquelyIdentified {
             else return false;
         } else
             throw new Error(`Internal error when trying to authorize command '${commandName}'.`);
+    }
+
+    /*
+        From RFC 3501, Section 7:
+        Server responses are in three forms: status responses, server data,
+        and command continuation request. 
+    */
+
+    public writeStatus (tag : string, type : string, code : string, command : string, message : string) : void {
+        this.socket.write(`${tag} ${type} ${((code.length !== 0) ? ("[" + code + "] ") : "")}${command} ${message}\r\n`);
+    }
+
+    public writeData (message : string) : void {
+        this.socket.write(`* ${message}\r\n`);
+    }
+
+    public writeContinuationRequest (message : string) : void {
+        this.socket.write(`+ ${message}\r\n`);
+    }
+
+    public writeOk (tag : string, command : string) : void {
+        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
 
     public close () : void {

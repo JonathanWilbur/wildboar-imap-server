@@ -6,7 +6,7 @@ import { lexer } from "../../ArgumentLexers/SimpleMailboxLexer";
 
 const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {
     if (lexemes.length !== 4) {
-        connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        connection.writeStatus(tag, "BAD", "", command, "Bad arguments.");
         return;
     }
     const mailboxName : string = lexemes[3].toString();
@@ -17,8 +17,8 @@ const handler = async (connection : Connection, tag : string, command : string, 
     if ("ok" in response && (<any>response)["ok"]) {
         connection.currentlySelectedMailbox = mailboxName;
         connection.hasWritePermissionOnCurrentlySelectedMailbox = true;
-        connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
-    } else connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        connection.writeOk(tag, command);
+    } else connection.writeStatus(tag, "NO", "", command, "Failed.");
 };
 
 const plugin : CommandPlugin = new CommandPlugin(lexer, handler);

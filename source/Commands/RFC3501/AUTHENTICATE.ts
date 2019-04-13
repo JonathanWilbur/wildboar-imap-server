@@ -50,14 +50,14 @@ const handler = async (connection : Connection, tag : string, command : string, 
         if ("authenticatedUser" in response && typeof (<any>response)["authenticatedUser"] === "string") {
             connection.authenticatedUser = (<any>response)["authenticatedUser"];
             connection.state = ConnectionState.AUTHENTICATED;
-            connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+            connection.writeOk(tag, command);
         } else {
-            connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+            connection.writeStatus(tag, "NO", "", command, "Authentication failed.");
         }
         connection.currentCommand = [];
     } else {
         if ("nextChallenge" in response && typeof (<any>response)["nextChallenge"] === "string")
-        connection.socket.write(`+ ${(<any>response)["nextChallenge"]}\r\n`);
+            connection.writeContinuationRequest((<any>response)["nextChallenge"]);
     }
 };
 

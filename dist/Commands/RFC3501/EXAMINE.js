@@ -5,7 +5,7 @@ const ConnectionState_1 = require("../../ConnectionState");
 const SimpleMailboxLexer_1 = require("../../ArgumentLexers/SimpleMailboxLexer");
 const handler = async (connection, tag, command, lexemes) => {
     if (lexemes.length !== 4) {
-        connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        connection.writeStatus(tag, "BAD", "", command, "Bad arguments.");
         return;
     }
     const mailboxName = lexemes[3].toString();
@@ -15,10 +15,10 @@ const handler = async (connection, tag, command, lexemes) => {
     if ("ok" in response && response["ok"]) {
         connection.currentlySelectedMailbox = mailboxName;
         connection.hasWritePermissionOnCurrentlySelectedMailbox = false;
-        connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+        connection.writeOk(tag, command);
     }
     else
-        connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
+        connection.writeStatus(tag, "NO", "", command, "Failed.");
 };
 const plugin = new CommandPlugin_1.CommandPlugin(SimpleMailboxLexer_1.lexer, handler);
 plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.AUTHENTICATED;

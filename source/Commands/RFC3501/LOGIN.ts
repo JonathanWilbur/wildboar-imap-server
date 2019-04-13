@@ -57,9 +57,8 @@ const handler = async (connection : Connection, tag : string, command : string, 
             if (connection.server.driverlessAuthenticationDatabase[username] === passhash) {
                 connection.authenticatedUser = username;
                 connection.state = ConnectionState.AUTHENTICATED;
-                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
-            } else
-            connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+                connection.writeOk(tag, command);
+            } else connection.writeStatus(tag, "NO", "", command, "Incorrect username or password.");
         });
     } else {
         const response : object = await connection.server.messageBroker.publishAuthentication("PLAIN", {
@@ -73,14 +72,14 @@ const handler = async (connection : Connection, tag : string, command : string, 
             if ("authenticatedUser" in response && typeof (<any>response)["authenticatedUser"] === "string") {
                 connection.authenticatedUser = (<any>response)["authenticatedUser"];
                 connection.state = ConnectionState.AUTHENTICATED;
-                connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+                connection.writeOk(tag, command);
             } else {
-                connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+                connection.writeStatus(tag, "NO", "", command, "Incorrect username or password.");
             }
         } else {
             // This is not supposed to happen, because the PLAIN
             // authentication mechanism only uses one message.
-            connection.socket.write(`${tag} NO ${command} Unexpected error.\r\n`);
+            connection.writeStatus(tag, "NO", "", command, "Failed.");
         }
     }
 };

@@ -88,6 +88,7 @@ development.
 - [x] Add `commands_needing_authorization` configuration directive.
 - [ ] Is `LexemeType.ERROR` really necessary anymore?
 - [ ] Implement an interface for command callbacks to write to the socket in a more controlled manner.
+- [ ] Catch errors in non-arguments lexing.
 
 ### Alpha
 

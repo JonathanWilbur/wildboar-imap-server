@@ -10,7 +10,7 @@ const lexer = function* (scanner, currentcommand) {
     return;
 };
 const handler = async (connection, tag, command, lexemes) => {
-    connection.socket.write(`${tag} BAD ${command} not supported by this server.\r\n`);
+    connection.writeStatus(tag, "BAD", "", command, "STARTTLS is not supported by this server.");
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
 plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;

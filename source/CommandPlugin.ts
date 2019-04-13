@@ -12,21 +12,6 @@ class CommandPlugin {
      */
     public acceptableConnectionState : ConnectionState | null = null;
 
-    // private _acceptableConnectionStatesBitFlags : number = (
-    //     ConnectionState.NOT_AUTHENTICATED |
-    //     ConnectionState.AUTHENTICATED |
-    //     ConnectionState.SELECTED |
-    //     ConnectionState.LOGOUT
-    // );
-
-    // get acceptableConnectionStatesBitFlags () : number {
-    //     return this._acceptableConnectionStatesBitFlags;
-    // }
-
-    // public prohibitThisCommandWhileInConnectionState (state : ConnectionState) : void {
-    //     this._acceptableConnectionStatesBitFlags &= (~state);
-    // }
-
     public mayExecuteWhileInConnectionState (state : ConnectionState) : boolean {
         return ((this.acceptableConnectionState === null) || (state === this.acceptableConnectionState));
     }

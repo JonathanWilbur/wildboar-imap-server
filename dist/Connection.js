@@ -65,6 +65,13 @@ class Connection {
     get socketString() {
         return `${this.socket.remoteFamily}:${this.socket.remoteAddress}:${this.socket.remotePort}`;
     }
+    get socketReport() {
+        const ret = {};
+        for (let property in this.socket) {
+            ret[property] = this.socket[property];
+        }
+        return ret;
+    }
     *lexemeStream() {
         while (true) {
             if (this.currentCommand.length > 20) {
@@ -230,7 +237,17 @@ class Connection {
         else
             throw new Error(`Internal error when trying to authorize command '${commandName}'.`);
     }
-    respond(tag, code, message) {
+    writeStatus(tag, type, code, command, message) {
+        this.socket.write(`${tag} ${type} ${((code.length !== 0) ? ("[" + code + "] ") : "")}${command} ${message}\r\n`);
+    }
+    writeData(message) {
+        this.socket.write(`* ${message}\r\n`);
+    }
+    writeContinuationRequest(message) {
+        this.socket.write(`+ ${message}\r\n`);
+    }
+    writeOk(tag, command) {
+        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
     close() {
         this.socket.end();

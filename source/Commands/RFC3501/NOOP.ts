@@ -11,7 +11,7 @@ const lexer = function* (scanner : Scanner, currentcommand : Lexeme[]) : Iterabl
 };
 
 const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {
-    connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+    connection.writeOk(tag, command);
 };
 
 const plugin : CommandPlugin = new CommandPlugin(lexer, handler);

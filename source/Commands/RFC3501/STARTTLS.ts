@@ -12,7 +12,7 @@ const lexer = function* (scanner : Scanner, currentcommand : Lexeme[]) : Iterabl
 };
 
 const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {
-    connection.socket.write(`${tag} BAD ${command} not supported by this server.\r\n`);
+    connection.writeStatus(tag, "BAD", "", command, "STARTTLS is not supported by this server.");
 };
 
 const plugin : CommandPlugin = new CommandPlugin(lexer, handler);

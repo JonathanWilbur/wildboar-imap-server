@@ -53,16 +53,16 @@ const handler = async (connection, tag, command, lexemes) => {
         if ("authenticatedUser" in response && typeof response["authenticatedUser"] === "string") {
             connection.authenticatedUser = response["authenticatedUser"];
             connection.state = ConnectionState_1.ConnectionState.AUTHENTICATED;
-            connection.socket.write(`${tag} OK ${command} Completed.\r\n`);
+            connection.writeOk(tag, command);
         }
         else {
-            connection.socket.write(`${tag} NO ${command} Incorrect username or password.\r\n`);
+            connection.writeStatus(tag, "NO", "", command, "Authentication failed.");
         }
         connection.currentCommand = [];
     }
     else {
         if ("nextChallenge" in response && typeof response["nextChallenge"] === "string")
-            connection.socket.write(`+ ${response["nextChallenge"]}\r\n`);
+            connection.writeContinuationRequest(response["nextChallenge"]);
     }
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);

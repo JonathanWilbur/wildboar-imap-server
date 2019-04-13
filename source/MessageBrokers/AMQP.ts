@@ -170,13 +170,7 @@ class AMQPMessageBroker implements MessageBroker, UniquelyIdentified {
                 currentlySelectedMailbox: connection.currentlySelectedMailbox,
                 authenticatedUser: connection.authenticatedUser,
                 connectionState: connection.state,
-                socket: {
-                    localAddress: connection.socket.localAddress,
-                    localPort: connection.socket.localPort,
-                    remoteFamily: connection.socket.remoteFamily,
-                    remoteAddress: connection.socket.remoteAddress,
-                    remotePort: connection.socket.remotePort
-                }
+                socket: connection.socketReport
             };
             
             // This MUST occur AFTER this.responseEmitter.once() to prevent a
