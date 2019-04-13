@@ -1,0 +1,1 @@
+{"version":3,"file":"NewLineLexer.js","sourceRoot":"","sources":["../../source/ArgumentLexers/NewLineLexer.ts"],"names":[],"mappings":";;AAIM,QAAA,KAAK,GAAG,QAAQ,CAAC,EAAE,OAAiB,EAAE,cAAyB;IACjE,MAAM,OAAO,GAAmB,OAAO,CAAC,6BAA6B,EAAE,CAAC;IACxE,IAAI,CAAC,OAAO;QAAE,OAAO;IACrB,MAAM,OAAO,CAAC;IACd,OAAO;AACX,CAAC,CAAC"}

@@ -1,7 +1,8 @@
 import { Lexeme } from "../Lexeme";
 import { Scanner } from "../Scanner";
 
-export const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
+export
+const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
     if (currentCommand.length <= 2) {
         const space : Lexeme | null = scanner.readSpace();
         if (!space) return;

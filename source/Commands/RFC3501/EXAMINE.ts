@@ -6,8 +6,6 @@ import { lexer } from "../../ArgumentLexers/SimpleMailboxLexer";
 
 const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {
     if (lexemes.length !== 4) {
-        // connection.socket.write(`${tag} NO ${command} Failed.\r\n`);
-        // connection.writeStatus(tag, "NO", "", command, "Failed.");
         connection.writeStatus(tag, "BAD", "", command, "Bad arguments.");
         return;
     }
