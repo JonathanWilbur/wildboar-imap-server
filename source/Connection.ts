@@ -6,10 +6,11 @@ import { Lexeme } from "./Lexeme";
 import { LexemeType } from "./LexemeType";
 import { Scanner } from "./Scanner";
 import { Server } from "./Server";
+import { SocketWriter } from "./SocketWriter";
 import { v4 as uuidv4 } from "uuid";
 
 export
-class Connection implements Temporal, UniquelyIdentified {
+class Connection implements SocketWriter, Temporal, UniquelyIdentified {
 
     public readonly id : string = `urn:uuid:${uuidv4()}`;
     public readonly creationTime : Date = new Date();
@@ -36,73 +37,73 @@ class Connection implements Temporal, UniquelyIdentified {
         readonly server : Server,
         private readonly socket : net.Socket
     ) {
-        // TODO: Move this hander out of the constructor.
-        socket.on("data", (data : Buffer) => {
-            this.scanner.enqueueData(data);
-            for (let lexeme of this.lexemeStream()) {
-                switch (<number>lexeme.type) {
-                    case (LexemeType.ERROR): {
-                        this.currentCommand = [];
-                        break;
-                    }
-                    case (LexemeType.LITERAL_LENGTH): {
-                        this.socket.write("+ Ready for literal data.\r\n");
-                        this.currentCommand.push(lexeme);
-                        break;
-                    }
-                    case (LexemeType.STRING_LITERAL): {
-                        /**
-                         * We remove the literal length indicator entirely.
-                         * Since it ALWAYS comes before the literal and serves
-                         * no other purpose than indicating the length of the
-                         * literal, which can be obtained from the literal
-                         * lexeme itself, it is useless at this point.
-                         * 
-                         * The advantage of doing this is simplicity: if there
-                         * are a fixed number of arguments expected in a
-                         * command that accepts literals, the number of lexemes
-                         * passed to the command plugin's callback can be used
-                         * directly, rather than a complicated scheme to
-                         * determine how many arguments have been received.
-                         * Every lexeme after [0] and [1] are arguments, and
-                         * each argument is represented on only a single
-                         * lexeme. This greatly simplifies the per-command
-                         * argument lexing.
-                         */
-                        this.currentCommand.pop();
-                        this.currentCommand.push(lexeme);
-                        break;
-                    }
-                    case (LexemeType.END_OF_COMMAND): {
-                        this.executeCommand(this.currentCommand.slice(0));
-                        this.currentCommand = [];
-                        break;
-                    }
-                    case (LexemeType.NEWLINE): {
-                        this.currentCommand.push(lexeme);
-                        this.executeCommand(this.currentCommand.slice(0));
-                        break;
-                    }
-                    default: {
-                        this.currentCommand.push(lexeme);
-                    }
+        this.socket.on("data", this.socketDataHandler);
+        this.socket.on("close", this.socketCloseHandler);
+        this.writeData("OK " + this.server.configuration.imap_server_greeting);
+    }
+
+    private socketDataHandler = (data : Buffer) : void => {
+        this.scanner.enqueueData(data);
+        for (let lexeme of this.lexemeStream()) {
+            switch (<number>lexeme.type) {
+                case (LexemeType.ERROR): {
+                    this.currentCommand = [];
+                    break;
+                }
+                case (LexemeType.LITERAL_LENGTH): {
+                    this.writeContinuationRequest("Ready for literal data.");
+                    this.currentCommand.push(lexeme);
+                    break;
+                }
+                case (LexemeType.STRING_LITERAL): {
+                    /**
+                     * We remove the literal length indicator entirely.
+                     * Since it ALWAYS comes before the literal and serves
+                     * no other purpose than indicating the length of the
+                     * literal, which can be obtained from the literal
+                     * lexeme itself, it is useless at this point.
+                     * 
+                     * The advantage of doing this is simplicity: if there
+                     * are a fixed number of arguments expected in a
+                     * command that accepts literals, the number of lexemes
+                     * passed to the command plugin's callback can be used
+                     * directly, rather than a complicated scheme to
+                     * determine how many arguments have been received.
+                     * Every lexeme after [0] and [1] are arguments, and
+                     * each argument is represented on only a single
+                     * lexeme. This greatly simplifies the per-command
+                     * argument lexing.
+                     */
+                    this.currentCommand.pop();
+                    this.currentCommand.push(lexeme);
+                    break;
+                }
+                case (LexemeType.END_OF_COMMAND): {
+                    this.executeCommand(this.currentCommand.slice(0));
+                    this.currentCommand = [];
+                    break;
+                }
+                case (LexemeType.NEWLINE): {
+                    this.currentCommand.push(lexeme);
+                    this.executeCommand(this.currentCommand.slice(0));
+                    break;
+                }
+                default: {
+                    this.currentCommand.push(lexeme);
                 }
             }
-        });
+        }
+    }
 
-        // TODO: Move this hander out of the constructor.
-        socket.on("close", (hadError : boolean) : void => {
-            server.logger.info({
-                topic: "imap.socket.close",
-                message: `Socket for connection ${this.id} closed.`,
-                socket: this.socket,
-                connectionID: this.id,
-                authenticatedUser: this.authenticatedUser,
-                hadError: hadError
-            });
+    private socketCloseHandler = (hadError : boolean) : void => {
+        this.server.logger.info({
+            topic: "imap.socket.close",
+            message: `Socket for connection ${this.id} closed.`,
+            socket: this.socket,
+            connectionID: this.id,
+            authenticatedUser: this.authenticatedUser,
+            hadError: hadError
         });
-
-        this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
     }
 
     /**
@@ -197,7 +198,7 @@ class Connection implements Temporal, UniquelyIdentified {
 
         // Check that the command exists
         if (!(commandName in this.server.commandPlugins)) {
-            this.socket.write(`${tag} BAD Command '${commandName}' not understood by this server.\r\n`);
+            this.writeStatus(tag, "BAD", "ALERT", commandName, "Command not understood by this server.");
             this.server.logger.warn({
                 message: `Command '${commandName}' not understood by this server.`,
                 topic: "imap.command._unknown",
@@ -212,7 +213,7 @@ class Connection implements Temporal, UniquelyIdentified {
 
         // Check that the command may be executed in this state.
         if (!(commandPlugin.mayExecuteWhileInConnectionState(this.state))) {
-            this.socket.write(`${tag} NO Command '${commandName}' not allowed in the current state.\r\n`);
+            this.writeStatus(tag, "NO", "ALERT", commandName, "Command not allowed in the current state.");
             this.server.logger.warn({
                 message: `Command '${commandName}' not allowed in the current state.`,
                 topic: "imap.command._wrongstate",
@@ -228,7 +229,7 @@ class Connection implements Temporal, UniquelyIdentified {
         try {
             const authorized : boolean = await this.checkAuthorization(lexemes);
             if (!authorized) {
-                this.socket.write(`${tag} NO Command '${commandName}' not authorized.\r\n`);
+                this.writeStatus(tag, "NO", "ALERT", commandName, "Not authorized.");
                 this.server.logger.warn({
                     message: `Command '${commandName}' not authorized.`,
                     topic: "imap.command._prohibited",
@@ -240,7 +241,7 @@ class Connection implements Temporal, UniquelyIdentified {
                 return;
             }
         } catch (e) {
-            this.socket.write(`${tag} NO Internal error. Sorry!\r\n`);
+            this.writeStatus(tag, "NO", "ALERT", commandName, "Internal error.");
             return;
         }
 
@@ -257,8 +258,7 @@ class Connection implements Temporal, UniquelyIdentified {
             });
         } catch (e) {
             this.currentCommand = [];
-            if (this.socket.writable)
-                this.socket.write(`${tag} NO Command '${commandName}' encountered an error.\r\n`);
+            this.writeStatus(tag, "OK", "ALERT", commandName, "Error.");
             this.server.logger.error({
                 topic: `imap.commands.${commandName}`,
                 message: e.message,
@@ -296,19 +296,22 @@ class Connection implements Temporal, UniquelyIdentified {
     */
 
     public writeStatus (tag : string, type : string, code : string, command : string, message : string) : void {
-        this.socket.write(`${tag} ${type} ${((code.length !== 0) ? ("[" + code + "] ") : "")}${command} ${message}\r\n`);
+        if (this.socket.writable) {
+            const codeString : string = ((code.length !== 0) ? ("[" + code + "] ") : "");
+            this.socket.write(`${tag} ${type} ${codeString}${command} ${message}\r\n`);
+        }
     }
 
     public writeData (message : string) : void {
-        this.socket.write(`* ${message}\r\n`);
+        if (this.socket.writable) this.socket.write(`* ${message}\r\n`);
     }
 
     public writeContinuationRequest (message : string) : void {
-        this.socket.write(`+ ${message}\r\n`);
+        if (this.socket.writable) this.socket.write(`+ ${message}\r\n`);
     }
 
     public writeOk (tag : string, command : string) : void {
-        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
+        if (this.socket.writable) this.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
 
     public close () : void {

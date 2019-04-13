@@ -16,7 +16,7 @@ class Connection {
         this.authenticatedUser = "";
         this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
         this.currentCommand = [];
-        socket.on("data", (data) => {
+        this.socketDataHandler = (data) => {
             this.scanner.enqueueData(data);
             for (let lexeme of this.lexemeStream()) {
                 switch (lexeme.type) {
@@ -25,7 +25,7 @@ class Connection {
                         break;
                     }
                     case (11): {
-                        this.socket.write("+ Ready for literal data.\r\n");
+                        this.writeContinuationRequest("Ready for literal data.");
                         this.currentCommand.push(lexeme);
                         break;
                     }
@@ -49,9 +49,9 @@ class Connection {
                     }
                 }
             }
-        });
-        socket.on("close", (hadError) => {
-            server.logger.info({
+        };
+        this.socketCloseHandler = (hadError) => {
+            this.server.logger.info({
                 topic: "imap.socket.close",
                 message: `Socket for connection ${this.id} closed.`,
                 socket: this.socket,
@@ -59,8 +59,10 @@ class Connection {
                 authenticatedUser: this.authenticatedUser,
                 hadError: hadError
             });
-        });
-        this.socket.write(`* OK ${this.server.configuration.imap_server_greeting}\r\n`);
+        };
+        this.socket.on("data", this.socketDataHandler);
+        this.socket.on("close", this.socketCloseHandler);
+        this.writeData("OK " + this.server.configuration.imap_server_greeting);
     }
     get socketString() {
         return `${this.socket.remoteFamily}:${this.socket.remoteAddress}:${this.socket.remotePort}`;
@@ -147,7 +149,7 @@ class Connection {
         const tag = lexemes[0].toString();
         const commandName = lexemes[1].toString();
         if (!(commandName in this.server.commandPlugins)) {
-            this.socket.write(`${tag} BAD Command '${commandName}' not understood by this server.\r\n`);
+            this.writeStatus(tag, "BAD", "ALERT", commandName, "Command not understood by this server.");
             this.server.logger.warn({
                 message: `Command '${commandName}' not understood by this server.`,
                 topic: "imap.command._unknown",
@@ -160,7 +162,7 @@ class Connection {
         }
         const commandPlugin = this.server.commandPlugins[commandName];
         if (!(commandPlugin.mayExecuteWhileInConnectionState(this.state))) {
-            this.socket.write(`${tag} NO Command '${commandName}' not allowed in the current state.\r\n`);
+            this.writeStatus(tag, "NO", "ALERT", commandName, "Command not allowed in the current state.");
             this.server.logger.warn({
                 message: `Command '${commandName}' not allowed in the current state.`,
                 topic: "imap.command._wrongstate",
@@ -174,7 +176,7 @@ class Connection {
         try {
             const authorized = await this.checkAuthorization(lexemes);
             if (!authorized) {
-                this.socket.write(`${tag} NO Command '${commandName}' not authorized.\r\n`);
+                this.writeStatus(tag, "NO", "ALERT", commandName, "Not authorized.");
                 this.server.logger.warn({
                     message: `Command '${commandName}' not authorized.`,
                     topic: "imap.command._prohibited",
@@ -187,7 +189,7 @@ class Connection {
             }
         }
         catch (e) {
-            this.socket.write(`${tag} NO Internal error. Sorry!\r\n`);
+            this.writeStatus(tag, "NO", "ALERT", commandName, "Internal error.");
             return;
         }
         try {
@@ -203,8 +205,7 @@ class Connection {
         }
         catch (e) {
             this.currentCommand = [];
-            if (this.socket.writable)
-                this.socket.write(`${tag} NO Command '${commandName}' encountered an error.\r\n`);
+            this.writeStatus(tag, "OK", "ALERT", commandName, "Error.");
             this.server.logger.error({
                 topic: `imap.commands.${commandName}`,
                 message: e.message,
@@ -238,16 +239,22 @@ class Connection {
             throw new Error(`Internal error when trying to authorize command '${commandName}'.`);
     }
     writeStatus(tag, type, code, command, message) {
-        this.socket.write(`${tag} ${type} ${((code.length !== 0) ? ("[" + code + "] ") : "")}${command} ${message}\r\n`);
+        if (this.socket.writable) {
+            const codeString = ((code.length !== 0) ? ("[" + code + "] ") : "");
+            this.socket.write(`${tag} ${type} ${codeString}${command} ${message}\r\n`);
+        }
     }
     writeData(message) {
-        this.socket.write(`* ${message}\r\n`);
+        if (this.socket.writable)
+            this.socket.write(`* ${message}\r\n`);
     }
     writeContinuationRequest(message) {
-        this.socket.write(`+ ${message}\r\n`);
+        if (this.socket.writable)
+            this.socket.write(`+ ${message}\r\n`);
     }
     writeOk(tag, command) {
-        this.socket.write(`${tag} OK ${command} Completed.\r\n`);
+        if (this.socket.writable)
+            this.socket.write(`${tag} OK ${command} Completed.\r\n`);
     }
     close() {
         this.socket.end();
