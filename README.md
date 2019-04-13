@@ -36,7 +36,7 @@ development.
     - [x] `EXAMINE`
     - [x] `CREATE`
     - [x] `DELETE`
-    - [ ] `RENAME`
+    - [x] `RENAME`
     - [x] `SUBSCRIBE`
     - [x] `UNSUBSCRIBE`
     - [ ] `LIST`
