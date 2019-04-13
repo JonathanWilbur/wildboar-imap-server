@@ -10,7 +10,7 @@ const handler = async (connection, tag, command, lexemes) => {
     }
     const mailboxName = lexemes[3].toString();
     const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
-        mailboxName: lexemes[3].toString()
+        mailboxName: mailboxName
     });
     if ("ok" in response && response["ok"]) {
         connection.currentlySelectedMailbox = mailboxName;

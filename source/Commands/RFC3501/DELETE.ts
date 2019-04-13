@@ -15,8 +15,6 @@ const handler = async (connection : Connection, tag : string, command : string, 
             mailboxName: mailboxName
         });
     if ("ok" in response && (<any>response)["ok"]) {
-        connection.currentlySelectedMailbox = mailboxName;
-        connection.hasWritePermissionOnCurrentlySelectedMailbox = false;
         connection.writeOk(tag, command);
     } else connection.writeStatus(tag, "NO", "", command, "Failed.");
 };
