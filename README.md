@@ -42,7 +42,7 @@ development.
     - [x] `LIST`
     - [x] `LSUB`
     - [x] `STATUS`
-    - [ ] `APPEND` (hard)
+    - [x] `APPEND`
     - [ ] `CHECK`
     - [ ] `CLOSE`
     - [ ] `EXPUNGE`

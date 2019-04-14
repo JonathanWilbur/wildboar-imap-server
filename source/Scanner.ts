@@ -151,6 +151,38 @@ class Scanner {
         } else return null;
     }
 
+    public readFlag () : Lexeme | null {
+        if ((this.scanCursor + 2) > this.receivedData.length) return null;
+        if (this.receivedData[this.scanCursor] !== '\\'.charCodeAt(0))
+            throw new Error(`Flag did not start with a backslash. Encountered ${this.receivedData[this.scanCursor]} instead.`);
+        let indexOfEndOfToken : number = -1;
+        for (let i : number = (this.scanCursor + 1); i < this.receivedData.length; i++) {
+            if (!(Scanner.isAtomChar(this.receivedData[i]))) {
+                indexOfEndOfToken = i;
+                break;
+            }
+        }
+        if (indexOfEndOfToken === -1) return null;
+        const oldScanCursor : number = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return new Lexeme(
+            LexemeType.FLAG,
+            this.receivedData.slice(oldScanCursor, this.scanCursor)
+        );
+    }
+
+    public readListStart () : Lexeme | null {
+        return this.readSpecificToken(
+            new Lexeme(LexemeType.LIST_START, Buffer.from("("))
+        );
+    }
+
+    public readListEnd () : Lexeme | null {
+        return this.readSpecificToken(
+            new Lexeme(LexemeType.LIST_END, Buffer.from(")"))
+        );
+    }
+
     public readAstring () : Lexeme | null {
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
             return this.readDoubleQuotedString();
@@ -282,11 +314,6 @@ class Scanner {
         } else return null;
     }
 
-    // public readParenthesizedList () : Lexeme | null {
-    //     if (!(this.receivedData[this.scanCursor] === '('.charCodeAt(0))) return null;
-
-    // }
-
     public readSASLMechanism () : Lexeme | null {
         const oldScanCursor : number = this.scanCursor;
         if (this.readImplicitlyTerminatedToken(Scanner.isSASLMechanismNameChar)) {
@@ -320,6 +347,13 @@ class Scanner {
             (Scanner.isListWildcardChar(char)) ||
             (Scanner.isQuotedSpecialChar(char)) ||
             (Scanner.isResponseSpecialChar(char))
+        );
+    }
+
+    public static isFlagChar (char : number) : boolean {
+        return (
+            (Scanner.isAtomChar(char)) ||
+            (char === "\\".charCodeAt(0))
         );
     }
 

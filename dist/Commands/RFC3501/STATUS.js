@@ -72,9 +72,7 @@ const lexer = function* (scanner, currentCommand) {
         do {
             try {
                 lex =
-                    scanner.readAny(scanner.readSpace.bind(scanner), scanner.readAtom.bind(scanner), (() => {
-                        return scanner.readSpecificToken(new Lexeme_1.Lexeme(7, Buffer.from(")")));
-                    }).bind(scanner));
+                    scanner.readAny(scanner.readSpace.bind(scanner), scanner.readAtom.bind(scanner), scanner.readListEnd.bind(scanner));
             }
             catch (e) {
                 break;

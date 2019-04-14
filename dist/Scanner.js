@@ -117,6 +117,30 @@ class Scanner {
         else
             return null;
     }
+    readFlag() {
+        if ((this.scanCursor + 2) > this.receivedData.length)
+            return null;
+        if (this.receivedData[this.scanCursor] !== '\\'.charCodeAt(0))
+            throw new Error(`Flag did not start with a backslash. Encountered ${this.receivedData[this.scanCursor]} instead.`);
+        let indexOfEndOfToken = -1;
+        for (let i = (this.scanCursor + 1); i < this.receivedData.length; i++) {
+            if (!(Scanner.isAtomChar(this.receivedData[i]))) {
+                indexOfEndOfToken = i;
+                break;
+            }
+        }
+        if (indexOfEndOfToken === -1)
+            return null;
+        const oldScanCursor = this.scanCursor;
+        this.scanCursor = indexOfEndOfToken;
+        return new Lexeme_1.Lexeme(13, this.receivedData.slice(oldScanCursor, this.scanCursor));
+    }
+    readListStart() {
+        return this.readSpecificToken(new Lexeme_1.Lexeme(6, Buffer.from("(")));
+    }
+    readListEnd() {
+        return this.readSpecificToken(new Lexeme_1.Lexeme(7, Buffer.from(")")));
+    }
     readAstring() {
         if (this.receivedData[this.scanCursor] === '"'.charCodeAt(0))
             return this.readDoubleQuotedString();
@@ -256,6 +280,10 @@ class Scanner {
             (Scanner.isListWildcardChar(char)) ||
             (Scanner.isQuotedSpecialChar(char)) ||
             (Scanner.isResponseSpecialChar(char)));
+    }
+    static isFlagChar(char) {
+        return ((Scanner.isAtomChar(char)) ||
+            (char === "\\".charCodeAt(0)));
     }
     static isControlCharacter(char) {
         return ((char >= 0x00 && char <= 0x1F) || (char === 0x7F));

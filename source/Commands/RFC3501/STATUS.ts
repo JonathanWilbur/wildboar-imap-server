@@ -79,11 +79,7 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
                     scanner.readAny(
                         scanner.readSpace.bind(scanner),
                         scanner.readAtom.bind(scanner),
-                        (() : Lexeme | null => {
-                            return scanner.readSpecificToken(
-                                new Lexeme(LexemeType.LIST_END, Buffer.from(")"))
-                            )
-                        }).bind(scanner)
+                        scanner.readListEnd.bind(scanner)
                     );
             } catch (e) {
                 break;

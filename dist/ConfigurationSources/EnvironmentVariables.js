@@ -95,7 +95,7 @@ class EnvironmentVariablesConfigurationSource extends ConfigurationSource_1.Conf
         return env;
     }
     get imap_server_tcp_socket_timeout_in_milliseconds() {
-        const DEFAULT_VALUE = 30000;
+        const DEFAULT_VALUE = 60000;
         const env = this.getInteger("imap.server.tcp.socket_timeout");
         if (!env)
             return DEFAULT_VALUE;
