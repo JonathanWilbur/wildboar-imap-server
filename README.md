@@ -45,7 +45,7 @@ development.
     - [x] `APPEND`
     - [x] `CHECK`
     - [x] `CLOSE`
-    - [ ] `EXPUNGE`
+    - [x] `EXPUNGE`
     - [ ] `SEARCH` (very hard) (And search tricks)
     - [ ] `FETCH` (hard)
     - [ ] `STORE` (medium)
@@ -88,6 +88,7 @@ development.
 - [x] Catch errors in non-arguments lexing.
 - [ ] Add `warnings` or `notifications` to storage driver responses and all handlers.
 - [ ] Deduplicate simple handlers
+- [ ] Move schema into command files
 
 These are not requirements, but may become features of this release:
 
@@ -112,6 +113,7 @@ development.
 - [ ] Error reporting with the [NodeJS Report API](https://nodejs.org/dist/latest-v11.x/docs/api/report.html)
 - [ ] Assertions
 - [ ] Handle size limitations imposed by message brokers (4GB for AMQP, 16MB for AWS SQS)
+- [ ] Fill out schema more
 
 ### Beta
 

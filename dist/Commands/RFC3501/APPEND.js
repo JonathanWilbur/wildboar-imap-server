@@ -77,10 +77,6 @@ const handler = async (connection, tag, command, lexemes) => {
     if (nonSpaceLexemes[parseCursor].type === 11) {
         message = nonSpaceLexemes[parseCursor].token;
     }
-    console.log(date);
-    console.log(date);
-    console.log(message);
-    console.log(Array.from(flags));
     const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
         mailboxName: mailboxName,
         date: date,
