@@ -43,8 +43,8 @@ development.
     - [x] `LSUB`
     - [x] `STATUS`
     - [x] `APPEND`
-    - [ ] `CHECK`
-    - [ ] `CLOSE`
+    - [x] `CHECK`
+    - [x] `CLOSE`
     - [ ] `EXPUNGE`
     - [ ] `SEARCH` (very hard) (And search tricks)
     - [ ] `FETCH` (hard)
@@ -86,7 +86,8 @@ development.
 - [x] Is `LexemeType.ERROR` really necessary anymore? Nope. Deleted.
 - [x] Implement an interface for command callbacks to write to the socket in a more controlled manner.
 - [x] Catch errors in non-arguments lexing.
-- [ ] Add `warnings` or `notifications` to storage driver responses.
+- [ ] Add `warnings` or `notifications` to storage driver responses and all handlers.
+- [ ] Deduplicate simple handlers
 
 These are not requirements, but may become features of this release:
 
