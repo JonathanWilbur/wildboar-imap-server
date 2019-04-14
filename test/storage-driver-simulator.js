@@ -86,5 +86,26 @@ amqp.connect("amqp://localhost:5672", (err, connection) => {
         //         });
         // });
 
+        channel.consume("imap.STATUS", (msg) => {
+            channel.ack(msg);
+            channel.sendToQueue(msg.properties.replyTo,
+                Buffer.from(JSON.stringify({
+                    ok: true,
+                    statusMessage: "Lemme get uhhhhh boneless pizza n uhhhh two liter coke",
+                    errorsToShowToUser: [
+                        "The gorillas have escaped"
+                    ],
+                    messages: 13,
+                    recent: 5,
+                    unseen: 2,
+                    uidNext: 543,
+                    uidValidity: 22
+                })), {
+                    correlationId: msg.properties.correlationId,
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
+                });
+        });
+
     });
 });

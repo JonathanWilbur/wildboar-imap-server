@@ -18,7 +18,9 @@ class DummyMessageBroker implements MessageBroker, UniquelyIdentified {
         return Promise.resolve(true);
     }
     public publishCommand () : Promise<object> {
-        return Promise.resolve({});
+        return Promise.resolve({
+            ok: true
+        });
     }
     public publishAuthentication (saslMechanism : string, message : AuthenticationRequest) : Promise<object> {
         return Promise.resolve({});

@@ -14,7 +14,9 @@ class DummyMessageBroker {
         return Promise.resolve(true);
     }
     publishCommand() {
-        return Promise.resolve({});
+        return Promise.resolve({
+            ok: true
+        });
     }
     publishAuthentication(saslMechanism, message) {
         return Promise.resolve({});

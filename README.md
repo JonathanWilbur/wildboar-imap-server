@@ -41,7 +41,7 @@ development.
     - [x] `UNSUBSCRIBE`
     - [x] `LIST`
     - [x] `LSUB`
-    - [ ] `STATUS` ("STATUS" SP mailbox SP "(" status-att *(SP status-att) ")") (status-att = "MESSAGES" / "RECENT" / "UIDNEXT" / "UIDVALIDITY" / "UNSEEN")
+    - [x] `STATUS`
     - [ ] `APPEND` (hard)
     - [ ] `CHECK`
     - [ ] `CLOSE`
@@ -86,6 +86,7 @@ development.
 - [x] Is `LexemeType.ERROR` really necessary anymore? Nope. Deleted.
 - [x] Implement an interface for command callbacks to write to the socket in a more controlled manner.
 - [x] Catch errors in non-arguments lexing.
+- [ ] Add `warnings` or `notifications` to storage driver responses.
 
 These are not requirements, but may become features of this release:
 
@@ -109,6 +110,7 @@ development.
   - [x] Is a DoS Possible by calling `LOGOUT` shortly after running a command?
 - [ ] Error reporting with the [NodeJS Report API](https://nodejs.org/dist/latest-v11.x/docs/api/report.html)
 - [ ] Assertions
+- [ ] Handle size limitations imposed by message brokers (4GB for AMQP, 16MB for AWS SQS)
 
 ### Beta
 

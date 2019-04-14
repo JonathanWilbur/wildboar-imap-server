@@ -104,6 +104,29 @@ class Scanner {
         return true;
     }
 
+    public readAny (... readers : (() => Lexeme | null)[]) : Lexeme | null {
+        for (let i = 0; i < readers.length; i++) {
+            try {
+                const lexeme : Lexeme | null = readers[i]();
+                return lexeme;
+            } catch (e) {
+                continue;
+            }
+        }
+        throw new Error("No tokens could be lexed.");
+    }
+
+    public readSpecificToken (lexeme : Lexeme) : Lexeme | null {
+        if (this.scanCursor + lexeme.token.length > this.receivedData.length)
+            return null;
+        const indexOfToken : number =
+            this.receivedData.indexOf(lexeme.token, this.scanCursor);
+        if (indexOfToken !== this.scanCursor)
+            throw new Error(`Specific token ${lexeme.token.join(" ")} could not be read.`);
+        this.scanCursor += lexeme.token.length;
+        return lexeme;
+    }
+
     public readTag () : Lexeme | null {
         const oldScanCursor : number = this.scanCursor;
         if (this.readImplicitlyTerminatedToken(Scanner.isTagChar)) {
@@ -258,6 +281,11 @@ class Scanner {
             );
         } else return null;
     }
+
+    // public readParenthesizedList () : Lexeme | null {
+    //     if (!(this.receivedData[this.scanCursor] === '('.charCodeAt(0))) return null;
+
+    // }
 
     public readSASLMechanism () : Lexeme | null {
         const oldScanCursor : number = this.scanCursor;

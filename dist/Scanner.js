@@ -76,6 +76,27 @@ class Scanner {
         this.scanCursor = indexOfEndOfToken;
         return true;
     }
+    readAny(...readers) {
+        for (let i = 0; i < readers.length; i++) {
+            try {
+                const lexeme = readers[i]();
+                return lexeme;
+            }
+            catch (e) {
+                continue;
+            }
+        }
+        throw new Error("No tokens could be lexed.");
+    }
+    readSpecificToken(lexeme) {
+        if (this.scanCursor + lexeme.token.length > this.receivedData.length)
+            return null;
+        const indexOfToken = this.receivedData.indexOf(lexeme.token, this.scanCursor);
+        if (indexOfToken !== this.scanCursor)
+            throw new Error(`Specific token ${lexeme.token.join(" ")} could not be read.`);
+        this.scanCursor += lexeme.token.length;
+        return lexeme;
+    }
     readTag() {
         const oldScanCursor = this.scanCursor;
         if (this.readImplicitlyTerminatedToken(Scanner.isTagChar)) {
