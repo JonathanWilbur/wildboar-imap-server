@@ -20,12 +20,15 @@ function imapPrint(thing) {
             return `${thing}`;
         }
         case ("string"): {
-            if (thing.indexOf("\n") !== -1
-                || thing.indexOf("\r") !== -1) {
+            if (/^\\[A-Za-z0-9]+$/.test(thing)) {
+                return thing;
+            }
+            else if (thing.indexOf("\n") !== -1 || thing.indexOf("\r") !== -1) {
                 return `{${thing.length}}\r\n${thing}`;
             }
             else if (thing.indexOf("\\") !== -1
-                || thing.indexOf("\"") !== -1) {
+                || thing.indexOf("\"") !== -1
+                || /\s+/g.test(thing)) {
                 return `"${thing.replace(/"/g, '\"').replace(/\\/g, '\\\\')}"`;
             }
             else

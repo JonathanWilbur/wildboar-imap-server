@@ -16,19 +16,17 @@ function imapPrint (thing?: any): string {
             return `${thing}`;
         }
         case ("string"): {
-            if (
-                thing.indexOf("\n") !== -1
-                || thing.indexOf("\r") !== -1
-            ) { // Return a literal
+            if (/^\\[A-Za-z0-9]+$/.test(thing)) { // If it looks like a \Flag
+                return thing;
+            } else if (thing.indexOf("\n") !== -1 || thing.indexOf("\r") !== -1) { // Return a literal
                 return `{${thing.length}}\r\n${thing}`;
-            }
-            else if (
+            } else if (
                 thing.indexOf("\\") !== -1
                 || thing.indexOf("\"") !== -1
+                || /\s+/g.test(thing) // If there is any whitespace in thing
             ) { // Return a double-quoted string
                 return `"${thing.replace(/"/g, '\"').replace(/\\/g, '\\\\')}"`;
-            } // Just return an atom.
-            else return thing;
+            } else return thing; // Just return an atom.
         }
         default: return "NIL";
     }

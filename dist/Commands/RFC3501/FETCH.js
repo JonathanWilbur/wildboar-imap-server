@@ -151,7 +151,6 @@ const handler = async (connection, tag, command, lexemes) => {
                 fetchAtts.push(fetchAttLexemes[i].toString());
             }
         }
-        fetchAtts.forEach((fa) => connection.writeData(`FETCH ${fa}`));
     }
     else {
         fetchAtts = [
@@ -160,7 +159,6 @@ const handler = async (connection, tag, command, lexemes) => {
                 .map((l) => l.toString())
                 .join("")
         ];
-        connection.writeData(`FETCH ${fetchAtts[0]}`);
     }
     const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
         sequenceSet: lexemes[3].toString(),
@@ -174,7 +172,7 @@ const handler = async (connection, tag, command, lexemes) => {
         }
         if (response["ok"]) {
             response["results"].forEach((result) => {
-                connection.writeData(`${result["id"]} FETCH ${result["attributes"].map((attr) => attr.attribute + ' ' + imapPrint_1.imapPrint(attr.value))}`);
+                connection.writeData(`${result["id"]} FETCH (${result["attributes"].map((attr) => attr.attribute + " " + imapPrint_1.imapPrint(attr.value)).join(" ")})`);
             });
             connection.writeOk(tag, command);
         }
@@ -195,6 +193,6 @@ const handler = async (connection, tag, command, lexemes) => {
     }
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
-plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
+plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.AUTHENTICATED;
 exports.default = plugin;
 //# sourceMappingURL=FETCH.js.map
