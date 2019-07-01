@@ -63,10 +63,10 @@ class Scanner {
         this.scanCursor = (indexOfTerminator + terminator.length);
         return true;
     }
-    readImplicitlyTerminatedToken(matcher) {
+    readImplicitlyTerminatedToken(...matchers) {
         let indexOfEndOfToken = -1;
         for (let i = this.scanCursor; i < this.receivedData.length; i++) {
-            if (!(matcher(this.receivedData[i]))) {
+            if (!(matchers.some(matcher => matcher(this.receivedData[i])))) {
                 indexOfEndOfToken = i;
                 break;
             }
@@ -167,6 +167,9 @@ class Scanner {
             return null;
     }
     readDoubleQuotedString() {
+        if (this.receivedData[this.scanCursor] !== '"'.charCodeAt(0)) {
+            throw new Error("Double quoted string did not start with a double-quote.");
+        }
         let i = (this.scanCursor + 1);
         let closingQuoteEncountered = false;
         while (i < this.receivedData.length) {
@@ -185,6 +188,32 @@ class Scanner {
         const oldScanCursor = this.scanCursor;
         this.scanCursor = (i + 1);
         return new Lexeme_1.Lexeme(9, this.receivedData.slice(oldScanCursor, this.scanCursor));
+    }
+    readFetchSection() {
+        if (this.receivedData[this.scanCursor] !== "[".charCodeAt(0)) {
+            throw new Error("Double quoted string did not start with a double-quote.");
+        }
+        const oldScanCursor = this.scanCursor;
+        if (this.readExplicitlyTerminatedToken(Buffer.from("]"))) {
+            return new Lexeme_1.Lexeme(22, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
+    }
+    readFetchPartial() {
+        if (this.receivedData[this.scanCursor] !== "<".charCodeAt(0)) {
+            throw new Error("Double quoted string did not start with a double-quote.");
+        }
+        const oldScanCursor = this.scanCursor;
+        if (this.readExplicitlyTerminatedToken(Buffer.from(">"))) {
+            const inner = this.receivedData.slice((oldScanCursor + 1), (this.scanCursor - 1)).toString();
+            if (!(/^\d+\.[1-9]\d*$/.test(inner))) {
+                throw new Error("Malformed FETCH section.");
+            }
+            return new Lexeme_1.Lexeme(25, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
     }
     readAtom() {
         const oldScanCursor = this.scanCursor;
@@ -254,12 +283,36 @@ class Scanner {
         else
             return null;
     }
+    readSequenceSet() {
+        const sequenceSetRegex = /^(\*|(?:[1-9]\d*))(?::(\*|(?:[1-9]\d*)))?(?:,(\*|(?:[1-9]\d*))(?::(\*|(?:[1-9]\d*)))?)*$/;
+        const oldScanCursor = this.scanCursor;
+        if (this.readImplicitlyTerminatedToken(Scanner.isSequenceSetChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("SequenceSet cannot be zero-length.");
+            if (!(sequenceSetRegex.test(this.receivedData.slice(oldScanCursor, this.scanCursor).toString()))) {
+                throw new Error("Malformed SequenceSet.");
+            }
+            return new Lexeme_1.Lexeme(19, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
+    }
     readSASLMechanism() {
         const oldScanCursor = this.scanCursor;
         if (this.readImplicitlyTerminatedToken(Scanner.isSASLMechanismNameChar)) {
             if (this.scanCursor === oldScanCursor)
                 throw new Error("SASL Mechanism cannot be zero-length.");
             return new Lexeme_1.Lexeme(21, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
+    }
+    readFetchAtt() {
+        const oldScanCursor = this.scanCursor;
+        if (this.readImplicitlyTerminatedToken(Scanner.isFetchAttChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("Fetch-att cannot be zero-length.");
+            return new Lexeme_1.Lexeme(8, this.receivedData.slice(oldScanCursor, this.scanCursor));
         }
         else
             return null;
@@ -284,6 +337,12 @@ class Scanner {
     static isFlagChar(char) {
         return ((Scanner.isAtomChar(char)) ||
             (char === "\\".charCodeAt(0)));
+    }
+    static isSequenceSetChar(char) {
+        return (Scanner.isDigit(char)
+            || char === ':'.charCodeAt(0)
+            || char === '*'.charCodeAt(0)
+            || char === ','.charCodeAt(0));
     }
     static isControlCharacter(char) {
         return ((char >= 0x00 && char <= 0x1F) || (char === 0x7F));
@@ -325,6 +384,14 @@ class Scanner {
         return (Scanner.isAtomChar(char) ||
             Scanner.isListWildcardChar(char) ||
             Scanner.isResponseSpecialChar(char));
+    }
+    static isAlphabeticChar(char) {
+        return ((char >= 0x41 && char <= 0x5A)
+            || (char >= 0x61 && char <= 0x7A));
+    }
+    static isFetchAttChar(char) {
+        return (Scanner.isAlphabeticChar(char)
+            || char === ".".charCodeAt(0));
     }
 }
 Scanner.LINE_TERMINATOR = "\r\n";

@@ -91,10 +91,10 @@ class Scanner {
         return true;
     }
 
-    private readImplicitlyTerminatedToken (matcher : (char : number) => boolean) : boolean {
+    private readImplicitlyTerminatedToken (... matchers : ((char : number) => boolean)[]) : boolean {
         let indexOfEndOfToken : number = -1;
         for (let i : number = this.scanCursor; i < this.receivedData.length; i++) {
-            if (!(matcher(this.receivedData[i]))) {
+            if (!(matchers.some(matcher => matcher(this.receivedData[i])))) {
                 indexOfEndOfToken = i;
                 break;
             }
@@ -210,6 +210,9 @@ class Scanner {
     }
 
     public readDoubleQuotedString () : Lexeme | null {
+        if (this.receivedData[this.scanCursor] !== '"'.charCodeAt(0)) {
+            throw new Error("Double quoted string did not start with a double-quote.");
+        }
         let i : number = (this.scanCursor + 1);
         let closingQuoteEncountered : boolean = false;
         while (i < this.receivedData.length) {
@@ -231,6 +234,37 @@ class Scanner {
         const oldScanCursor = this.scanCursor;
         this.scanCursor = (i + 1);
         return new Lexeme(LexemeType.QUOTED_STRING, this.receivedData.slice(oldScanCursor, this.scanCursor));
+    }
+
+    // This is not exactly correct, but it is 99.99% correct.
+    public readFetchSection (): Lexeme | null {
+        if (this.receivedData[this.scanCursor] !== "[".charCodeAt(0)) {
+            throw new Error("Double quoted string did not start with a double-quote.");
+        }
+        const oldScanCursor : number = this.scanCursor;
+        if (this.readExplicitlyTerminatedToken(Buffer.from("]"))) {
+            return new Lexeme(
+                LexemeType.SECTION,
+                this.receivedData.slice(oldScanCursor, this.scanCursor)
+            );
+        } else return null;
+    }
+
+    public readFetchPartial (): Lexeme | null {
+        if (this.receivedData[this.scanCursor] !== "<".charCodeAt(0)) {
+            throw new Error("Double quoted string did not start with a double-quote.");
+        }
+        const oldScanCursor : number = this.scanCursor;
+        if (this.readExplicitlyTerminatedToken(Buffer.from(">"))) {
+            const inner : string = this.receivedData.slice((oldScanCursor + 1), (this.scanCursor - 1)).toString();
+            if (!(/^\d+\.[1-9]\d*$/.test(inner))) {
+                throw new Error("Malformed FETCH section.");
+            }
+            return new Lexeme(
+                LexemeType.PARTIAL,
+                this.receivedData.slice(oldScanCursor, this.scanCursor)
+            );
+        } else return null;
     }
 
     public readAtom () : Lexeme | null {
@@ -314,6 +348,22 @@ class Scanner {
         } else return null;
     }
 
+    public readSequenceSet () : Lexeme | null {
+        const sequenceSetRegex = /^(\*|(?:[1-9]\d*))(?::(\*|(?:[1-9]\d*)))?(?:,(\*|(?:[1-9]\d*))(?::(\*|(?:[1-9]\d*)))?)*$/;
+        const oldScanCursor : number = this.scanCursor;
+        if (this.readImplicitlyTerminatedToken(Scanner.isSequenceSetChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("SequenceSet cannot be zero-length.");
+            if (!(sequenceSetRegex.test(this.receivedData.slice(oldScanCursor, this.scanCursor).toString()))) {
+                throw new Error("Malformed SequenceSet.");
+            }
+            return new Lexeme(
+                LexemeType.SEQUENCE_SET,
+                this.receivedData.slice(oldScanCursor, this.scanCursor)
+            );
+        } else return null;
+    }
+
     public readSASLMechanism () : Lexeme | null {
         const oldScanCursor : number = this.scanCursor;
         if (this.readImplicitlyTerminatedToken(Scanner.isSASLMechanismNameChar)) {
@@ -324,6 +374,18 @@ class Scanner {
                 this.receivedData.slice(oldScanCursor, this.scanCursor)
             );
         } else return null;
+    }
+
+    public readFetchAtt () : Lexeme | null {
+        const oldScanCursor : number = this.scanCursor;
+        if (this.readImplicitlyTerminatedToken(Scanner.isFetchAttChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("Fetch-att cannot be zero-length.");
+            return new Lexeme(
+                LexemeType.ATOM,
+                this.receivedData.slice(oldScanCursor, this.scanCursor)
+            );
+        } else return null; 
     }
 
     public static isChar (char : number) : boolean {
@@ -354,6 +416,15 @@ class Scanner {
         return (
             (Scanner.isAtomChar(char)) ||
             (char === "\\".charCodeAt(0))
+        );
+    }
+
+    public static isSequenceSetChar (char : number) : boolean {
+        return (
+            Scanner.isDigit(char)
+            || char === ':'.charCodeAt(0)
+            || char === '*'.charCodeAt(0)
+            || char === ','.charCodeAt(0)
         );
     }
 
@@ -411,6 +482,20 @@ class Scanner {
             Scanner.isAtomChar(char) ||
             Scanner.isListWildcardChar(char) ||
             Scanner.isResponseSpecialChar(char)
+        );
+    }
+
+    public static isAlphabeticChar (char: number) : boolean {
+        return (
+            (char >= 0x41 && char <= 0x5A)
+            || (char >= 0x61 && char <= 0x7A)
+        );
+    }
+
+    public static isFetchAttChar (char: number) : boolean {
+        return (
+            Scanner.isAlphabeticChar(char)
+            || char === ".".charCodeAt(0)
         );
     }
 }

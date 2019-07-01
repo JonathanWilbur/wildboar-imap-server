@@ -29,5 +29,11 @@ const enum LexemeType {
     ZONE,  // +|-####
     SEQUENCE_SET,
     ABORT, // *
-    SASL_MECHANISM
+    SASL_MECHANISM,
+    SECTION,
+    SECTION_START, // "[" (Used by FETCH)
+    SECTION_END, // "]" (Used by FETCH)
+    PARTIAL,
+    PARTIAL_START, // "<" (Used by FETCH)
+    PARTIAL_END, // ">" (Used by FETCH)
 };

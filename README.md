@@ -90,10 +90,6 @@ development.
 - [ ] Deduplicate simple handlers
 - [ ] Move schema into command files
 
-These are not requirements, but may become features of this release:
-
-- [ ] Use [`ajv`](https://www.npmjs.com/package/ajv) to validate RPC responses.
-
 ### Alpha
 
 Once the following requirements are met, Wildboar IMAP Server moves into Beta
@@ -113,7 +109,14 @@ development.
 - [ ] Error reporting with the [NodeJS Report API](https://nodejs.org/dist/latest-v11.x/docs/api/report.html)
 - [ ] Assertions
 - [ ] Handle size limitations imposed by message brokers (4GB for AMQP, 16MB for AWS SQS)
-- [ ] Fill out schema more
+- [ ] Fill out JSON schema more ([Documentation](json-schema.org/latest/json-schema-validation.html))
+- [ ] Audit all commands for the following:
+  - Correct State
+  - Error Reporting
+  - Argument Length checking
+  - Length assertions
+  - Error logging
+  - Logging is correct severity
 
 ### Beta
 

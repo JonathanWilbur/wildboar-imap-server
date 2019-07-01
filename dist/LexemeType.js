@@ -24,6 +24,12 @@ var LexemeType;
     LexemeType[LexemeType["SEQUENCE_SET"] = 19] = "SEQUENCE_SET";
     LexemeType[LexemeType["ABORT"] = 20] = "ABORT";
     LexemeType[LexemeType["SASL_MECHANISM"] = 21] = "SASL_MECHANISM";
+    LexemeType[LexemeType["SECTION"] = 22] = "SECTION";
+    LexemeType[LexemeType["SECTION_START"] = 23] = "SECTION_START";
+    LexemeType[LexemeType["SECTION_END"] = 24] = "SECTION_END";
+    LexemeType[LexemeType["PARTIAL"] = 25] = "PARTIAL";
+    LexemeType[LexemeType["PARTIAL_START"] = 26] = "PARTIAL_START";
+    LexemeType[LexemeType["PARTIAL_END"] = 27] = "PARTIAL_END";
 })(LexemeType = exports.LexemeType || (exports.LexemeType = {}));
 ;
 //# sourceMappingURL=LexemeType.js.map
