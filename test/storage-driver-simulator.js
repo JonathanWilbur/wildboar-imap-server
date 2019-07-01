@@ -107,5 +107,55 @@ amqp.connect("amqp://localhost:5672", (err, connection) => {
                 });
         });
 
+        channel.consume("imap.FETCH", (msg) => {
+            channel.ack(msg);
+
+            const message = JSON.parse(msg.content.toString());
+            let fetchedMessages = [
+                {
+                    id: 15,
+                    attributes: [],
+                }
+            ];
+            message.fetchAttributes.forEach(fa => {
+                switch (fa.toUpperCase()) {
+                    case ("BODY"): {
+                        fetchedMessages[0].attributes.push({
+                            attribute: fa,
+                            value: "YO DAWG",
+                        });
+                        break;
+                    }
+                    case ("FLAGS"): {
+                        fetchedMessages[0].attributes.push({
+                            attribute: fa,
+                            value: [
+                                "\\Seen",
+                                "\\Unseen",
+                            ],
+                        });
+                        break;
+                    }
+                    case ("RFC822.SIZE"): {
+                        fetchedMessages[0].attributes.push({
+                            attribute: fa,
+                            value: 75,
+                        });
+                        break;
+                    }
+                }
+            });
+
+            channel.sendToQueue(msg.properties.replyTo,
+                Buffer.from(JSON.stringify({
+                    ok: true,
+                    results: fetchedMessages
+                })), {
+                    correlationId: msg.properties.correlationId,
+                    contentType: "application/json",
+                    contentEncoding: "8bit"
+                });
+        });
+
     });
 });

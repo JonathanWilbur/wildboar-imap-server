@@ -485,17 +485,18 @@ class Scanner {
         );
     }
 
-    public static isAlphabeticChar (char: number) : boolean {
+    public static isAlphabeticChar (char : number) : boolean {
         return (
             (char >= 0x41 && char <= 0x5A)
             || (char >= 0x61 && char <= 0x7A)
         );
     }
 
-    public static isFetchAttChar (char: number) : boolean {
+    public static isFetchAttChar (char : number) : boolean {
         return (
-            Scanner.isAlphabeticChar(char)
-            || char === ".".charCodeAt(0)
+            char === ".".charCodeAt(0)
+            || Scanner.isAlphabeticChar(char)
+            || Scanner.isDigit(char)
         );
     }
 }

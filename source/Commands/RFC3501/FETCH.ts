@@ -5,7 +5,9 @@ import { LexemeType } from "../../LexemeType";
 import { Scanner } from "../../Scanner";
 import { ConnectionState } from "../../ConnectionState";
 import { storageDriverResponseSchema } from "../../ResponseSchema/StorageResponsesSchema";
+import { imapPrint } from "../../imapPrint";
 import * as Ajv from "ajv";
+import { any } from "bluebird";
 
 // fetch           = "FETCH" SP sequence-set SP ("ALL" / "FULL" / "FAST" /
 //                   fetch-att / "(" fetch-att *(SP fetch-att) ")")
@@ -149,15 +151,14 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
                                 yield section;
                             }
                         } catch (e) {}
-                    } else {
-                        const lex : Lexeme | null = scanner.readAny(
-                            scanner.readListEnd.bind(scanner),
-                            scanner.readFetchSection.bind(scanner),
-                            scanner.readSpace.bind(scanner),
-                        );
-                        if (!lex) return;
-                        yield lex;
                     }
+                    const lex : Lexeme | null = scanner.readAny(
+                        scanner.readListEnd.bind(scanner),
+                        scanner.readFetchSection.bind(scanner),
+                        scanner.readSpace.bind(scanner),
+                    );
+                    if (!lex) return;
+                    yield lex;
                     break;
                 }
                 case (LexemeType.SECTION): {
@@ -237,23 +238,68 @@ const handler = async (connection : Connection, tag : string, command : string, 
         return;
     }
 
+    let fetchAtts: string[] = [];
     if (lexemes[5].type === LexemeType.LIST_START) {
-        const fetchAtts: string[] = lexemes
+        const fetchAttLexemes: Lexeme[] = lexemes
             .slice(6, -1)
-            .filter((l: Lexeme): boolean => l.type !== LexemeType.WHITESPACE)
-            .map((l: Lexeme): string => l.toString());
+            .filter((l: Lexeme): boolean => l.type !== LexemeType.WHITESPACE);
+        for (let i : number = 0; i < fetchAttLexemes.length; i++) {
+            if (
+                fetchAttLexemes[i].type === LexemeType.SECTION
+                || fetchAttLexemes[i].type === LexemeType.PARTIAL
+            ) {
+                fetchAtts[fetchAtts.length - 1] += fetchAttLexemes[i].toString();
+            } else {
+                fetchAtts.push(fetchAttLexemes[i].toString());
+            }
+        }
         fetchAtts.forEach((fa) => connection.writeData(`FETCH ${fa}`));
     } else {
-        const fetchAtt: string = lexemes
-            .slice(5)
-            .map((l: Lexeme): string => l.toString())
-            .join("");
-        connection.writeData(`FETCH ${fetchAtt}`);
+        fetchAtts = [
+            lexemes
+                .slice(5)
+                .map((l: Lexeme): string => l.toString())
+                .join("")
+        ];
+        connection.writeData(`FETCH ${fetchAtts[0]}`);
     }
-    connection.writeOk(tag, command);
+    // connection.writeOk(tag, command);
+
+    const response : object =
+    await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+        sequenceSet: lexemes[3].toString(),
+        fetchAttributes: fetchAtts,
+    });
+    try {
+        // TODO: await validate(response);
+        if ("errorsToShowToUser" in response) {
+            (<any[]>(<any>response)["errorsToShowToUser"]).forEach((error : any) : void => {
+                connection.writeData(`BAD ${error}`);
+            });
+        }
+
+        if ((response as any)["ok"]) {
+            (response as any)["results"].forEach((result: any) => {
+                connection.writeData(`${result["id"]} FETCH ${result["attributes"].map((attr: any) => attr.attribute + ' ' + imapPrint(attr.value))}`);
+            });
+            connection.writeOk(tag, command);
+        } else connection.writeStatus(tag, "NO", "", command, "Failed.");
+    } catch (e) {
+        connection.writeStatus(tag, "NO", "", command, "Failed.");
+        connection.server.logger.error({
+            topic: "imap.json",
+            message: e.message,
+            error: e,
+            command: command,
+            socket: connection.socketReport,
+            connectionID: connection.id,
+            authenticatedUser: connection.authenticatedUser
+        });
+    }
+
 };
 
 const plugin : CommandPlugin = new CommandPlugin(lexer, handler);
-// plugin.acceptableConnectionState = ConnectionState.AUTHENTICATED;
+// FIXME: plugin.acceptableConnectionState = ConnectionState.AUTHENTICATED;
 plugin.acceptableConnectionState = ConnectionState.NOT_AUTHENTICATED;
 export default plugin;

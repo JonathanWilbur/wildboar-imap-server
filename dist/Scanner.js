@@ -390,8 +390,9 @@ class Scanner {
             || (char >= 0x61 && char <= 0x7A));
     }
     static isFetchAttChar(char) {
-        return (Scanner.isAlphabeticChar(char)
-            || char === ".".charCodeAt(0));
+        return (char === ".".charCodeAt(0)
+            || Scanner.isAlphabeticChar(char)
+            || Scanner.isDigit(char));
     }
 }
 Scanner.LINE_TERMINATOR = "\r\n";

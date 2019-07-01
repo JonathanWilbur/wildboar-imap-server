@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
 const ConnectionState_1 = require("../../ConnectionState");
 const StorageResponsesSchema_1 = require("../../ResponseSchema/StorageResponsesSchema");
+const imapPrint_1 = require("../../imapPrint");
 const Ajv = require("ajv");
 const ajv = new Ajv();
 const validate = ajv.addSchema(StorageResponsesSchema_1.storageDriverResponseSchema);
@@ -53,12 +54,10 @@ const lexer = function* (scanner, currentCommand) {
                         }
                         catch (e) { }
                     }
-                    else {
-                        const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readFetchSection.bind(scanner), scanner.readSpace.bind(scanner));
-                        if (!lex)
-                            return;
-                        yield lex;
-                    }
+                    const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readFetchSection.bind(scanner), scanner.readSpace.bind(scanner));
+                    if (!lex)
+                        return;
+                    yield lex;
                     break;
                 }
                 case (22): {
@@ -138,21 +137,62 @@ const handler = async (connection, tag, command, lexemes) => {
         connection.writeStatus(tag, "BAD", "", command, "Too few arguments.");
         return;
     }
+    let fetchAtts = [];
     if (lexemes[5].type === 6) {
-        const fetchAtts = lexemes
+        const fetchAttLexemes = lexemes
             .slice(6, -1)
-            .filter((l) => l.type !== 1)
-            .map((l) => l.toString());
+            .filter((l) => l.type !== 1);
+        for (let i = 0; i < fetchAttLexemes.length; i++) {
+            if (fetchAttLexemes[i].type === 22
+                || fetchAttLexemes[i].type === 25) {
+                fetchAtts[fetchAtts.length - 1] += fetchAttLexemes[i].toString();
+            }
+            else {
+                fetchAtts.push(fetchAttLexemes[i].toString());
+            }
+        }
         fetchAtts.forEach((fa) => connection.writeData(`FETCH ${fa}`));
     }
     else {
-        const fetchAtt = lexemes
-            .slice(5)
-            .map((l) => l.toString())
-            .join("");
-        connection.writeData(`FETCH ${fetchAtt}`);
+        fetchAtts = [
+            lexemes
+                .slice(5)
+                .map((l) => l.toString())
+                .join("")
+        ];
+        connection.writeData(`FETCH ${fetchAtts[0]}`);
     }
-    connection.writeOk(tag, command);
+    const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+        sequenceSet: lexemes[3].toString(),
+        fetchAttributes: fetchAtts,
+    });
+    try {
+        if ("errorsToShowToUser" in response) {
+            response["errorsToShowToUser"].forEach((error) => {
+                connection.writeData(`BAD ${error}`);
+            });
+        }
+        if (response["ok"]) {
+            response["results"].forEach((result) => {
+                connection.writeData(`${result["id"]} FETCH ${result["attributes"].map((attr) => attr.attribute + ' ' + imapPrint_1.imapPrint(attr.value))}`);
+            });
+            connection.writeOk(tag, command);
+        }
+        else
+            connection.writeStatus(tag, "NO", "", command, "Failed.");
+    }
+    catch (e) {
+        connection.writeStatus(tag, "NO", "", command, "Failed.");
+        connection.server.logger.error({
+            topic: "imap.json",
+            message: e.message,
+            error: e,
+            command: command,
+            socket: connection.socketReport,
+            connectionID: connection.id,
+            authenticatedUser: connection.authenticatedUser
+        });
+    }
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
 plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;

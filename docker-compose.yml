@@ -51,4 +51,5 @@ services:
       - '5672:5672/tcp'
       - '15672:15672/tcp'
     volumes:
+      # Run $env:PWD=$(pwd) on Windows to fix this issue.
       - "${PWD}/configuration/rabbitmq/enabled_plugins.erl:/etc/rabbitmq/enabled_plugins:ro"
