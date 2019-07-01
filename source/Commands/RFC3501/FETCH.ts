@@ -38,74 +38,76 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
 
     if (currentCommand.length >= 6) {
         if (currentCommand[5].type === LexemeType.LIST_START) {
-            switch (currentCommand[currentCommand.length - 1].type) {
-                case (LexemeType.LIST_START): {
-                    const lex : Lexeme | null = scanner.readAny(
-                        scanner.readListEnd.bind(scanner),
-                        scanner.readFetchAtt.bind(scanner),
-                    );
-                    if (!lex) return;
-                    yield lex;
-                    break;
-                }
-                case (LexemeType.ATOM): {
-                    const lastSection : string = currentCommand[currentCommand.length - 1].toString();
-                    if (lastSection === "BODY" || lastSection === "BODY.PEEK") {
-                        let section : Lexeme | null = null;
-                        try {
-                            section = scanner.readFetchSection();
-                            if (section) {
-                                yield section;
-                            }
-                        } catch (e) {}
-                    }
-                    const lex : Lexeme | null = scanner.readAny(
-                        scanner.readListEnd.bind(scanner),
-                        scanner.readFetchSection.bind(scanner),
-                        scanner.readSpace.bind(scanner),
-                    );
-                    if (!lex) return;
-                    yield lex;
-                    break;
-                }
-                case (LexemeType.SECTION): {
-                    let partial : Lexeme | null = null;
-                    try {
-                        partial = scanner.readFetchPartial();
-                    } catch (e) {}
-                    if (partial) {
-                        yield partial;
-                    } else {
+            while (true) {
+                switch (currentCommand[currentCommand.length - 1].type) {
+                    case (LexemeType.LIST_START): {
                         const lex : Lexeme | null = scanner.readAny(
                             scanner.readListEnd.bind(scanner),
-                            scanner.readFetchPartial.bind(scanner),
+                            scanner.readFetchAtt.bind(scanner),
+                        );
+                        if (!lex) return;
+                        yield lex;
+                        break;
+                    }
+                    case (LexemeType.ATOM): {
+                        const lastSection : string = currentCommand[currentCommand.length - 1].toString();
+                        if (lastSection === "BODY" || lastSection === "BODY.PEEK") {
+                            let section : Lexeme | null = null;
+                            try {
+                                section = scanner.readFetchSection();
+                                if (section) {
+                                    yield section;
+                                }
+                            } catch (e) {}
+                        }
+                        const lex : Lexeme | null = scanner.readAny(
+                            scanner.readListEnd.bind(scanner),
+                            // scanner.readFetchSection.bind(scanner),
                             scanner.readSpace.bind(scanner),
                         );
                         if (!lex) return;
                         yield lex;
+                        break;
                     }
-                    break;
-                }
-                case (LexemeType.PARTIAL): {
-                    const lex : Lexeme | null = scanner.readAny(
-                        scanner.readListEnd.bind(scanner),
-                        scanner.readSpace.bind(scanner),
-                    );
-                    if (!lex) return;
-                    yield lex;
-                    break;
-                }
-                case (LexemeType.WHITESPACE): {
-                    const lex : Lexeme | null = scanner.readFetchAtt();
-                    if (!lex) return;
-                    yield lex;
-                    break;
-                }
-                case (LexemeType.LIST_END): {
-                    const lex : Lexeme | null = scanner.readCommandTerminatingNewLine();
-                    if (!lex) return;
-                    yield lex;
-                    return;
+                    case (LexemeType.SECTION): {
+                        let partial : Lexeme | null = null;
+                        try {
+                            partial = scanner.readFetchPartial();
+                        } catch (e) {}
+                        if (partial) {
+                            yield partial;
+                        } else {
+                            const lex : Lexeme | null = scanner.readAny(
+                                scanner.readListEnd.bind(scanner),
+                                scanner.readFetchPartial.bind(scanner),
+                                scanner.readSpace.bind(scanner),
+                            );
+                            if (!lex) return;
+                            yield lex;
+                        }
+                        break;
+                    }
+                    case (LexemeType.PARTIAL): {
+                        const lex : Lexeme | null = scanner.readAny(
+                            scanner.readListEnd.bind(scanner),
+                            scanner.readSpace.bind(scanner),
+                        );
+                        if (!lex) return;
+                        yield lex;
+                        break;
+                    }
+                    case (LexemeType.WHITESPACE): {
+                        const lex : Lexeme | null = scanner.readFetchAtt();
+                        if (!lex) return;
+                        yield lex;
+                        break;
+                    }
+                    case (LexemeType.LIST_END): {
+                        const lex : Lexeme | null = scanner.readCommandTerminatingNewLine();
+                        if (!lex) return;
+                        yield lex;
+                        return;
+                    }
                 }
             }
         } else { // It is a single fetch-att
@@ -170,10 +172,10 @@ const handler = async (connection : Connection, tag : string, command : string, 
     }
 
     const response : object =
-    await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
-        sequenceSet: lexemes[3].toString(),
-        fetchAttributes: fetchAtts,
-    });
+        await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+            sequenceSet: lexemes[3].toString(),
+            fetchAttributes: fetchAtts,
+        });
     try {
         // TODO: await validate(response);
         if ("errorsToShowToUser" in response) {
@@ -182,7 +184,7 @@ const handler = async (connection : Connection, tag : string, command : string, 
             });
         }
 
-        if ((response as any)["ok"]) {
+        if ((response as any)["ok"] && (response as any)["results"]) {
             (response as any)["results"].forEach((result: any) => {
                 connection.writeData(`${result["id"]} FETCH (${result["attributes"].map((attr: any) => attr.attribute + " " + imapPrint(attr.value)).join(" ")})`);
             });

@@ -42,7 +42,6 @@ const lexer = function* (scanner, currentCommand) {
     if (!newline)
         return;
     yield newline;
-    return;
 };
 const handler = async (connection, tag, command, lexemes) => {
     if (lexemes.length <= 5) {

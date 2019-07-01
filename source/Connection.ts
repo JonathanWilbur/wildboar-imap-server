@@ -131,6 +131,7 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                 this.currentCommand = [];
                 break;
             }
+            // REVIEW: Why does this also executeCommand()?
             case (LexemeType.NEWLINE): {
                 this.currentCommand.push(lexeme);
                 this.executeCommand(this.currentCommand.slice(0));
@@ -151,75 +152,53 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
      * @private
      */
     private *lexemeStream () : IterableIterator<Lexeme> {
-        while (true) {
-            if (this.currentCommand.length > 20) {
+        if (this.currentCommand.length > 20) {
+            this.scanner.skipLine();
+            return;
+        }
+        if (!this.scanner.lineReady()) {
+            return;
+        }
+        if (this.currentCommand.length === 0) {
+            const tag : Lexeme | null = this.scanner.readTag();
+            if (!tag) return;
+            this.scanner.readSpace();
+            yield tag;
+        }
+        if (this.currentCommand.length <= 1) {
+            const command : Lexeme | null = this.scanner.readCommand();
+            if (!command) return;
+            yield command;
+        }
+
+        const lastLexeme : Lexeme = this.currentCommand[this.currentCommand.length - 1];
+        if (lastLexeme.type === LexemeType.LITERAL_LENGTH) {
+            const literal : Lexeme | null = this.scanner.readLiteral(lastLexeme.toLiteralLength());
+            if (!literal) return;
+            yield literal;
+        }
+
+        const tag : string = this.currentCommand[0].toString(); // #UTF_SAFE
+        const commandName : string = this.currentCommand[1].toString(); // #UTF_SAFE
+        if (commandName in this.server.commandPlugins) {
+            const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
+            try {
+                yield* commandPlugin.argumentsScanner(this.scanner, this.currentCommand);
+            } catch (e) {
+                this.writeStatus(tag, "BAD", "ALERT", commandName, "Bad arguments.");
                 this.scanner.skipLine();
+                this.currentCommand = [];
                 return;
             }
-            if (this.currentCommand.length === 0 && this.scanner.lineReady()) {
-                const tag : Lexeme | null = this.scanner.readTag();
-                if (!tag) return;
-                this.scanner.readSpace();
-                yield tag;
-            }
-            const lastLexeme : Lexeme = this.currentCommand[this.currentCommand.length - 1];
-            if (!lastLexeme) return;
-            switch (<number>lastLexeme.type) {
-                case (LexemeType.TAG): {
-                    if (this.scanner.lineReady()) {
-                        const command : Lexeme | null = this.scanner.readCommand();
-                        if (!command) return;
-                        yield command;
-                        continue;
-                    }
-                    return;
-                }
-                case (LexemeType.LITERAL_LENGTH): {
-                    const literalLength : number = lastLexeme.toLiteralLength();
-                    const literal : Lexeme | null = this.scanner.readLiteral(literalLength);
-                    if (!literal) return;
-                    yield literal;
-                    continue;
-                }
-                case (LexemeType.END_OF_COMMAND): {
-                    if (this.scanner.lineReady()) {
-                        // REVIEW: Is there a more elegant way to avoid repeating yourself?
-                        const tag : Lexeme | null = this.scanner.readTag();
-                        if (!tag) return;
-                        this.scanner.readSpace();
-                        yield tag;
-                        continue;
-                    } else return;
-                }
-                default: {
-                    const tag : string = this.currentCommand[0].toString(); // #UTF_SAFE
-                    const commandName : string = this.currentCommand[1].toString(); // #UTF_SAFE
-                    if (commandName in this.server.commandPlugins) {
-                        const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
-                        try {
-                            const nextArgument : IteratorResult<Lexeme> =
-                                commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
-                            if (nextArgument.done) return;
-                            yield nextArgument.value;
-                        } catch (e) {
-                            this.writeStatus(tag, "BAD", "ALERT", commandName, "Bad arguments.");
-                            this.scanner.skipLine();
-                            this.currentCommand = [];
-                            return;
-                        }
-                    } else {
-                        /*
-                            It is unnecessary to do anything more than skip the
-                            line and yield an `END_OF_COMMAND` Lexeme, because
-                            the actual "command not understood" functionality
-                            should be handled by `executeCommand()`.
-                        */
-                        this.scanner.skipLine();
-                        yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
-                    }
-                    continue;
-                }
-            }
+        } else {
+            /*
+                It is unnecessary to do anything more than skip the
+                line and yield an `END_OF_COMMAND` Lexeme, because
+                the actual "command not understood" functionality
+                should be handled by `executeCommand()`.
+            */
+            this.scanner.skipLine();
+            yield new Lexeme(LexemeType.END_OF_COMMAND, Buffer.from("\r\n"));
         }
     }
 

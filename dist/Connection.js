@@ -107,77 +107,50 @@ class Connection {
         }
     }
     *lexemeStream() {
-        while (true) {
-            if (this.currentCommand.length > 20) {
+        if (this.currentCommand.length > 20) {
+            this.scanner.skipLine();
+            return;
+        }
+        if (!this.scanner.lineReady()) {
+            return;
+        }
+        if (this.currentCommand.length === 0) {
+            const tag = this.scanner.readTag();
+            if (!tag)
+                return;
+            this.scanner.readSpace();
+            yield tag;
+        }
+        if (this.currentCommand.length <= 1) {
+            const command = this.scanner.readCommand();
+            if (!command)
+                return;
+            yield command;
+        }
+        const lastLexeme = this.currentCommand[this.currentCommand.length - 1];
+        if (lastLexeme.type === 10) {
+            const literal = this.scanner.readLiteral(lastLexeme.toLiteralLength());
+            if (!literal)
+                return;
+            yield literal;
+        }
+        const tag = this.currentCommand[0].toString();
+        const commandName = this.currentCommand[1].toString();
+        if (commandName in this.server.commandPlugins) {
+            const commandPlugin = this.server.commandPlugins[commandName];
+            try {
+                yield* commandPlugin.argumentsScanner(this.scanner, this.currentCommand);
+            }
+            catch (e) {
+                this.writeStatus(tag, "BAD", "ALERT", commandName, "Bad arguments.");
                 this.scanner.skipLine();
+                this.currentCommand = [];
                 return;
             }
-            if (this.currentCommand.length === 0 && this.scanner.lineReady()) {
-                const tag = this.scanner.readTag();
-                if (!tag)
-                    return;
-                this.scanner.readSpace();
-                yield tag;
-            }
-            const lastLexeme = this.currentCommand[this.currentCommand.length - 1];
-            if (!lastLexeme)
-                return;
-            switch (lastLexeme.type) {
-                case (4): {
-                    if (this.scanner.lineReady()) {
-                        const command = this.scanner.readCommand();
-                        if (!command)
-                            return;
-                        yield command;
-                        continue;
-                    }
-                    return;
-                }
-                case (10): {
-                    const literalLength = lastLexeme.toLiteralLength();
-                    const literal = this.scanner.readLiteral(literalLength);
-                    if (!literal)
-                        return;
-                    yield literal;
-                    continue;
-                }
-                case (2): {
-                    if (this.scanner.lineReady()) {
-                        const tag = this.scanner.readTag();
-                        if (!tag)
-                            return;
-                        this.scanner.readSpace();
-                        yield tag;
-                        continue;
-                    }
-                    else
-                        return;
-                }
-                default: {
-                    const tag = this.currentCommand[0].toString();
-                    const commandName = this.currentCommand[1].toString();
-                    if (commandName in this.server.commandPlugins) {
-                        const commandPlugin = this.server.commandPlugins[commandName];
-                        try {
-                            const nextArgument = commandPlugin.argumentsScanner(this.scanner, this.currentCommand).next();
-                            if (nextArgument.done)
-                                return;
-                            yield nextArgument.value;
-                        }
-                        catch (e) {
-                            this.writeStatus(tag, "BAD", "ALERT", commandName, "Bad arguments.");
-                            this.scanner.skipLine();
-                            this.currentCommand = [];
-                            return;
-                        }
-                    }
-                    else {
-                        this.scanner.skipLine();
-                        yield new Lexeme_1.Lexeme(2, Buffer.from("\r\n"));
-                    }
-                    continue;
-                }
-            }
+        }
+        else {
+            this.scanner.skipLine();
+            yield new Lexeme_1.Lexeme(2, Buffer.from("\r\n"));
         }
     }
     async executeCommand(lexemes) {

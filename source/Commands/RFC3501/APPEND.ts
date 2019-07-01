@@ -35,7 +35,7 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
                     scanner.readAstring.bind(scanner),
                     scanner.readFlag.bind(scanner),
                     scanner.readListStart.bind(scanner),
-                    scanner.readListEnd.bind(scanner)
+                    scanner.readListEnd.bind(scanner),
                 );
         } catch (e) {
             break;
@@ -47,7 +47,6 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
     const newline : Lexeme | null = scanner.readCommandTerminatingNewLine();
     if (!newline) return;
     yield newline;
-    return;
 };
 
 const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {

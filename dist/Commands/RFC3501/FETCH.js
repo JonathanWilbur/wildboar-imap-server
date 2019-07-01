@@ -34,69 +34,71 @@ const lexer = function* (scanner, currentCommand) {
     }
     if (currentCommand.length >= 6) {
         if (currentCommand[5].type === 6) {
-            switch (currentCommand[currentCommand.length - 1].type) {
-                case (6): {
-                    const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readFetchAtt.bind(scanner));
-                    if (!lex)
-                        return;
-                    yield lex;
-                    break;
-                }
-                case (8): {
-                    const lastSection = currentCommand[currentCommand.length - 1].toString();
-                    if (lastSection === "BODY" || lastSection === "BODY.PEEK") {
-                        let section = null;
-                        try {
-                            section = scanner.readFetchSection();
-                            if (section) {
-                                yield section;
-                            }
-                        }
-                        catch (e) { }
-                    }
-                    const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readFetchSection.bind(scanner), scanner.readSpace.bind(scanner));
-                    if (!lex)
-                        return;
-                    yield lex;
-                    break;
-                }
-                case (22): {
-                    let partial = null;
-                    try {
-                        partial = scanner.readFetchPartial();
-                    }
-                    catch (e) { }
-                    if (partial) {
-                        yield partial;
-                    }
-                    else {
-                        const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readFetchPartial.bind(scanner), scanner.readSpace.bind(scanner));
+            while (true) {
+                switch (currentCommand[currentCommand.length - 1].type) {
+                    case (6): {
+                        const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readFetchAtt.bind(scanner));
                         if (!lex)
                             return;
                         yield lex;
+                        break;
                     }
-                    break;
-                }
-                case (25): {
-                    const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readSpace.bind(scanner));
-                    if (!lex)
+                    case (8): {
+                        const lastSection = currentCommand[currentCommand.length - 1].toString();
+                        if (lastSection === "BODY" || lastSection === "BODY.PEEK") {
+                            let section = null;
+                            try {
+                                section = scanner.readFetchSection();
+                                if (section) {
+                                    yield section;
+                                }
+                            }
+                            catch (e) { }
+                        }
+                        const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readSpace.bind(scanner));
+                        if (!lex)
+                            return;
+                        yield lex;
+                        break;
+                    }
+                    case (22): {
+                        let partial = null;
+                        try {
+                            partial = scanner.readFetchPartial();
+                        }
+                        catch (e) { }
+                        if (partial) {
+                            yield partial;
+                        }
+                        else {
+                            const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readFetchPartial.bind(scanner), scanner.readSpace.bind(scanner));
+                            if (!lex)
+                                return;
+                            yield lex;
+                        }
+                        break;
+                    }
+                    case (25): {
+                        const lex = scanner.readAny(scanner.readListEnd.bind(scanner), scanner.readSpace.bind(scanner));
+                        if (!lex)
+                            return;
+                        yield lex;
+                        break;
+                    }
+                    case (1): {
+                        const lex = scanner.readFetchAtt();
+                        if (!lex)
+                            return;
+                        yield lex;
+                        break;
+                    }
+                    case (7): {
+                        const lex = scanner.readCommandTerminatingNewLine();
+                        if (!lex)
+                            return;
+                        yield lex;
                         return;
-                    yield lex;
-                    break;
-                }
-                case (1): {
-                    const lex = scanner.readFetchAtt();
-                    if (!lex)
-                        return;
-                    yield lex;
-                    break;
-                }
-                case (7): {
-                    const lex = scanner.readCommandTerminatingNewLine();
-                    if (!lex)
-                        return;
-                    yield lex;
-                    return;
+                    }
                 }
             }
         }
@@ -170,7 +172,7 @@ const handler = async (connection, tag, command, lexemes) => {
                 connection.writeData(`BAD ${error}`);
             });
         }
-        if (response["ok"]) {
+        if (response["ok"] && response["results"]) {
             response["results"].forEach((result) => {
                 connection.writeData(`${result["id"]} FETCH (${result["attributes"].map((attr) => attr.attribute + " " + imapPrint_1.imapPrint(attr.value)).join(" ")})`);
             });
