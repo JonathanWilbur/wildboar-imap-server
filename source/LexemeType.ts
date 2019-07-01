@@ -36,4 +36,5 @@ const enum LexemeType {
     PARTIAL,
     PARTIAL_START, // "<" (Used by FETCH)
     PARTIAL_END, // ">" (Used by FETCH)
+    SEARCH_KEY,
 };

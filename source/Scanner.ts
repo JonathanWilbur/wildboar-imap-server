@@ -388,6 +388,18 @@ class Scanner {
         } else return null; 
     }
 
+    public readSearchKey () : Lexeme | null {
+        const oldScanCursor : number = this.scanCursor;
+        if (this.readImplicitlyTerminatedToken(Scanner.isAlphabeticChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("Search key cannot be zero-length.");
+            return new Lexeme(
+                LexemeType.SEARCH_KEY,
+                this.receivedData.slice(oldScanCursor, this.scanCursor)
+            );
+        } else return null;
+    }
+
     public static isChar (char : number) : boolean {
         return (char >= 0x01 && char <= 0x7F);
     }

@@ -317,6 +317,16 @@ class Scanner {
         else
             return null;
     }
+    readSearchKey() {
+        const oldScanCursor = this.scanCursor;
+        if (this.readImplicitlyTerminatedToken(Scanner.isAlphabeticChar)) {
+            if (this.scanCursor === oldScanCursor)
+                throw new Error("Search key cannot be zero-length.");
+            return new Lexeme_1.Lexeme(28, this.receivedData.slice(oldScanCursor, this.scanCursor));
+        }
+        else
+            return null;
+    }
     static isChar(char) {
         return (char >= 0x01 && char <= 0x7F);
     }

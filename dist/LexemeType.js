@@ -30,6 +30,7 @@ var LexemeType;
     LexemeType[LexemeType["PARTIAL"] = 25] = "PARTIAL";
     LexemeType[LexemeType["PARTIAL_START"] = 26] = "PARTIAL_START";
     LexemeType[LexemeType["PARTIAL_END"] = 27] = "PARTIAL_END";
+    LexemeType[LexemeType["SEARCH_KEY"] = 28] = "SEARCH_KEY";
 })(LexemeType = exports.LexemeType || (exports.LexemeType = {}));
 ;
 //# sourceMappingURL=LexemeType.js.map

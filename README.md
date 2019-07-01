@@ -47,7 +47,7 @@ development.
     - [x] `CLOSE`
     - [x] `EXPUNGE`
     - [ ] `SEARCH` (very hard) (And search tricks)
-    - [ ] `FETCH` (hard)
+    - [x] `FETCH` (hard)
     - [ ] `STORE` (medium)
     - [ ] `COPY` (medium)
     - [ ] `UID` (medium)
