@@ -143,6 +143,15 @@ class Connection {
             }
             catch (e) {
                 this.writeStatus(tag, "BAD", "ALERT", commandName, "Bad arguments.");
+                this.server.logger.error({
+                    topic: "command.error",
+                    message: e.message,
+                    error: e,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser,
+                    applicationLayerProtocol: "IMAP"
+                });
                 this.scanner.skipLine();
                 this.currentCommand = [];
                 return;

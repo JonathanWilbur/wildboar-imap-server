@@ -2,51 +2,79 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
 const ConnectionState_1 = require("../../ConnectionState");
-const allLexer = function* (scanner, currentCommand) {
+function currentSearchKey(currentCommand) {
+    for (let i = currentCommand.length - 1; i > 0; i--) {
+        if (currentCommand[i].type === 28) {
+            return currentCommand.slice(i);
+        }
+    }
+    return currentCommand;
+}
+const nullLexer = function* (scanner, currentCommand) {
     return;
 };
 const uidLexer = function* (scanner, currentCommand) {
-    const lastLexeme = currentCommand[currentCommand.length - 1];
-    console.log(lastLexeme.type);
-    switch (lastLexeme.type) {
-        case (28): {
-            const space = scanner.readSpace();
-            if (!space)
-                return;
-            console.log("Found a space");
-            yield space;
-            break;
+    scanner.readSpace();
+    const uid = scanner.readSequenceSet();
+    if (!uid)
+        return;
+    yield uid;
+};
+const headerLexer = function* (scanner, currentCommand) {
+    while (currentSearchKey(currentCommand).length < 5) {
+        switch (currentCommand[currentCommand.length - 1].type) {
+            case (1): {
+                const astr = scanner.readAstring();
+                if (!astr)
+                    return;
+                yield astr;
+            }
+            default: {
+                let space = null;
+                try {
+                    space = scanner.readSpace();
+                }
+                catch (e) {
+                    const newline = scanner.readCommandTerminatingNewLine();
+                    if (!newline)
+                        return;
+                    yield newline;
+                    return;
+                }
+                if (!space)
+                    return;
+                yield space;
+            }
         }
-        case (1): {
-            const uid = scanner.readSequenceSet();
-            if (!uid)
-                return;
-            yield uid;
-            break;
-        }
-        default: return;
     }
 };
 const lexMap = new Map([
-    ["ALL", allLexer],
+    ["ALL", nullLexer],
     ["UID", uidLexer],
+    ["HEADER", headerLexer],
 ]);
 const lexer = function* (scanner, currentCommand) {
     const lastLexeme = currentCommand[currentCommand.length - 1];
     do {
         switch (lastLexeme.type) {
+            case (5): {
+                const space = scanner.readSpace();
+                if (!space)
+                    return;
+                yield space;
+            }
             case (1): {
                 let key = null;
                 key = scanner.readSearchKey();
                 if (!key)
                     return;
                 yield key;
-                break;
             }
             case (28): {
-                const keyLexer = lexMap.get(lastLexeme.toString().toUpperCase());
+                const searchKey = currentCommand[currentCommand.length - 1].toString().toUpperCase();
+                const keyLexer = lexMap.get(searchKey);
                 if (!keyLexer) {
-                    throw new Error(`Cannot understand search key '${lastLexeme.toString()}'.`);
+                    throw new Error(`Cannot understand search key '${searchKey}'.`);
                 }
                 yield* keyLexer(scanner, currentCommand);
             }

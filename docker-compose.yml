@@ -6,19 +6,19 @@ networks:
 
 services:
 
-  imap:
-    build: .
-    container_name: 'imaphost'
-    # depends_on:
-    #   - messagebroker
-    environment:
-      IMAP_SERVER_SIMPLE_AUTHORIZATION: 'TRUE'
-      QUEUE_SERVER_HOSTNAME: 'messagebroker'
-    hostname: 'imaphost'
-    networks:
-      - messaging
-    ports:
-      - '143:143'
+  # imap:
+  #   build: .
+  #   container_name: 'imaphost'
+  #   # depends_on:
+  #   #   - messagebroker
+  #   environment:
+  #     IMAP_SERVER_SIMPLE_AUTHORIZATION: 'TRUE'
+  #     QUEUE_SERVER_HOSTNAME: 'messagebroker'
+  #   hostname: 'imaphost'
+  #   networks:
+  #     - messaging
+  #   ports:
+  #     - '143:143'
 
   imap-debug:
     command: '/usr/local/bin/node --inspect=0.0.0.0:5858 /srv/dist/index.js'

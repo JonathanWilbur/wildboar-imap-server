@@ -7,6 +7,20 @@ import * as Ajv from "ajv";
 import { LexemeType } from "../../LexemeType";
 // import { schema } from "../../ResponseSchema/LSUB";
 
+/* TODO:
+    Consider putting the lexing in the scanner, since you're not really doing
+    any semantic validation here, and putting it in the scanner may give you
+    more control.
+
+    On the other hand, that may not be a good idea, because the entire search
+    query will return as a single SEARCH_KEY lexeme, instead of a sequence of
+    lexemes. It still may be worth the experiment.
+*/
+
+// TODO: Figure out how to parse search-key = sequence-set
+// TODO: Figure out how to parse search-key = "(" search-key *(SP search-key) ")"
+// TODO: Create skipSpace() and use it.
+
 // const ajv : Ajv.Ajv = new Ajv();
 // const validate = ajv.compile(schema);
 
@@ -31,64 +45,81 @@ import { LexemeType } from "../../LexemeType";
 //                   "UID" SP sequence-set / "UNDRAFT" / sequence-set /
 //                   "(" search-key *(SP search-key) ")"
 
-const allLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
+function currentSearchKey (currentCommand : Lexeme[]) : Lexeme[] {
+    for (let i : number = currentCommand.length - 1; i > 0; i--) {
+        if (currentCommand[i].type === LexemeType.SEARCH_KEY) {
+            return currentCommand.slice(i);
+        }
+    }
+    return currentCommand;
+}
+
+const nullLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
     return;
 }
 
 const uidLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
-    const lastLexeme: Lexeme = currentCommand[currentCommand.length - 1];
-    console.log(lastLexeme.type);
-    switch (lastLexeme.type) {
-        case (LexemeType.SEARCH_KEY): {
-            const space : Lexeme | null = scanner.readSpace();
-            if (!space) return;
-            console.log("Found a space");
-            yield space;
-            break;
+    scanner.readSpace();
+    const uid : Lexeme | null = scanner.readSequenceSet();
+    if (!uid) return;
+    yield uid;
+}
+
+// TODO: template this (lengthOfCommand, readCommand)
+// "HEADER" SP header-fld-name SP astring
+const headerLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
+    while (currentSearchKey(currentCommand).length < 5) {
+        switch (currentCommand[currentCommand.length - 1].type) {
+            case (LexemeType.WHITESPACE): {
+                const astr : Lexeme | null = scanner.readAstring();
+                if (!astr) return;
+                yield astr;
+            }
+            default: {
+                let space : Lexeme | null = null;
+                try {
+                    space = scanner.readSpace();
+                } catch (e) {
+                    const newline : Lexeme | null = scanner.readCommandTerminatingNewLine();
+                    if (!newline) return;
+                    yield newline;
+                    return;
+                }
+                if (!space) return;
+                yield space;
+            }
         }
-        case (LexemeType.WHITESPACE): {
-            const uid : Lexeme | null = scanner.readSequenceSet();
-            if (!uid) return;
-            yield uid;
-            break;
-        }
-        default: return;
     }
 }
 
 const lexMap: Map<string, (scanner : Scanner, currentCommand : Lexeme[]) => IterableIterator<Lexeme>> = new Map([
-    ["ALL", allLexer],
+    ["ALL", nullLexer],
     ["UID", uidLexer],
+    ["HEADER", headerLexer],
 ]);
 
 const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
     const lastLexeme: Lexeme = currentCommand[currentCommand.length - 1];
     do {
         switch (lastLexeme.type) {
+            case (LexemeType.COMMAND_NAME): {
+                const space : Lexeme | null = scanner.readSpace();
+                if (!space) return;
+                yield space;
+            }
             case (LexemeType.WHITESPACE): {
                 let key : Lexeme | null = null;
-                // try {
-                    key = scanner.readSearchKey();
-                // } catch (e) {
-                //     const newline : Lexeme | null = scanner.readCommandTerminatingNewLine();
-                //     if (!newline) return;
-                //     yield newline;
-                //     return;
-                // }
+                key = scanner.readSearchKey();
                 if (!key) return;
                 yield key;
-                break;
             }
             case (LexemeType.SEARCH_KEY): {
-                const keyLexer = lexMap.get(lastLexeme.toString().toUpperCase());
+                const searchKey : string = currentCommand[currentCommand.length - 1].toString().toUpperCase();
+                const keyLexer = lexMap.get(searchKey);
                 if (!keyLexer) {
-                    throw new Error(`Cannot understand search key '${lastLexeme.toString()}'.`);
+                    throw new Error(`Cannot understand search key '${searchKey}'.`);
                 }
-                // const lexing =
                 yield* keyLexer(scanner, currentCommand);
-                // for (const lex of lexing) {
-                //     yield lex;
-                // }
                 // break; NOTE: You intentionally do not want to break here.
             }
             default: {
