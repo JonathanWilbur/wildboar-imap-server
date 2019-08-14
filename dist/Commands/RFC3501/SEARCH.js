@@ -50,6 +50,19 @@ const headerLexer = function* (scanner, currentCommand) {
 };
 const lexMap = new Map([
     ["ALL", nullLexer],
+    ["ANSWERED", nullLexer],
+    ["DELETED", nullLexer],
+    ["FLAGGED", nullLexer],
+    ["NEW", nullLexer],
+    ["OLD", nullLexer],
+    ["RECENT", nullLexer],
+    ["SEEN", nullLexer],
+    ["UNANSWERED", nullLexer],
+    ["UNDELETED", nullLexer],
+    ["UNFLAGGED", nullLexer],
+    ["UNSEEN", nullLexer],
+    ["DRAFT", nullLexer],
+    ["UNDRAFT", nullLexer],
     ["UID", uidLexer],
     ["HEADER", headerLexer],
 ]);

@@ -20,6 +20,8 @@ import { LexemeType } from "../../LexemeType";
 // TODO: Figure out how to parse search-key = sequence-set
 // TODO: Figure out how to parse search-key = "(" search-key *(SP search-key) ")"
 // TODO: Create skipSpace() and use it.
+// TODO: Create readDate() and use it.
+// TODO: Create type alias for search key lexers
 
 // const ajv : Ajv.Ajv = new Ajv();
 // const validate = ajv.compile(schema);
@@ -45,6 +47,8 @@ import { LexemeType } from "../../LexemeType";
 //                   "UID" SP sequence-set / "UNDRAFT" / sequence-set /
 //                   "(" search-key *(SP search-key) ")"
 
+type SearchKeyLexer = (scanner : Scanner, currentCommand : Lexeme[]) => IterableIterator<Lexeme>;
+
 function currentSearchKey (currentCommand : Lexeme[]) : Lexeme[] {
     for (let i : number = currentCommand.length - 1; i > 0; i--) {
         if (currentCommand[i].type === LexemeType.SEARCH_KEY) {
@@ -54,11 +58,11 @@ function currentSearchKey (currentCommand : Lexeme[]) : Lexeme[] {
     return currentCommand;
 }
 
-const nullLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
+const nullLexer : SearchKeyLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
     return;
 }
 
-const uidLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
+const uidLexer : SearchKeyLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
     scanner.readSpace();
     const uid : Lexeme | null = scanner.readSequenceSet();
     if (!uid) return;
@@ -67,7 +71,7 @@ const uidLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iter
 
 // TODO: template this (lengthOfCommand, readCommand)
 // "HEADER" SP header-fld-name SP astring
-const headerLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
+const headerLexer : SearchKeyLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
     while (currentSearchKey(currentCommand).length < 5) {
         switch (currentCommand[currentCommand.length - 1].type) {
             case (LexemeType.WHITESPACE): {
@@ -92,10 +96,50 @@ const headerLexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : I
     }
 }
 
-const lexMap: Map<string, (scanner : Scanner, currentCommand : Lexeme[]) => IterableIterator<Lexeme>> = new Map([
+const lexMap: Map<string, SearchKeyLexer> = new Map([
+
+    // One-word search keys.
     ["ALL", nullLexer],
+    ["ANSWERED", nullLexer],
+    ["DELETED", nullLexer],
+    ["FLAGGED", nullLexer],
+    ["NEW", nullLexer],
+    ["OLD", nullLexer],
+    ["RECENT", nullLexer],
+    ["SEEN", nullLexer],
+    ["UNANSWERED", nullLexer],
+    ["UNDELETED", nullLexer],
+    ["UNFLAGGED", nullLexer],
+    ["UNSEEN", nullLexer],
+    ["DRAFT", nullLexer],
+    ["UNDRAFT", nullLexer],
+
+    // Search keys that use arguments.
     ["UID", uidLexer],
     ["HEADER", headerLexer],
+    // "BCC" SP astring
+    // "BEFORE" SP date
+    // "BODY" SP astring
+    // "CC" SP astring
+    // "FROM" SP astring
+    // "KEYWORD" SP flag-keyword
+    // "ON" SP date
+    // "SINCE" SP date
+    // "SUBJECT" SP astring
+    // "TEXT" SP astring
+    // "TO" SP astring
+    // "UNKEYWORD" SP flag-keyword
+    // "HEADER" SP header-fld-name SP astring
+    // "LARGER" SP number
+    // "NOT" SP search-key
+    // "OR" SP search-key SP search-key
+    // "SENTBEFORE" SP date
+    // "SENTON" SP date
+    // "SENTSINCE" SP date
+    // "SMALLER" SP number
+    // "UID" SP sequence-set
+    // sequence-set
+    // "(" search-key *(SP search-key) ")"
 ]);
 
 const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : IterableIterator<Lexeme> {
@@ -144,33 +188,6 @@ const handler = async (connection : Connection, tag : string, command : string, 
         connection.writeData(`SEARCH ${lex.toString()}`);
     });
     connection.writeOk(tag, command);
-    // if (lexemes.length !== 6) {
-    //     connection.writeStatus(tag, "BAD", "", command, "Bad arguments.");
-    //     return;
-    // }
-    // const mailboxName : string = lexemes[3].toString();
-    // const response : object =
-    //     await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
-    //         mailboxName: mailboxName
-    //     });
-    // try {
-    //     // await validate(response);
-    //     (<any[]>(<any>response)["lsubItems"]).forEach((lsubItem : any) : void => {
-    //         connection.writeData(`LSUB (${lsubItem.nameAttributes.join(" ")}) "${lsubItem.hierarchyDelimiter}" ${lsubItem.name}`);
-    //     });
-    //     connection.writeOk(tag, command);
-    // } catch (e) {
-    //     connection.writeStatus(tag, "NO", "", command, "Failed.");
-    //     connection.server.logger.error({
-    //         topic: "imap.json",
-    //         message: e.message,
-    //         error: e,
-    //         command: command,
-    //         socket: connection.socketReport,
-    //         connectionID: connection.id,
-    //         authenticatedUser: connection.authenticatedUser
-    //     });
-    // }
 };
 
 const plugin : CommandPlugin = new CommandPlugin(lexer, handler);
