@@ -163,6 +163,7 @@ const handler = async (connection, tag, command, lexemes) => {
         ];
     }
     const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+        useUID: connection.useUID,
         sequenceSet: lexemes[3].toString(),
         fetchAttributes: fetchAtts,
     });
@@ -179,10 +180,10 @@ const handler = async (connection, tag, command, lexemes) => {
             connection.writeOk(tag, command);
         }
         else
-            connection.writeStatus(tag, "NO", "", command, "Failed.");
+            connection.writeStatus(tag, "NO", "", `${connection.useUID ? "UID " : ""}${command}`, "Failed.");
     }
     catch (e) {
-        connection.writeStatus(tag, "NO", "", command, "Failed.");
+        connection.writeStatus(tag, "NO", "", `${connection.useUID ? "UID " : ""}${command}`, "Failed.");
         connection.server.logger.error({
             topic: "imap.json",
             message: e.message,

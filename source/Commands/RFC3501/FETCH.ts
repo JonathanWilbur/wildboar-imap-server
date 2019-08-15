@@ -173,6 +173,7 @@ const handler = async (connection : Connection, tag : string, command : string, 
 
     const response : object =
         await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+            useUID: connection.useUID,
             sequenceSet: lexemes[3].toString(),
             fetchAttributes: fetchAtts,
         });
@@ -189,9 +190,9 @@ const handler = async (connection : Connection, tag : string, command : string, 
                 connection.writeData(`${result["id"]} FETCH (${result["attributes"].map((attr: any) => attr.attribute + " " + imapPrint(attr.value)).join(" ")})`);
             });
             connection.writeOk(tag, command);
-        } else connection.writeStatus(tag, "NO", "", command, "Failed.");
+        } else connection.writeStatus(tag, "NO", "", `${connection.useUID ? "UID " : ""}${command}`, "Failed.");
     } catch (e) {
-        connection.writeStatus(tag, "NO", "", command, "Failed.");
+        connection.writeStatus(tag, "NO", "", `${connection.useUID ? "UID " : ""}${command}`, "Failed.");
         connection.server.logger.error({
             topic: "imap.json",
             message: e.message,

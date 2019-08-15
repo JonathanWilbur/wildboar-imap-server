@@ -71,6 +71,7 @@ const handler = async (connection, tag, command, lexemes) => {
     const messageDataItemName = lexemes[5].toString();
     const flags = lexemes.slice(8, -1).map(l => l.toString());
     const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+        useUID: connection.useUID,
         sequenceSet,
         messageDataItemName,
         flags,

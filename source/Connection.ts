@@ -20,6 +20,7 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
     public authenticatedUser : string = "";
     public state : ConnectionState = ConnectionState.NOT_AUTHENTICATED;
     public currentCommand : Lexeme[] = [];
+    public useUID : boolean = false;
 
     public get socketString () : string {
         return `${this.socket.remoteFamily}:${this.socket.remoteAddress}:${this.socket.remotePort}`;
@@ -168,7 +169,21 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
         if (this.currentCommand.length <= 1) {
             const command : Lexeme | null = this.scanner.readCommand();
             if (!command) return;
-            yield command;
+            /**
+             * This is the one exception where I discriminate against commands
+             * in the Connection logic, and I only do so because UID just uses
+             * other commands behind the scenes and because I don't expect to
+             * ever have to do this again with any other command.
+             */
+            if (command.toString().toUpperCase() === "UID") {
+                this.scanner.readSpace();
+                const command2 : Lexeme | null = this.scanner.readCommand();
+                if (!command2) return;
+                this.useUID = true;
+                yield command2;
+            } else {
+                yield command;
+            }
         }
 
         const lastLexeme : Lexeme = this.currentCommand[this.currentCommand.length - 1];
@@ -292,6 +307,8 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                 message: e.message,
                 error: e
             });
+        } finally {
+            this.useUID = false;
         }
     }
 

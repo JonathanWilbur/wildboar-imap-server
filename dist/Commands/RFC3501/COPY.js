@@ -41,15 +41,17 @@ const handler = async (connection, tag, command, lexemes) => {
     const sequenceSet = lexemes[3].toString();
     const mailboxName = lexemes[5].toString();
     const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+        useUID: connection.useUID,
         sequenceSet,
         mailboxName,
     });
     if ("ok" in response && response["ok"]) {
-        connection.writeOk(tag, command);
+        connection.writeOk(tag, `${connection.useUID ? "UID " : ""}${command}`);
     }
     else {
-        connection.writeStatus(tag, "NO", "", command, "Failed.");
+        connection.writeStatus(tag, "NO", "", `${connection.useUID ? "UID " : ""}${command}`, "Failed.");
     }
+    connection.useUID = false;
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
 plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.SELECTED;

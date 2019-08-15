@@ -25,7 +25,7 @@ Once the following requirements are met, Wildboar IMAP Server moves into Alpha
 development.
 
 - [ ] Commands:
-  - [ ] RFC 3501
+  - [x] RFC 3501
     - [x] `CAPABILITY`
     - [x] `NOOP`
     - [x] `LOGOUT`
@@ -46,11 +46,14 @@ development.
     - [x] `CHECK`
     - [x] `CLOSE`
     - [x] `EXPUNGE`
-    - [x] `SEARCH` (very hard) (And search tricks)
-    - [x] `FETCH` (hard)
-    - [x] `STORE` (medium)
-    - [ ] `COPY` (medium)
-    - [ ] `UID` (medium)
+    - [x] `SEARCH`
+    - [x] `FETCH`
+    - [x] `STORE`
+    - [x] `COPY`
+    - [x] `UID`
+      - [x] `UID COPY`
+      - [x] `UID FETCH`
+      - [x] `UID STORE`
   - [ ] Custom commands:
     - [ ] `ERROR` (Intentionally throws an error, for testing purposes)
     - [ ] `TRESPASS` (Intentionally rejects on authorization)
@@ -96,6 +99,7 @@ Once the following requirements are met, Wildboar IMAP Server moves into Beta
 development.
 
 - [ ] AWS SQS message broker support
+- [ ] Azure Queue storage support
 - [ ] Update dependencies
 - [ ] Use `Set` instead of arrays where uniqueness is a requirement. (Check for `string[]`)
 - [ ] Check for correct state at the start of commands.

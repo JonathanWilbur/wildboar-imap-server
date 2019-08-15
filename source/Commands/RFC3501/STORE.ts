@@ -76,6 +76,7 @@ const handler = async (connection : Connection, tag : string, command : string, 
     
     const response : object =
         await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
+            useUID: connection.useUID,
             sequenceSet,
             messageDataItemName,
             flags,

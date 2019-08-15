@@ -16,6 +16,7 @@ class Connection {
         this.authenticatedUser = "";
         this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
         this.currentCommand = [];
+        this.useUID = false;
         this.socketCloseHandler = (hadError) => {
             this.server.logger.info({
                 topic: "tcp.close",
@@ -125,7 +126,17 @@ class Connection {
             const command = this.scanner.readCommand();
             if (!command)
                 return;
-            yield command;
+            if (command.toString().toUpperCase() === "UID") {
+                this.scanner.readSpace();
+                const command2 = this.scanner.readCommand();
+                if (!command2)
+                    return;
+                this.useUID = true;
+                yield command2;
+            }
+            else {
+                yield command;
+            }
         }
         const lastLexeme = this.currentCommand[this.currentCommand.length - 1];
         if (lastLexeme.type === 10) {
@@ -230,6 +241,9 @@ class Connection {
                 message: e.message,
                 error: e
             });
+        }
+        finally {
+            this.useUID = false;
         }
     }
     async checkAuthorization(lexemes) {
