@@ -10,11 +10,12 @@ const handler = async (connection, tag, command, lexemes) => {
     }
     const mailboxName = lexemes[3].toString();
     const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, {
-        mailboxName: mailboxName
+        mailboxName,
     });
     if ("ok" in response && response["ok"]) {
         connection.currentlySelectedMailbox = mailboxName;
         connection.hasWritePermissionOnCurrentlySelectedMailbox = true;
+        connection.state = ConnectionState_1.ConnectionState.SELECTED;
         connection.writeOk(tag, command);
     }
     else
