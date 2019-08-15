@@ -9,6 +9,7 @@ const handler = async (connection : Connection, tag : string, command : string) 
     connection.writeData(`Connection Authenticated User: ${connection.authenticatedUser}`);
     connection.writeData(`Connection Selected Mailbox: ${connection.currentlySelectedMailbox}`);
     connection.writeData(`Connection State: ${connection.state}`);
+    connection.writeData(`Connection Socket String: ${connection.socketString}`);
     connection.writeData(`Server ID: ${connection.server.id}`);
     connection.writeData(`Server Creation Time: ${connection.server.creationTime.toISOString()}`);
     connection.writeOk(tag, command);
