@@ -55,7 +55,7 @@ development.
       - [x] `UID FETCH`
       - [x] `UID STORE`
   - [ ] Custom commands:
-    - [ ] `ERROR` (Intentionally throws an error, for testing purposes)
+    - [x] `ERROR` (Intentionally throws an error, for testing purposes)
     - [ ] `TRESPASS` (Intentionally rejects on authorization)
     - [ ] `STATISTICS`
     - [ ] `CONNECTIONS`
