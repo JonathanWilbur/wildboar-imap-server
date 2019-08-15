@@ -26,46 +26,15 @@ development.
 
 - [ ] Commands:
   - [x] RFC 3501
-    - [x] `CAPABILITY`
-    - [x] `NOOP`
-    - [x] `LOGOUT`
-    - [x] `STARTTLS`
-    - [x] `AUTHENTICATE`
-    - [x] `LOGIN`
-    - [x] `SELECT`
-    - [x] `EXAMINE`
-    - [x] `CREATE`
-    - [x] `DELETE`
-    - [x] `RENAME`
-    - [x] `SUBSCRIBE`
-    - [x] `UNSUBSCRIBE`
-    - [x] `LIST`
-    - [x] `LSUB`
-    - [x] `STATUS`
-    - [x] `APPEND`
-    - [x] `CHECK`
-    - [x] `CLOSE`
-    - [x] `EXPUNGE`
-    - [x] `SEARCH`
-    - [x] `FETCH`
-    - [x] `STORE`
-    - [x] `COPY`
-    - [x] `UID`
-      - [x] `UID COPY`
-      - [x] `UID FETCH`
-      - [x] `UID STORE`
   - [ ] Custom commands:
     - [x] `ERROR` (Intentionally throws an error, for testing purposes)
-    - [ ] `TRESPASS` (Intentionally rejects on authorization)
     - [ ] `STATISTICS`
     - [ ] `CONNECTIONS`
     - [ ] `CONFIGURATION` (Displays configuration options)
-    - [ ] `HEALTHCHECK`
-      - [ ] Queue can be reached.
-      - [ ] Configuration source can be reached.
-      - [ ] Listening on socket.
+    - [x] `HEALTHCHECK`
 - [x] Graceful Shutdown
 - [x] Add `isSet` to ConfigurationSource.
+- [ ] Ignore blank newlines.
 - [ ] Healthcheck tool
 - [ ] Use a `sensitiveCommandRunning` flag to prevent race conditions when a
       connection attempts two `APPEND`s at once, for instance.
