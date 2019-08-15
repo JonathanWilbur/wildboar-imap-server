@@ -4,7 +4,7 @@ const CommandPlugin_1 = require("../../CommandPlugin");
 const NewLineLexer_1 = require("../../ArgumentLexers/NewLineLexer");
 const ConnectionState_1 = require("../../ConnectionState");
 const handler = async (connection, tag, command) => {
-    connection.writeData(`Commands requiring authentication: ${Array.from(connection.server.configuration.imap_server_commands_requiring_authorization).join(", ")}`);
+    connection.writeData(`Commands Requiring Authorization: ${Array.from(connection.server.configuration.imap_server_commands_requiring_authorization).join(", ")}`);
     connection.writeData(`Domain: ${connection.server.configuration.imap_server_domain}`);
     connection.writeData(`Greeting: ${connection.server.configuration.imap_server_greeting}`);
     connection.writeData(`Host Name: ${connection.server.configuration.imap_server_hostname}`);

@@ -28,7 +28,7 @@ development.
   - [x] RFC 3501
   - [ ] Custom commands:
     - [x] `ERROR` (Intentionally throws an error, for testing purposes)
-    - [ ] `STATISTICS`
+    - [x] `STATISTICS`
     - [ ] `CONNECTIONS`
     - [x] `CONFIGURATION` (Displays configuration options)
     - [x] `HEALTHCHECK`
