@@ -2,119 +2,69 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandPlugin_1 = require("../../CommandPlugin");
 const ConnectionState_1 = require("../../ConnectionState");
-function currentSearchKey(currentCommand) {
-    for (let i = currentCommand.length - 1; i > 0; i--) {
-        if (currentCommand[i].type === 28) {
-            return currentCommand.slice(i);
-        }
-    }
-    return currentCommand;
-}
-const nullLexer = function* (scanner, currentCommand) {
-    return;
-};
-const uidLexer = function* (scanner, currentCommand) {
-    scanner.readSpace();
-    const uid = scanner.readSequenceSet();
-    if (!uid)
-        return;
-    yield uid;
-};
-const headerLexer = function* (scanner, currentCommand) {
-    while (currentSearchKey(currentCommand).length < 5) {
-        switch (currentCommand[currentCommand.length - 1].type) {
-            case (1): {
-                const astr = scanner.readAstring();
-                if (!astr)
-                    return;
-                yield astr;
-            }
-            default: {
-                let space = null;
-                try {
-                    space = scanner.readSpace();
-                }
-                catch (e) {
-                    const newline = scanner.readCommandTerminatingNewLine();
-                    if (!newline)
-                        return;
-                    yield newline;
-                    return;
-                }
-                if (!space)
-                    return;
-                yield space;
-            }
-        }
-    }
-};
-const lexMap = new Map([
-    ["ALL", nullLexer],
-    ["ANSWERED", nullLexer],
-    ["DELETED", nullLexer],
-    ["FLAGGED", nullLexer],
-    ["NEW", nullLexer],
-    ["OLD", nullLexer],
-    ["RECENT", nullLexer],
-    ["SEEN", nullLexer],
-    ["UNANSWERED", nullLexer],
-    ["UNDELETED", nullLexer],
-    ["UNFLAGGED", nullLexer],
-    ["UNSEEN", nullLexer],
-    ["DRAFT", nullLexer],
-    ["UNDRAFT", nullLexer],
-    ["UID", uidLexer],
-    ["HEADER", headerLexer],
-]);
 const lexer = function* (scanner, currentCommand) {
-    const lastLexeme = currentCommand[currentCommand.length - 1];
-    do {
+    while (true) {
+        const lastLexeme = currentCommand[currentCommand.length - 1];
         switch (lastLexeme.type) {
             case (5): {
                 const space = scanner.readSpace();
                 if (!space)
                     return;
                 yield space;
+                break;
             }
             case (1): {
-                let key = null;
-                key = scanner.readSearchKey();
-                if (!key)
+                let lex = scanner.readAny(scanner.readSequenceSet.bind(scanner), scanner.readFlag.bind(scanner), scanner.readListStart.bind(scanner), scanner.readAstring.bind(scanner));
+                if (!lex)
                     return;
-                yield key;
+                yield lex;
+                break;
             }
-            case (28): {
-                const searchKey = currentCommand[currentCommand.length - 1].toString().toUpperCase();
-                const keyLexer = lexMap.get(searchKey);
-                if (!keyLexer) {
-                    throw new Error(`Cannot understand search key '${searchKey}'.`);
-                }
-                yield* keyLexer(scanner, currentCommand);
+            case (6): {
+                let lex = scanner.readAny(scanner.readAstring.bind(scanner), scanner.readListStart.bind(scanner));
+                if (!lex)
+                    return;
+                yield lex;
+                break;
+            }
+            case (7): {
+                let lex = scanner.readAny(scanner.readSpace.bind(scanner), scanner.readListEnd.bind(scanner), scanner.readCommandTerminatingNewLine.bind(scanner));
+                if (!lex)
+                    return;
+                yield lex;
+                break;
             }
             default: {
-                let space = null;
-                try {
-                    space = scanner.readSpace();
-                }
-                catch (e) {
-                    const newline = scanner.readCommandTerminatingNewLine();
-                    if (!newline)
-                        return;
-                    yield newline;
+                let lex = scanner.readAny(scanner.readSpace.bind(scanner), scanner.readListEnd.bind(scanner), scanner.readCommandTerminatingNewLine.bind(scanner));
+                if (!lex)
                     return;
-                }
-                if (!space)
-                    return;
-                yield space;
+                yield lex;
             }
         }
-    } while (true);
+    }
 };
 const handler = async (connection, tag, command, lexemes) => {
-    lexemes.forEach((lex) => {
-        connection.writeData(`SEARCH ${lex.toString()}`);
-    });
-    connection.writeOk(tag, command);
+    const query = {
+        characterSet: 'utf8',
+        query: undefined,
+    };
+    let indexOfStartOfSearchKey = 3;
+    if (lexemes[3].toString().toUpperCase() === "CHARSET") {
+        query.characterSet = lexemes[5].toString();
+        indexOfStartOfSearchKey += 4;
+    }
+    query.query = lexemes.slice(indexOfStartOfSearchKey);
+    const response = await connection.server.messageBroker.publishCommand(connection.authenticatedUser, command, query);
+    if ("ok" in response && response["ok"]) {
+        if ("sequenceNumbers" in response
+            && Array.isArray(response["sequenceNumbers"])
+            && response["sequenceNumbers"].every(n => Number.isInteger(n))) {
+            connection.writeData(response["sequenceNumbers"].join(" "));
+        }
+        connection.writeOk(tag, command);
+    }
+    else
+        connection.writeStatus(tag, "NO", "", command, "Failed.");
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
 plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;

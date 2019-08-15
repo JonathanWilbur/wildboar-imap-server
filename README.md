@@ -46,7 +46,7 @@ development.
     - [x] `CHECK`
     - [x] `CLOSE`
     - [x] `EXPUNGE`
-    - [ ] `SEARCH` (very hard) (And search tricks)
+    - [x] `SEARCH` (very hard) (And search tricks)
     - [x] `FETCH` (hard)
     - [ ] `STORE` (medium)
     - [ ] `COPY` (medium)
