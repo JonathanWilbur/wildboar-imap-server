@@ -18,6 +18,7 @@ class Connection {
         this.currentCommand = [];
         this.useUID = false;
         this.socketCloseHandler = (hadError) => {
+            this.server.connections.delete(this);
             this.server.logger.info({
                 topic: "tcp.close",
                 message: `Socket for IMAP connection ${this.id} closed.`,
@@ -68,6 +69,7 @@ class Connection {
         this.socket.on("data", this.socketDataHandler);
         this.socket.on("error", this.socketErrorHandler);
         this.socket.on("timeout", this.socketTimeoutHandler);
+        this.server.connections.add(this);
         this.writeData("OK " + this.server.configuration.imap_server_greeting);
     }
     get socketString() {

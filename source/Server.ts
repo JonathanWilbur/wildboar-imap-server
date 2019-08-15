@@ -56,6 +56,8 @@ class Server implements Temporal, UniquelyIdentified {
         ));
     };
 
+    public readonly connections : Set<Connection> = new Set<Connection>([]);
+
     constructor(
         readonly configuration : TypedKeyValueStore & ConfigurationSource,
         readonly messageBroker : MessageBroker,

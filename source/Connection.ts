@@ -44,10 +44,12 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
         // "end" not used.
         this.socket.on("error", this.socketErrorHandler);
         this.socket.on("timeout", this.socketTimeoutHandler);
+        this.server.connections.add(this);
         this.writeData("OK " + this.server.configuration.imap_server_greeting);
     }
 
     private socketCloseHandler = (hadError : boolean) : void => {
+        this.server.connections.delete(this);
         this.server.logger.info({
             topic: "tcp.close",
             message: `Socket for IMAP connection ${this.id} closed.`,

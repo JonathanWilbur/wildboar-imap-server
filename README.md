@@ -24,12 +24,12 @@ work in `index.ts`.
 Once the following requirements are met, Wildboar IMAP Server moves into Alpha
 development.
 
-- [ ] Commands:
+- [x] Commands:
   - [x] RFC 3501
-  - [ ] Custom commands:
+  - [x] Custom commands:
     - [x] `ERROR` (Intentionally throws an error, for testing purposes)
     - [x] `STATISTICS`
-    - [ ] `CONNECTIONS`
+    - [x] `CONNECTIONS`
     - [x] `CONFIGURATION` (Displays configuration options)
     - [x] `HEALTHCHECK`
 - [x] Graceful Shutdown
