@@ -71,6 +71,7 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
         yield listStart;
     }
 
+    // REVIEW: DoS?
     if (currentCommand[currentCommand.length - 1].type !== LexemeType.LIST_END) {
         let lex : Lexeme | null = null;
         do {

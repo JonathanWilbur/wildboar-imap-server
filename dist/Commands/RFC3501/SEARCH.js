@@ -63,10 +63,11 @@ const handler = async (connection, tag, command, lexemes) => {
         }
         connection.writeOk(tag, command);
     }
-    else
+    else {
         connection.writeStatus(tag, "NO", "", command, "Failed.");
+    }
 };
 const plugin = new CommandPlugin_1.CommandPlugin(lexer, handler);
-plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
+plugin.acceptableConnectionState = ConnectionState_1.ConnectionState.SELECTED;
 exports.default = plugin;
 //# sourceMappingURL=SEARCH.js.map

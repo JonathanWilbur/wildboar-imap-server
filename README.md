@@ -48,7 +48,7 @@ development.
     - [x] `EXPUNGE`
     - [x] `SEARCH` (very hard) (And search tricks)
     - [x] `FETCH` (hard)
-    - [ ] `STORE` (medium)
+    - [x] `STORE` (medium)
     - [ ] `COPY` (medium)
     - [ ] `UID` (medium)
   - [ ] Custom commands:

@@ -87,9 +87,11 @@ const handler = async (connection : Connection, tag : string, command : string, 
             connection.writeData(((response as any)["sequenceNumbers"] as number[]).join(" "));
         }
         connection.writeOk(tag, command);
-    } else connection.writeStatus(tag, "NO", "", command, "Failed.");
+    } else {
+        connection.writeStatus(tag, "NO", "", command, "Failed.");
+    }
 };
 
 const plugin : CommandPlugin = new CommandPlugin(lexer, handler);
-plugin.acceptableConnectionState = ConnectionState.NOT_AUTHENTICATED;
+plugin.acceptableConnectionState = ConnectionState.SELECTED;
 export default plugin;
