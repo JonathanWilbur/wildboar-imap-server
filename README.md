@@ -35,7 +35,7 @@ development.
 - [x] Graceful Shutdown
 - [x] Add `isSet` to ConfigurationSource.
 - [x] Ignore blank newlines.
-- [ ] Healthcheck tool
+- [x] Healthcheck tool
 - [ ] Use a `sensitiveCommandRunning` flag to prevent race conditions when a
       connection attempts two `APPEND`s at once, for instance.
 - [ ] Limit everything:
