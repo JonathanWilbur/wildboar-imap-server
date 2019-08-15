@@ -118,7 +118,13 @@ class Connection {
             return;
         }
         if (this.currentCommand.length === 0) {
-            const tag = this.scanner.readTag();
+            let tag = null;
+            try {
+                tag = this.scanner.readTag();
+            }
+            catch (e) {
+                this.scanner.skipLine();
+            }
             if (!tag)
                 return;
             this.scanner.readSpace();

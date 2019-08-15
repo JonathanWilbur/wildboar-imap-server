@@ -163,7 +163,16 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
             return;
         }
         if (this.currentCommand.length === 0) {
-            const tag : Lexeme | null = this.scanner.readTag();
+            let tag : Lexeme | null = null;
+            /**
+             * This try-catch block allows us to ignore blank lines in the
+             * stream.
+             */
+            try {
+                tag = this.scanner.readTag();
+            } catch (e) {
+                this.scanner.skipLine();
+            }
             if (!tag) return;
             this.scanner.readSpace();
             yield tag;
