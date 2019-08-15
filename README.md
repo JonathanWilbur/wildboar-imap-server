@@ -24,28 +24,13 @@ work in `index.ts`.
 Once the following requirements are met, Wildboar IMAP Server moves into Alpha
 development.
 
-- [x] Commands:
-  - [x] RFC 3501
-  - [x] Custom commands:
-    - [x] `ERROR` (Intentionally throws an error, for testing purposes)
-    - [x] `STATISTICS`
-    - [x] `CONNECTIONS`
-    - [x] `CONFIGURATION` (Displays configuration options)
-    - [x] `HEALTHCHECK`
+- [x] Commands
 - [x] Graceful Shutdown
 - [x] Add `isSet` to ConfigurationSource.
 - [x] Ignore blank newlines.
 - [x] Healthcheck tool
 - [ ] Use a `sensitiveCommandRunning` flag to prevent race conditions when a
       connection attempts two `APPEND`s at once, for instance.
-- [ ] Limit everything:
-  - [ ] Maximum commands per minute.
-  - [ ] Time since last command.
-  - [x] Maximum command lexemes.
-  - [ ] Errors per minute.
-  - [ ] Average TCP data chunk size (to prevent Slow Loris attacks)
-  - [ ] Average line length.
-  - [ ] Authentication attempts per hour should be handled by the authorizer.
 - [x] Simple Authorization
 - [x] Start-up checks:
   - [x] Confirm that all integers are safe.
@@ -61,6 +46,7 @@ development.
 - [ ] Add `warnings` or `notifications` to storage driver responses and all handlers.
 - [ ] Deduplicate simple handlers
 - [ ] Move schema into command files
+- [ ] Immediately drop connection if tag is "GET" to mitigate SSRF attacks.
 
 ### Alpha
 

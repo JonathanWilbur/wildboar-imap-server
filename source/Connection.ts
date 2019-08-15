@@ -22,6 +22,16 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
     public currentCommand : Lexeme[] = [];
     public useUID : boolean = false;
 
+    // Fields of statistical significance.
+    public commandsExecuted : number = 0;
+    public authenticationAttempts : number = 0;
+    public authorizationFailures : number = 0;
+    public invalidStateErrors : number = 0;
+    public tagReadFailures : number = 0;
+    public unknownCommandsAttempted : number = 0;
+    public commandExecutionErrors : number = 0;
+    public badArgumentFailures : number = 0;
+
     public get socketString () : string {
         return `${this.socket.remoteFamily}:${this.socket.remoteAddress}:${this.socket.remotePort}`;
     }
@@ -172,6 +182,19 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                 tag = this.scanner.readTag();
             } catch (e) {
                 this.scanner.skipLine();
+                this.tagReadFailures++;
+                if (this.tagReadFailures > 10) {  // TODO: Make this configurable
+                    this.server.logger.warn({
+                        topic: "command",
+                        message: `Connection ${this.id} closed because of excessive readTag failures.`,
+                        error: e,
+                        socket: this.socket,
+                        connectionID: this.id,
+                        authenticatedUser: this.authenticatedUser,
+                        applicationLayerProtocol: "IMAP"
+                    });
+                    this.close();
+                }
             }
             if (!tag) return;
             this.scanner.readSpace();
@@ -221,6 +244,19 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                     authenticatedUser: this.authenticatedUser,
                     applicationLayerProtocol: "IMAP"
                 });
+                this.badArgumentFailures++;
+                if (this.badArgumentFailures > 10) { // TODO: Make this configurable
+                    this.server.logger.warn({
+                        topic: "command",
+                        message: `Connection ${this.id} closed because of excessive bad arguments.`,
+                        error: e,
+                        socket: this.socket,
+                        connectionID: this.id,
+                        authenticatedUser: this.authenticatedUser,
+                        applicationLayerProtocol: "IMAP"
+                    });
+                    this.close();
+                }
                 this.scanner.skipLine();
                 this.currentCommand = [];
                 return;
@@ -261,6 +297,18 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                 connectionID: this.id,
                 authenticatedUser: this.authenticatedUser
             });
+            this.unknownCommandsAttempted++;
+            if (this.unknownCommandsAttempted > 10) { // TODO: Make this configurable.
+                this.server.logger.warn({
+                    topic: "command",
+                    message: `Connection ${this.id} closed because of excessive unknown commands.`,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser,
+                    applicationLayerProtocol: "IMAP"
+                });
+                this.close();
+            }
             return;
         }
         const commandPlugin : CommandPlugin = this.server.commandPlugins[commandName];
@@ -276,6 +324,18 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                 connectionID: this.id,
                 authenticatedUser: this.authenticatedUser
             });
+            this.invalidStateErrors++;
+            if (this.invalidStateErrors > 10) { // TODO: Make this configurable.
+                this.server.logger.warn({
+                    topic: "command",
+                    message: `Connection ${this.id} closed because of excessive attempts to execute a command in an invalid state.`,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser,
+                    applicationLayerProtocol: "IMAP"
+                });
+                this.close();
+            }
             return;
         }
 
@@ -292,10 +352,23 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                     connectionID: this.id,
                     authenticatedUser: this.authenticatedUser
                 });
+                this.authorizationFailures++;
+                if (this.authorizationFailures > 10) { // TODO: Make this configurable.
+                    this.server.logger.warn({
+                        topic: "command",
+                        message: `Connection ${this.id} closed because of excessive authorization failures.`,
+                        socket: this.socket,
+                        connectionID: this.id,
+                        authenticatedUser: this.authenticatedUser,
+                        applicationLayerProtocol: "IMAP"
+                    });
+                    this.close();
+                }
                 return;
             }
         } catch (e) {
             this.writeStatus(tag, "NO", "ALERT", commandName, "Internal error.");
+            // TODO: Log some sort of error count here.
             return;
         }
 
@@ -318,8 +391,21 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
                 message: e.message,
                 error: e
             });
+            this.commandExecutionErrors++;
+            if (this.commandExecutionErrors > 10) {
+                this.server.logger.warn({
+                    topic: `command.${commandName}`,
+                    message: `Connection ${this.id} closed because of excessive command execution errors.`,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser,
+                    applicationLayerProtocol: "IMAP"
+                });
+                this.close();
+            }
         } finally {
             this.useUID = false;
+            this.commandsExecuted++;
         }
     }
 
@@ -341,8 +427,9 @@ class Connection implements SocketWriter, Temporal, UniquelyIdentified {
         if ("authorized" in authorization && typeof (<any>authorization)["authorized"] === "boolean") {
             if ((<any>authorization)["authorized"]) return true;
             else return false;
-        } else
+        } else {
             throw new Error(`Internal error when trying to authorize command '${commandName}'.`);
+        }
     }
 
     /*

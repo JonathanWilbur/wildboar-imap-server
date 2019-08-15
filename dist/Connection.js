@@ -17,6 +17,14 @@ class Connection {
         this.state = ConnectionState_1.ConnectionState.NOT_AUTHENTICATED;
         this.currentCommand = [];
         this.useUID = false;
+        this.commandsExecuted = 0;
+        this.authenticationAttempts = 0;
+        this.authorizationFailures = 0;
+        this.invalidStateErrors = 0;
+        this.tagReadFailures = 0;
+        this.unknownCommandsAttempted = 0;
+        this.commandExecutionErrors = 0;
+        this.badArgumentFailures = 0;
         this.socketCloseHandler = (hadError) => {
             this.server.connections.delete(this);
             this.server.logger.info({
@@ -124,6 +132,19 @@ class Connection {
             }
             catch (e) {
                 this.scanner.skipLine();
+                this.tagReadFailures++;
+                if (this.tagReadFailures > 10) {
+                    this.server.logger.warn({
+                        topic: "command",
+                        message: `Connection ${this.id} closed because of excessive readTag failures.`,
+                        error: e,
+                        socket: this.socket,
+                        connectionID: this.id,
+                        authenticatedUser: this.authenticatedUser,
+                        applicationLayerProtocol: "IMAP"
+                    });
+                    this.close();
+                }
             }
             if (!tag)
                 return;
@@ -171,6 +192,19 @@ class Connection {
                     authenticatedUser: this.authenticatedUser,
                     applicationLayerProtocol: "IMAP"
                 });
+                this.badArgumentFailures++;
+                if (this.badArgumentFailures > 10) {
+                    this.server.logger.warn({
+                        topic: "command",
+                        message: `Connection ${this.id} closed because of excessive bad arguments.`,
+                        error: e,
+                        socket: this.socket,
+                        connectionID: this.id,
+                        authenticatedUser: this.authenticatedUser,
+                        applicationLayerProtocol: "IMAP"
+                    });
+                    this.close();
+                }
                 this.scanner.skipLine();
                 this.currentCommand = [];
                 return;
@@ -196,6 +230,18 @@ class Connection {
                 connectionID: this.id,
                 authenticatedUser: this.authenticatedUser
             });
+            this.unknownCommandsAttempted++;
+            if (this.unknownCommandsAttempted > 10) {
+                this.server.logger.warn({
+                    topic: "command",
+                    message: `Connection ${this.id} closed because of excessive unknown commands.`,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser,
+                    applicationLayerProtocol: "IMAP"
+                });
+                this.close();
+            }
             return;
         }
         const commandPlugin = this.server.commandPlugins[commandName];
@@ -209,6 +255,18 @@ class Connection {
                 connectionID: this.id,
                 authenticatedUser: this.authenticatedUser
             });
+            this.invalidStateErrors++;
+            if (this.invalidStateErrors > 10) {
+                this.server.logger.warn({
+                    topic: "command",
+                    message: `Connection ${this.id} closed because of excessive attempts to execute a command in an invalid state.`,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser,
+                    applicationLayerProtocol: "IMAP"
+                });
+                this.close();
+            }
             return;
         }
         try {
@@ -223,6 +281,18 @@ class Connection {
                     connectionID: this.id,
                     authenticatedUser: this.authenticatedUser
                 });
+                this.authorizationFailures++;
+                if (this.authorizationFailures > 10) {
+                    this.server.logger.warn({
+                        topic: "command",
+                        message: `Connection ${this.id} closed because of excessive authorization failures.`,
+                        socket: this.socket,
+                        connectionID: this.id,
+                        authenticatedUser: this.authenticatedUser,
+                        applicationLayerProtocol: "IMAP"
+                    });
+                    this.close();
+                }
                 return;
             }
         }
@@ -249,9 +319,22 @@ class Connection {
                 message: e.message,
                 error: e
             });
+            this.commandExecutionErrors++;
+            if (this.commandExecutionErrors > 10) {
+                this.server.logger.warn({
+                    topic: `command.${commandName}`,
+                    message: `Connection ${this.id} closed because of excessive command execution errors.`,
+                    socket: this.socket,
+                    connectionID: this.id,
+                    authenticatedUser: this.authenticatedUser,
+                    applicationLayerProtocol: "IMAP"
+                });
+                this.close();
+            }
         }
         finally {
             this.useUID = false;
+            this.commandsExecuted++;
         }
     }
     async checkAuthorization(lexemes) {
@@ -276,8 +359,9 @@ class Connection {
             else
                 return false;
         }
-        else
+        else {
             throw new Error(`Internal error when trying to authorize command '${commandName}'.`);
+        }
     }
     writeStatus(tag, type, code, command, message) {
         if (this.socket.writable) {

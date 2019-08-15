@@ -37,6 +37,19 @@ const lexer = function* (scanner : Scanner, currentCommand : Lexeme[]) : Iterabl
 };
 
 const handler = async (connection : Connection, tag : string, command : string, lexemes : Lexeme[]) => {
+    connection.authenticationAttempts++;
+    if (connection.authenticationAttempts > 3) { // TODO: Make this configurable.
+        connection.server.logger.warn({
+            topic: `command.${command}`,
+            message: `Connection ${connection.id} closed because of excessive failed authentication failures.`,
+            socket: connection.socketReport,
+            connectionID: connection.id,
+            authenticatedUser: connection.authenticatedUser,
+            applicationLayerProtocol: "IMAP"
+        });
+        connection.close();
+        return;
+    }
     const saslMechanism : string = lexemes[3].toString();
     const saslResponses : Lexeme[] = lexemes.filter((lexeme : Lexeme) : boolean => {
         return (lexeme.type === LexemeType.BASE64);

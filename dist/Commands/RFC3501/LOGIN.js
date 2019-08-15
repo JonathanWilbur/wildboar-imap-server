@@ -41,6 +41,19 @@ const lexer = function* (scanner, currentCommand) {
     }
 };
 const handler = async (connection, tag, command, lexemes) => {
+    connection.authenticationAttempts++;
+    if (connection.authenticationAttempts > 3) {
+        connection.server.logger.warn({
+            topic: `command.${command}`,
+            message: `Connection ${connection.id} closed because of excessive failed authentication failures.`,
+            socket: connection.socketReport,
+            connectionID: connection.id,
+            authenticatedUser: connection.authenticatedUser,
+            applicationLayerProtocol: "IMAP"
+        });
+        connection.close();
+        return;
+    }
     const credentials = lexemes.filter((lexeme) => {
         return (lexeme.type === 8 ||
             lexeme.type === 9 ||
