@@ -30,7 +30,7 @@ development.
     - [x] `ERROR` (Intentionally throws an error, for testing purposes)
     - [ ] `STATISTICS`
     - [ ] `CONNECTIONS`
-    - [ ] `CONFIGURATION` (Displays configuration options)
+    - [x] `CONFIGURATION` (Displays configuration options)
     - [x] `HEALTHCHECK`
 - [x] Graceful Shutdown
 - [x] Add `isSet` to ConfigurationSource.
