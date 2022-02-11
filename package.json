@@ -34,7 +34,7 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
-    "ajv": "^6.10.2",
+    "ajv": "^6.12.3",
     "amqplib": "^0.5.5",
     "wildboar-microservices-ts": "^0.1.3"
   }
